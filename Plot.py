@@ -10,7 +10,6 @@ from matplotlib.backends.backend_qt5agg import (
     FigureCanvasQTAgg as FigureCanvas,
     NavigationToolbar2QT as NavigationToolbar)
 #from matplotlib.figure import Figure
-import matplotlib.patches as patches
 import matplotlib as mpl
 #from matplotlib import (
 #    figure as Figure,
@@ -203,6 +202,7 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindow.Ui_plotWindow):
             self._rChild=PlotWindow(func_renormalize, self._level+1,self)
             self._rChild.setWindowTitle("Level "+str(self._level+1))
             self._rChild.setAttribute(QtCore.Qt.WA_DeleteOnClose)
+            self._rChild.setParent(None)
             self.openWindow(self._rChild)
         else:
             self.focusWindow(self._rChild)
@@ -225,8 +225,8 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindow.Ui_plotWindow):
         #    self._childWindow.raise_()
         #    self._childWindow.activateWindow()
         widget.show()
-        widget.raise_()
         widget.activateWindow()
+        widget.raise_()
 
     def closeWindow(self, widget):
         widget.close()

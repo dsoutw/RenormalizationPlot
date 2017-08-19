@@ -51,16 +51,34 @@ class MainWindow(QtWidgets.QMainWindow, MainWindow.Ui_mainWindow):
         #sub = QMdiSubWindow()
         #sub.setWidget(QTextEdit())
         #sub.setWindowTitle("subwindow"+str(MainWindow.count))
+        
+        def openMdiWindow(parent,child):
+            child.mdiSubWindow=self.mdiArea.addSubWindow(child,
+                    QtCore.Qt.SubWindow | QtCore.Qt.CustomizeWindowHint | QtCore.Qt.WindowSystemMenuHint |
+                    QtCore.Qt.WindowMinMaxButtonsHint | QtCore.Qt.WindowCloseButtonHint)
+            child.mdiSubWindow.show()
+        def closeMdiWindow(parent,child):
+            child.mdiSubWindow.close()
+            child.mdiSubWindow=None
+            self.mdiArea.removeSubWindow(child)
+        def focusMdiWindow(parent,child):
+            self.mdiArea.setActiveSubWindow(child.mdiSubWindow)
+
+        Plot.PlotWindow.openWindow=openMdiWindow
+        Plot.PlotWindow.closeWindow=closeMdiWindow
+        Plot.PlotWindow.focusWindow=focusMdiWindow
+
         self.__originalPlot=Plot.PlotWindow(
             Unimodal(lambda x:Setting.func(x,Setting.parameterValue),Setting.func_c(Setting.parameterValue)),
-            0,
-            mdi=self.mdiArea)
+            0)
         self.__originalPlot.setWindowTitle("Original Function")
         self.__originalPlot.setAttribute(QtCore.Qt.WA_DeleteOnClose)
+        
         #self.mdiArea.addSubWindow(self.__originalPlot)
-        self.mdiArea.addSubWindow(self.__originalPlot,QtCore.Qt.SubWindow | QtCore.Qt.WindowMinimizeButtonHint | QtCore.Qt.WindowMaximizeButtonHint)
+        self.__originalPlot.mdiSubWindow=self.mdiArea.addSubWindow(self.__originalPlot,QtCore.Qt.SubWindow | QtCore.Qt.WindowMinimizeButtonHint | QtCore.Qt.WindowMaximizeButtonHint)
         self.__originalPlot.showMaximized()
         
+    
         
     # Update Parameter
     def __parameterEditUpdate(self):
