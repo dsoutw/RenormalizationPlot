@@ -48,10 +48,6 @@ class MainWindow(QtWidgets.QMainWindow, MainWindow.Ui_mainWindow):
         self.parameterZOutButton.clicked.connect(self.__parameterZoomOut)
         
         # Add the window for the initial plot
-        #sub = QMdiSubWindow()
-        #sub.setWidget(QTextEdit())
-        #sub.setWindowTitle("subwindow"+str(MainWindow.count))
-        
         def openMdiWindow(parent,child):
             child.mdiSubWindow=self.mdiArea.addSubWindow(child,
                     QtCore.Qt.SubWindow | QtCore.Qt.CustomizeWindowHint | QtCore.Qt.WindowSystemMenuHint |
@@ -74,7 +70,6 @@ class MainWindow(QtWidgets.QMainWindow, MainWindow.Ui_mainWindow):
         self.__originalPlot.setWindowTitle("Original Function")
         self.__originalPlot.setAttribute(QtCore.Qt.WA_DeleteOnClose)
         
-        #self.mdiArea.addSubWindow(self.__originalPlot)
         self.__originalPlot.mdiSubWindow=self.mdiArea.addSubWindow(self.__originalPlot,QtCore.Qt.SubWindow | QtCore.Qt.WindowMinimizeButtonHint | QtCore.Qt.WindowMaximizeButtonHint)
         self.__originalPlot.showMaximized()
         

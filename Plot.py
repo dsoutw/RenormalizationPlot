@@ -1,5 +1,4 @@
 from PyQt5 import QtCore, QtWidgets # Import the PyQt4 module we'll need
-#from PyQt5.QtCore import QObject, pyqtProperty
 import sys # We need sys so that we can pass argv to QApplication
 
 import PlotWindow # This file holds our MainWindow and all design related things
@@ -9,12 +8,7 @@ import PlotWindow # This file holds our MainWindow and all design related things
 from matplotlib.backends.backend_qt5agg import (
     FigureCanvasQTAgg as FigureCanvas,
     NavigationToolbar2QT as NavigationToolbar)
-#from matplotlib.figure import Figure
 import matplotlib as mpl
-#from matplotlib import (
-#    figure as Figure,
-#    patches as patches)
-
 
 # renormalization 
 from Unimodal import Unimodal
@@ -111,18 +105,11 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindow.Ui_plotWindow):
         # Add graph toolbar
         self.mplToolbar = NavigationToolbar(self.canvas, self.centralwidget)
         self.addToolBar(self.mplToolbar)
-    
-        # connect rParent
-        # bug: does not work
+
+        # setup the parent button    
         if rParent is not None:
             def showParent():
                 self.focusWindow(rParent)
-                #if self._mdi is not None:
-                #    self._mdi.setActiveSubWindow(self._rParent.parentWidget())
-                #else:
-                #    self._rParent.raise_()
-                #    self._rParent.activateWindow()
-                
             self.parentButton.clicked.connect(showParent)
         else:
             self.parentButton.hide()
@@ -145,22 +132,16 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindow.Ui_plotWindow):
         self.iteratedGraphCheckBox.setChecked(Setting.figureMultipleIterate)
         self.iteratedGraphCheckBox.clicked.connect(self.f_unimodal_p.setVisible)
     
-    #def setCentralWidget(self, *args):
-    #    self.setWidget(*args)
-    #    pass
-        
-    def closeChild(self):
+    def closeRChild(self):
         if self._rChild is not None:
             self.closeWindow(self._rChild)
             self._rChild=None
-            #self._childWindow.close()
-            #self._childWindow=None
                     
     def closeEvent(self, evnt):
         if self._rParent is not None:
             #print("close captured")
             self._rParent._rChild=None
-        self.closeChild()
+        self.closeRChild()
         super().closeEvent(evnt)
         
     def _periodSpinBoxChanged(self, value):
@@ -179,7 +160,7 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindow.Ui_plotWindow):
         else:
             self.renormalizableResultLabel.setText("No")
             self.renormalizeButton.setEnabled(False)
-            self.closeChild()
+            self.closeRChild()
     
     def _renormalize(self,period):
         try:
@@ -207,23 +188,12 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindow.Ui_plotWindow):
         else:
             self.focusWindow(self._rChild)
     
+    # window utilities
     # modify this method if created by mdi window
     def openWindow(self, widget):
-        #    if self._mdi is not None:
-        #        self._childWindow = self._mdi.addSubWindow(self._rChild,
-        #            QtCore.Qt.SubWindow | QtCore.Qt.CustomizeWindowHint | QtCore.Qt.WindowSystemMenuHint |
-        #            QtCore.Qt.WindowMinMaxButtonsHint | QtCore.Qt.WindowCloseButtonHint)
-        #    else:
-        #        self._childWindow = self._rChild
-        #    self._childWindow.show()
         widget.show()
 
     def focusWindow(self, widget):
-        #if self._mdi is not None:
-        #    self._mdi.setActiveSubWindow(self._childWindow)
-        #else:
-        #    self._childWindow.raise_()
-        #    self._childWindow.activateWindow()
         widget.show()
         widget.activateWindow()
         widget.raise_()
@@ -231,6 +201,7 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindow.Ui_plotWindow):
     def closeWindow(self, widget):
         widget.close()
 
+    # unimodal map for the plot
     def getFunction(self):
         return self._func
 
@@ -241,7 +212,7 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindow.Ui_plotWindow):
         if self._rChild is not None:
             func_renormalize=self._renormalize(self._period)
             if func_renormalize is None:
-                self.closeChild()
+                self.closeRChild()
             else:
                 self._rChild.function=func_renormalize
         
@@ -263,12 +234,10 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindow.Ui_plotWindow):
         self.f_SelfReturnBetaQ.setBounds(func.p_B,func.p_B,func.p_b-func.p_B,func.p_b-func.p_B)
         
         # Set ticks
-        #self.axes2.set_xticks([-1,1,func.p_c,func.p_b,func.p_B,func.p_B2])
         self.f_Alpha0Ticks.setTicks([-1,1,func.p_c])
         self.f_Beta0Ticks.setTicks([func.p_b,func.p_B,func.p_B2])
 
         self.canvas.setUpdatesEnabled(True)
-        #self.canvas.draw_idle()
 
     function=property(getFunction, setFunction)
 
