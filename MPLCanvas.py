@@ -21,6 +21,7 @@ class MPLCanvas(FigureCanvas):
         #                           QtWidgets.QSizePolicy.Expanding)
         FigureCanvas.updateGeometry(self)
         self.setMinimumSize(0, 0)
+        self._updateDirty=False
 
     def compute_initial_figure(self):
         pass
@@ -43,7 +44,8 @@ class MPLCanvas(FigureCanvas):
     @QtCore.pyqtSlot(bool)
     def setUpdatesEnabled(self, enable):
         if enable == False:
-            self._updateDirty=False
+            #self._updateDirty=False
+            pass
         elif enable == True:
             if self._updateDirty == True:
                 FigureCanvas.draw_idle(self)

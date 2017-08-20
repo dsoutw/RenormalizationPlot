@@ -4,6 +4,8 @@ import sys # We need sys so that we can pass argv to QApplication
 import PlotWindow # This file holds our MainWindow and all design related things
                     # it also keeps events etc that we defined in Qt Designer
 
+from scipy import optimize
+
 # Matplotlib library
 from matplotlib.backends.backend_qt5agg import (
     FigureCanvasQTAgg as FigureCanvas,
@@ -46,12 +48,12 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindow.Ui_plotWindow):
         # Draw second iterate
         self.f_unimodal_2 = FunctionG(self.canvas,lambda x:self._func(self._func(x)),visible=Setting.figureSecondIterate,lw=1)
         self.secondIterateCheckBox.setChecked(Setting.figureSecondIterate)
-        self.secondIterateCheckBox.clicked.connect(self.f_unimodal_2.setVisible)
+        self.secondIterateCheckBox.toggled.connect(self.f_unimodal_2.setVisible)
 
         # Draw diagonal line
         self.f_diagonal = FunctionG(self.canvas,lambda x:x,visible=Setting.figureDiagonal,lw=1)
         self.diagonalCheckBox.setChecked(Setting.figureDiagonal)
-        self.diagonalCheckBox.clicked.connect(self.f_diagonal.setVisible)
+        self.diagonalCheckBox.toggled.connect(self.f_diagonal.setVisible)
         
         # Draw beta(0) points
         # Draw b
@@ -66,7 +68,7 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindow.Ui_plotWindow):
                                 )
         self.f_Beta0=GroupG([self.f_b,self.f_B,self.f_B2,self.f_Beta0Ticks],visible=Setting.figureBeta0)
         self.beta0CheckBox.setChecked(Setting.figureBeta0)
-        self.beta0CheckBox.clicked.connect(self.f_Beta0.setVisible)
+        self.beta0CheckBox.toggled.connect(self.f_Beta0.setVisible)
         
         # Draw self-return interval
         self.f_SelfReturnBetaR=RectangleG(self.canvas,
@@ -81,7 +83,7 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindow.Ui_plotWindow):
             )
         self.f_SelfReturnBeta=GroupG([self.f_SelfReturnBetaR,self.f_SelfReturnBetaQ],visible=Setting.figureSelfReturn)
         self.selfReturnCheckBox.setChecked(Setting.figureSelfReturn)
-        self.selfReturnCheckBox.clicked.connect(self.f_SelfReturnBeta.setVisible)
+        self.selfReturnCheckBox.toggled.connect(self.f_SelfReturnBeta.setVisible)
         
         # Set ticks
         self.f_Alpha0Ticks=TicksG(self.canvas,"top",
@@ -120,7 +122,7 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindow.Ui_plotWindow):
         self._updateRenormalizable()
         self.periodSpinBox.valueChanged.connect(self._periodSpinBoxChanged)
         self._rChild=None
-        self.renormalizeButton.clicked.connect(self._renormalizeWindow)
+        self.renormalizeButton.clicked.connect(self.openRChild)
         self.canvas.setMinimumSize(0,0)
         
         # setup multiple iterates 
@@ -130,13 +132,13 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindow.Ui_plotWindow):
             return x
         self.f_unimodal_p = FunctionG(self.canvas,_fp,visible=Setting.figureMultipleIterate,lw=1)
         self.iteratedGraphCheckBox.setChecked(Setting.figureMultipleIterate)
-        self.iteratedGraphCheckBox.clicked.connect(self.f_unimodal_p.setVisible)
+        self.iteratedGraphCheckBox.toggled.connect(self.f_unimodal_p.setVisible)
+        
+        # setup level grapgs
+        self.levelBox.setEnabled(False)
     
-    def closeRChild(self):
-        if self._rChild is not None:
-            self.closeWindow(self._rChild)
-            self._rChild=None
-                    
+    # inherited from QtWidgets.QMainWindow
+    # close child renormalization when the window is closed
     def closeEvent(self, evnt):
         if self._rParent is not None:
             #print("close captured")
@@ -144,6 +146,7 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindow.Ui_plotWindow):
         self.closeRChild()
         super().closeEvent(evnt)
         
+    # UI callbacks
     def _periodSpinBoxChanged(self, value):
         self._period=value
         def _fp(x):
@@ -152,7 +155,8 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindow.Ui_plotWindow):
             return x
         self.f_unimodal_p.setFunction(_fp)
         self._updateRenormalizable()
-    
+        
+    # update status of renormlaizable
     def _updateRenormalizable(self):
         if(self._func.renomalizable(self._period)):
             self.renormalizableResultLabel.setText("Yes")
@@ -162,6 +166,7 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindow.Ui_plotWindow):
             self.renormalizeButton.setEnabled(False)
             self.closeRChild()
     
+    # do renormalization
     def _renormalize(self,period):
         try:
             func_renormalize=self._func.renomalize(period)
@@ -173,21 +178,88 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindow.Ui_plotWindow):
             print(str(e))
             return None
     
-    def _renormalizeWindow(self):
+    # child renormalization window
+    def openRChild(self):
         # create window if not exist then renormalize
         if self._rChild is None:
-            func_renormalize=self._renormalize(self._period)
-            if func_renormalize is None:
+            rFunc, r_s, r_si =self._renormalize(self._period)
+            if rFunc is None:
                 return
 
-            self._rChild=PlotWindow(func_renormalize, self._level+1,self)
+            self._rChild=PlotWindow(rFunc, self._level+1,self)
             self._rChild.setWindowTitle("Level "+str(self._level+1))
             self._rChild.setAttribute(QtCore.Qt.WA_DeleteOnClose)
             self._rChild.setParent(None)
+            self.levelBox.setEnabled(True)
             self.openWindow(self._rChild)
+            
+            self._addNextLevelOrbit(rFunc, r_si)
+            
+            #self.f_alpha1List=
         else:
             self.focusWindow(self._rChild)
-    
+            
+    def closeRChild(self):
+        if self._rChild is not None:
+            self.closeWindow(self._rChild)
+            self.levelBox.setEnabled(False)
+            self._rChild=None
+
+            # remove sub-structures
+            self._removeNextLevelOrbit()
+
+    # plot sub-structures if possible
+    def _addNextLevelOrbit(self, rFunc, r_si):
+        
+        # build period orbit from the next level
+        def _nextLevelOrbit(p_x,p_X):
+            p_xList=[]
+            for i in range(self._period):
+                p_x=self._func(p_x)
+                p_xList.append(p_x)
+                
+            p_XList=[None] * self._period
+            p_XList[self._period-1]=p_X
+            i=self._period-2
+            while i >= 0:
+                if p_xList[i] < self._func.p_c:
+                    p_X=optimize.brenth(lambda x: self._func(x)-p_X,self._func.p_a,self._func.p_c)
+                else:
+                    p_X=optimize.brenth(lambda x: self._func(x)-p_X,self._func.p_c,self._func.p_A)
+                p_XList[i]=p_X
+                i=i-1
+            return p_xList, p_XList
+
+        p_a1List, p_A1List=_nextLevelOrbit(r_si(rFunc.p_a),r_si(rFunc.p_A))
+        p_b1List, p_B1List=_nextLevelOrbit(r_si(rFunc.p_b),r_si(rFunc.p_B))
+
+        self.canvas.setUpdatesEnabled(False)
+        
+        f_a1List=[VerticalLineG(self.canvas, p_a1List[i], visible=True) for i in range(self._period)]
+        f_A1List=[VerticalLineG(self.canvas, p_A1List[i], visible=True) for i in range(self._period)]
+        self.f_aA1List=GroupG(f_a1List+f_A1List,visible=self.alpha1CheckBox.isChecked())
+        self.alpha1CheckBox.toggled.connect(self.f_aA1List.setVisible)
+
+        f_b1List=[VerticalLineG(self.canvas, p_b1List[i], visible=True) for i in range(self._period)]
+        f_B1List=[VerticalLineG(self.canvas, p_B1List[i], visible=True) for i in range(self._period)]
+        self.f_bB1List=GroupG(f_b1List+f_B1List,visible=self.beta1CheckBox.isChecked())
+        self.beta1CheckBox.toggled.connect(self.f_bB1List.setVisible)
+        
+        self.f_level1=GroupG([self.f_aA1List,self.f_bB1List],visible=self.partitionButton.isChecked())
+        self.partitionButton.toggled.connect(self.f_level1.setVisible)
+        
+        self.canvas.setUpdatesEnabled(True)
+
+    def _removeNextLevelOrbit(self):
+        # remove sub-structures
+        self.alpha1CheckBox.toggled.disconnect()
+        self.beta1CheckBox.toggled.disconnect()
+        self.partitionButton.toggled.disconnect(self.f_level1.setVisible)
+        self.f_level1.remove()
+        self.f_level1=None
+        self.f_aA1List=None
+        self.f_bB1List=None
+
     # window utilities
     # modify this method if created by mdi window
     def openWindow(self, widget):
@@ -207,17 +279,22 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindow.Ui_plotWindow):
 
     @QtCore.pyqtSlot(Unimodal)
     def setFunction(self, func):
+
         self._func = func
         self._updateRenormalizable()
         if self._rChild is not None:
-            func_renormalize=self._renormalize(self._period)
-            if func_renormalize is None:
+            rFunc, r_s, r_si = self._renormalize(self._period)
+            if rFunc is None:
                 self.closeRChild()
             else:
-                self._rChild.function=func_renormalize
-        
+                self._rChild.function=rFunc
+                
+                # plot sub-structures if possible
+                self._removeNextLevelOrbit()
+                self._addNextLevelOrbit(rFunc, r_si)
+                
         self.canvas.setUpdatesEnabled(False)
-        
+
         # Update Graph
         self.f_unimodal.setFunction(func)
         self.f_unimodal_2.setFunction(lambda x:self._func(self._func(x)))

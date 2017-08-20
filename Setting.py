@@ -15,14 +15,15 @@ figureDiagonal=False
 figureBeta0=True
 figureSelfReturn=True
 
-# unit second
 interpolationEnabled=True
+# unit second
 interpolationThreshold=0.1
+# precision of sampling points for the interpolation
 interpolationPrecision=0.001
 
 # one-parameter unimodal map
 def func(x, mu):
     return mu*(np.float64(1.0)+x)*(np.float64(1.0)-x)-np.float64(1.0)
-# critical point
+# critical point for the one-paraameter family
 def func_c(mu):
     return 0

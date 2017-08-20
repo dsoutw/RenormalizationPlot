@@ -43,6 +43,9 @@ class GraphObjectBase():
         self._visibleMask=visibleMask
     visibleMask=property(getVisibleMask, setVisibleMask)
 
+    def remove(self):
+        raise NotImplementedError("GraphObjectBase.remove has to be implemented")
+
 
 #
 class GraphObject(GraphObjectBase,QtCore.QObject):
@@ -70,13 +73,17 @@ class GraphObject(GraphObjectBase,QtCore.QObject):
 
 class GroupG(GraphObjectBase,list):
     def __init__(self,*args,visible=True):
-        GraphObjectBase.__init__(self,visible)
         list.__init__(self,*args)
+        GraphObjectBase.__init__(self,visible)
         
     def _setVisibleInternal(self, visible):
         for member in self:
             member.setVisibleMask(visible)
         
+    def remove(self):
+        for member in self:
+            member.remove()
+            
 # line=matplotlib.lines.Line2D object
 class CurveG(GraphObject):
     def __init__(self, canvas, curve, visible=True):
@@ -95,12 +102,17 @@ class CurveG(GraphObject):
         self._curve=curve
     curve=property(getCurve, setCurve)
     
+    def remove(self):
+        self._curve.remove()
+        self.update()
+    
 class FunctionG(CurveG):
     def __init__(self, canvas, func, visible=True, **kwargs):
         self._func=func
         self._kwargs=kwargs
         self._sample = np.arange(-1.0, 1.0, 0.001)
         
+        # plot when visible
         if visible == True:
             curve, = canvas.axes.plot(self._sample, self._func(self._sample), **kwargs)
             self._updated = True

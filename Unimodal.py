@@ -1,7 +1,7 @@
 import numpy as np
 import copy
 from scipy import optimize
-from scipy.misc import derivative
+#from scipy.misc import derivative
 from scipy.interpolate import interp1d
 import time
 import Setting
@@ -82,7 +82,7 @@ class Unimodal:
             s_i=Affine(np.float64(-1),self.p_b,np.float64(1),self.p_B)
             #return Unimodal(lambda x: s(self._map(self._map(s_i(x)))),s(self.p_c))
 
-            return UnimodalRescaleIterate(s, self._map, 2, s_i, s(self.p_c))
+            return UnimodalRescaleIterate(s, self._map, 2, s_i, s(self.p_c)), s, s_i
         else:
             return None
     
@@ -132,7 +132,7 @@ class UnimodalRescaleIterate(Unimodal):
                     rfunc=Unimodal(interp1d(sample, data, kind='cubic', fill_value='extrapolate'),s(self._rescale2(self.p_c)))
                     print("Warning: the unimodal map is approximated by intepolation to speed up the performance")
                 
-            return rfunc
+            return rfunc, Affine(self.p_b,np.float64(-1),self.p_B,np.float64(1)), Affine(np.float64(-1),self.p_b,np.float64(1),self.p_B)
 
         else:
             return None

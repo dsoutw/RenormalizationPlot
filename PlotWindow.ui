@@ -146,6 +146,19 @@
             <item row="1" column="1">
              <widget class="QCheckBox" name="iteratedGraphCheckBox"/>
             </item>
+            <item row="2" column="0">
+             <widget class="QLabel" name="selfReturnLabel">
+              <property name="text">
+               <string>Self Return</string>
+              </property>
+              <property name="buddy">
+               <cstring>selfReturnCheckBox</cstring>
+              </property>
+             </widget>
+            </item>
+            <item row="2" column="1">
+             <widget class="QCheckBox" name="selfReturnCheckBox"/>
+            </item>
             <item row="3" column="0">
              <widget class="QLabel" name="renormalizableLabel">
               <property name="text">
@@ -157,6 +170,32 @@
              <widget class="QLabel" name="renormalizableResultLabel">
               <property name="text">
                <string>No</string>
+              </property>
+             </widget>
+            </item>
+            <item row="4" column="0">
+             <widget class="QToolButton" name="parentButton">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="text">
+               <string>Parent</string>
+              </property>
+             </widget>
+            </item>
+            <item row="4" column="1">
+             <widget class="QToolButton" name="renormalizeButton">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="text">
+               <string>Renormalize</string>
               </property>
              </widget>
             </item>
@@ -176,66 +215,101 @@
               </property>
              </spacer>
             </item>
-            <item row="7" column="0">
-             <widget class="QRadioButton" name="noneButton">
-              <property name="text">
-               <string>None</string>
+            <item row="7" column="0" colspan="2">
+             <widget class="QGroupBox" name="levelBox">
+              <property name="minimumSize">
+               <size>
+                <width>100</width>
+                <height>100</height>
+               </size>
               </property>
-              <property name="checked">
-               <bool>true</bool>
+              <property name="title">
+               <string>Deeper Levels</string>
               </property>
-              <attribute name="buttonGroup">
-               <string notr="true">buttonGroup</string>
-              </attribute>
+              <layout class="QFormLayout" name="formLayout_3">
+               <item row="0" column="0">
+                <widget class="QRadioButton" name="noneButton">
+                 <property name="text">
+                  <string>None</string>
+                 </property>
+                 <property name="checked">
+                  <bool>true</bool>
+                 </property>
+                 <attribute name="buttonGroup">
+                  <string notr="true">buttonGroup</string>
+                 </attribute>
+                </widget>
+               </item>
+               <item row="1" column="0">
+                <widget class="QRadioButton" name="partitionButton">
+                 <property name="text">
+                  <string>First Level</string>
+                 </property>
+                 <attribute name="buttonGroup">
+                  <string notr="true">buttonGroup</string>
+                 </attribute>
+                </widget>
+               </item>
+               <item row="2" column="0">
+                <widget class="QLabel" name="alpha1Label">
+                 <property name="enabled">
+                  <bool>false</bool>
+                 </property>
+                 <property name="text">
+                  <string>α(1)</string>
+                 </property>
+                 <property name="buddy">
+                  <cstring>alpha1CheckBox</cstring>
+                 </property>
+                </widget>
+               </item>
+               <item row="2" column="1">
+                <widget class="QCheckBox" name="alpha1CheckBox">
+                 <property name="enabled">
+                  <bool>false</bool>
+                 </property>
+                </widget>
+               </item>
+               <item row="3" column="0">
+                <widget class="QLabel" name="beta1Label">
+                 <property name="enabled">
+                  <bool>false</bool>
+                 </property>
+                 <property name="text">
+                  <string>β(1)</string>
+                 </property>
+                 <property name="buddy">
+                  <cstring>beta1CheckBox</cstring>
+                 </property>
+                </widget>
+               </item>
+               <item row="3" column="1">
+                <widget class="QCheckBox" name="beta1CheckBox">
+                 <property name="enabled">
+                  <bool>false</bool>
+                 </property>
+                </widget>
+               </item>
+               <item row="4" column="0">
+                <widget class="QRadioButton" name="levelButton">
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                   <horstretch>0</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
+                 </property>
+                 <property name="text">
+                  <string>Rescaling Levels</string>
+                 </property>
+                 <attribute name="buttonGroup">
+                  <string notr="true">buttonGroup</string>
+                 </attribute>
+                </widget>
+               </item>
+              </layout>
              </widget>
             </item>
-            <item row="10" column="0">
-             <widget class="QRadioButton" name="partitionButton">
-              <property name="text">
-               <string>Partition</string>
-              </property>
-              <attribute name="buttonGroup">
-               <string notr="true">buttonGroup</string>
-              </attribute>
-             </widget>
-            </item>
-            <item row="11" column="0">
-             <widget class="QLabel" name="alpha1Label">
-              <property name="text">
-               <string>α(1)</string>
-              </property>
-              <property name="buddy">
-               <cstring>alpha1CheckBox</cstring>
-              </property>
-             </widget>
-            </item>
-            <item row="11" column="1">
-             <widget class="QCheckBox" name="alpha1CheckBox"/>
-            </item>
-            <item row="12" column="0">
-             <widget class="QLabel" name="beta1Label">
-              <property name="text">
-               <string>β(1)</string>
-              </property>
-              <property name="buddy">
-               <cstring>beta1CheckBox</cstring>
-              </property>
-             </widget>
-            </item>
-            <item row="12" column="1">
-             <widget class="QCheckBox" name="beta1CheckBox"/>
-            </item>
-            <item row="15" column="0">
-             <widget class="QRadioButton" name="levelButton">
-              <property name="text">
-               <string>Levels</string>
-              </property>
-              <attribute name="buttonGroup">
-               <string notr="true">buttonGroup</string>
-              </attribute>
-             </widget>
-            </item>
-            <item row="16" column="0">
+            <item row="8" column="0">
              <spacer name="verticalSpacer">
               <property name="orientation">
                <enum>Qt::Vertical</enum>
@@ -247,45 +321,6 @@
                </size>
               </property>
              </spacer>
-            </item>
-            <item row="4" column="1">
-             <widget class="QToolButton" name="renormalizeButton">
-              <property name="sizePolicy">
-               <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
-              </property>
-              <property name="text">
-               <string>Renormalize</string>
-              </property>
-             </widget>
-            </item>
-            <item row="4" column="0">
-             <widget class="QToolButton" name="parentButton">
-              <property name="sizePolicy">
-               <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
-              </property>
-              <property name="text">
-               <string>Parent</string>
-              </property>
-             </widget>
-            </item>
-            <item row="2" column="0">
-             <widget class="QLabel" name="selfReturnLabel">
-              <property name="text">
-               <string>Self Return</string>
-              </property>
-              <property name="buddy">
-               <cstring>selfReturnCheckBox</cstring>
-              </property>
-             </widget>
-            </item>
-            <item row="2" column="1">
-             <widget class="QCheckBox" name="selfReturnCheckBox"/>
             </item>
            </layout>
           </widget>
@@ -419,7 +454,72 @@
   <tabstop>iteratedGraphCheckBox</tabstop>
  </tabstops>
  <resources/>
- <connections/>
+ <connections>
+  <connection>
+   <sender>partitionButton</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>alpha1Label</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>501</x>
+     <y>244</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>482</x>
+     <y>270</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>partitionButton</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>alpha1CheckBox</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>535</x>
+     <y>242</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>593</x>
+     <y>269</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>partitionButton</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>beta1Label</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>481</x>
+     <y>244</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>481</x>
+     <y>295</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>partitionButton</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>beta1CheckBox</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>522</x>
+     <y>247</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>588</x>
+     <y>294</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
  <buttongroups>
   <buttongroup name="buttonGroup"/>
  </buttongroups>

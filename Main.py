@@ -47,7 +47,7 @@ class MainWindow(QtWidgets.QMainWindow, MainWindow.Ui_mainWindow):
         self.parameterZInButton.clicked.connect(self.__parameterZoomIn)
         self.parameterZOutButton.clicked.connect(self.__parameterZoomOut)
         
-        # Add the window for the initial plot
+        # overwrite the window utilities to support mdi window
         def openMdiWindow(parent,child):
             child.mdiSubWindow=self.mdiArea.addSubWindow(child,
                     QtCore.Qt.SubWindow | QtCore.Qt.CustomizeWindowHint | QtCore.Qt.WindowSystemMenuHint |
@@ -59,11 +59,11 @@ class MainWindow(QtWidgets.QMainWindow, MainWindow.Ui_mainWindow):
             self.mdiArea.removeSubWindow(child)
         def focusMdiWindow(parent,child):
             self.mdiArea.setActiveSubWindow(child.mdiSubWindow)
-
         Plot.PlotWindow.openWindow=openMdiWindow
         Plot.PlotWindow.closeWindow=closeMdiWindow
         Plot.PlotWindow.focusWindow=focusMdiWindow
 
+        # Create the window for the original plot
         self.__originalPlot=Plot.PlotWindow(
             Unimodal(lambda x:Setting.func(x,Setting.parameterValue),Setting.func_c(Setting.parameterValue)),
             0)
@@ -73,7 +73,6 @@ class MainWindow(QtWidgets.QMainWindow, MainWindow.Ui_mainWindow):
         self.__originalPlot.mdiSubWindow=self.mdiArea.addSubWindow(self.__originalPlot,QtCore.Qt.SubWindow | QtCore.Qt.WindowMinimizeButtonHint | QtCore.Qt.WindowMaximizeButtonHint)
         self.__originalPlot.showMaximized()
         
-    
         
     # Update Parameter
     def __parameterEditUpdate(self):
@@ -155,12 +154,10 @@ class MainWindow(QtWidgets.QMainWindow, MainWindow.Ui_mainWindow):
         
         
 def main():
-    print("test print")
     app = QtWidgets.QApplication(sys.argv)  # A new instance of QApplication
     form = MainWindow()                 # We set the form to be our ExampleApp (design)
     form.show()                         # Show the form
     app.exec_()                         # and execute the app
-    print("end")
 
 
 if __name__ == '__main__':              # if we're running file directly and not importing it
