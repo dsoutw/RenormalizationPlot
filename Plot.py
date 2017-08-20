@@ -42,59 +42,10 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindow.Ui_plotWindow):
 
         self.canvas.setUpdatesEnabled(False)
 
-        # Draw unimodal map        
-        self.f_unimodal = FunctionG(self.canvas,self._func,lw=1)
-
-        # Draw second iterate
-        self.f_unimodal_2 = FunctionG(self.canvas,lambda x:self._func(self._func(x)),visible=Setting.figureSecondIterate,lw=1)
-        self.secondIterateCheckBox.setChecked(Setting.figureSecondIterate)
-        self.secondIterateCheckBox.toggled.connect(self.f_unimodal_2.setVisible)
-
-        # Draw diagonal line
-        self.f_diagonal = FunctionG(self.canvas,lambda x:x,visible=Setting.figureDiagonal,lw=1)
-        self.diagonalCheckBox.setChecked(Setting.figureDiagonal)
-        self.diagonalCheckBox.toggled.connect(self.f_diagonal.setVisible)
+        self._plotCurrentLevelGraphs()
+        self._plotCurrentLevelOrbits()
+        self._plotSelfReturnBoxes()
         
-        # Draw beta(0) points
-        # Draw b
-        self.f_b=VerticalLineG(self.canvas,self._func.p_b,color='gray',lw=0.5)
-        # Draw B
-        self.f_B=VerticalLineG(self.canvas,self._func.p_B,color='gray',lw=0.5)
-        # Draw B2
-        self.f_B2=VerticalLineG(self.canvas,self._func.p_B2,color='gray',lw=0.5)
-        self.f_Beta0Ticks=TicksG(self.canvas,"top",
-                                [self._func.p_b,self._func.p_B,self._func.p_B2],
-                                [r"$\beta^{0}$",r"$\overline{\beta^{1}}$"]
-                                )
-        self.f_Beta0=GroupG([self.f_b,self.f_B,self.f_B2,self.f_Beta0Ticks],visible=Setting.figureBeta0)
-        self.beta0CheckBox.setChecked(Setting.figureBeta0)
-        self.beta0CheckBox.toggled.connect(self.f_Beta0.setVisible)
-        
-        # Draw self-return interval
-        self.f_SelfReturnBetaR=RectangleG(self.canvas,
-                self._func.p_b, self._func.p_b, #x,y
-                self._func.p_B2-self._func.p_b, self._func.p_B2-self._func.p_b, #width, height
-                visible=True, color='gray', lw=1, fill=None
-            )
-        self.f_SelfReturnBetaQ=RectangleG(self.canvas,
-                self._func.p_B, self._func.p_B, #x,y
-                self._func.p_b-self._func.p_B, self._func.p_b-self._func.p_B, #width, height
-                visible=True, color='gray', lw=1, fill=None
-            )
-        self.f_SelfReturnBeta=GroupG([self.f_SelfReturnBetaR,self.f_SelfReturnBetaQ],visible=Setting.figureSelfReturn)
-        self.selfReturnCheckBox.setChecked(Setting.figureSelfReturn)
-        self.selfReturnCheckBox.toggled.connect(self.f_SelfReturnBeta.setVisible)
-        
-        # Set ticks
-        self.f_Alpha0Ticks=TicksG(self.canvas,"top",
-                                [-1,1,self._func.p_c],
-                                [r"$\alpha(0)$",r"$\overline{\alpha(0)}$",r"$c$"]
-                                )
-        
-        #self.axes2=canvas.axes.twiny()  # ax2 is responsible for "top" axis and "right" axis
-        #self.axes2.set_xticks([-1,1,self._func.p_c,self._func.p_b,self._func.p_B,self._func.p_B2])
-        #self.axes2.set_xticklabels([r"$\alpha(0)$",r"$\overline{\alpha(0)}$",r"$c$", r"$\alpha^{0}(1)$",r"$\overline{\alpha^{1}(1)}$",r"$\overline{\alpha^{0}(1)}$"])
-
         canvas.axes.axis([-1, 1, -1, 1])
         canvas.axes.set(adjustable='box-forced',xlim=[-1,1], ylim=[-1,1],aspect='equal')
         #self.axes2.set(adjustable='box-forced',xlim=[-1,1], ylim=[-1,1],aspect='equal')
@@ -124,15 +75,6 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindow.Ui_plotWindow):
         self._rChild=None
         self.renormalizeButton.clicked.connect(self.openRChild)
         self.canvas.setMinimumSize(0,0)
-        
-        # setup multiple iterates 
-        def _fp(x):
-            for i in range(self._period):
-                x=self._func(x)
-            return x
-        self.f_unimodal_p = FunctionG(self.canvas,_fp,visible=Setting.figureMultipleIterate,lw=1)
-        self.iteratedGraphCheckBox.setChecked(Setting.figureMultipleIterate)
-        self.iteratedGraphCheckBox.toggled.connect(self.f_unimodal_p.setVisible)
         
         # setup level grapgs
         self.levelBox.setEnabled(False)
@@ -193,7 +135,7 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindow.Ui_plotWindow):
             self.levelBox.setEnabled(True)
             self.openWindow(self._rChild)
             
-            self._addNextLevelOrbit(rFunc, r_si)
+            self._plotNextLevelOrbits(rFunc, r_si)
             
             #self.f_alpha1List=
         else:
@@ -206,10 +148,143 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindow.Ui_plotWindow):
             self._rChild=None
 
             # remove sub-structures
-            self._removeNextLevelOrbit()
+            self._removeNextLevelOrbits()
 
-    # plot sub-structures if possible
-    def _addNextLevelOrbit(self, rFunc, r_si):
+    # window utilities
+    # modify this method if created by mdi window
+    def openWindow(self, widget):
+        widget.show()
+
+    def focusWindow(self, widget):
+        widget.show()
+        widget.activateWindow()
+        widget.raise_()
+
+    def closeWindow(self, widget):
+        widget.close()
+
+    # unimodal map for the plot
+    def getFunction(self):
+        return self._func
+
+    @QtCore.pyqtSlot(Unimodal)
+    def setFunction(self, func):
+        self._func = func
+        self._updateRenormalizable()
+        if self._rChild is not None:
+            rFunc, r_s, r_si = self._renormalize(self._period)
+            if rFunc is None:
+                self.closeRChild()
+            else:
+                self._rChild.function=rFunc
+                
+                # plot sub-structures if possible
+                self._removeNextLevelOrbits()
+                self._plotNextLevelOrbits(rFunc, r_si)
+                
+        self.canvas.setUpdatesEnabled(False)
+
+        self._updateCurrentLevelGraphs()
+        self._updateCurrentLevelOrbits()
+        self._updateSelfReturnBoxes()
+        
+        self.canvas.setUpdatesEnabled(True)
+
+    function=property(getFunction, setFunction)
+
+    # Plotting sub-routine
+
+    # plot graphs for current level
+    def _func_p(self, x):
+        for i in range(self._period):
+            x=self._func(x)
+        return x
+     
+    def _plotCurrentLevelGraphs(self):
+        # Draw unimodal map        
+        self.f_unimodal = FunctionG(self.canvas,self._func,lw=1)
+
+        # Draw second iterate
+        self.f_unimodal_2 = FunctionG(self.canvas,lambda x:self._func(self._func(x)),visible=Setting.figureSecondIterate,lw=1)
+        self.secondIterateCheckBox.setChecked(Setting.figureSecondIterate)
+        self.secondIterateCheckBox.toggled.connect(self.f_unimodal_2.setVisible)
+
+        # Draw diagonal line
+        self.f_diagonal = FunctionG(self.canvas,lambda x:x,visible=Setting.figureDiagonal,lw=1)
+        self.diagonalCheckBox.setChecked(Setting.figureDiagonal)
+        self.diagonalCheckBox.toggled.connect(self.f_diagonal.setVisible)
+        
+        # Draw multiple iterates 
+        self.f_unimodal_p = FunctionG(self.canvas,self._func_p,visible=Setting.figureMultipleIterate,lw=1)
+        self.iteratedGraphCheckBox.setChecked(Setting.figureMultipleIterate)
+        self.iteratedGraphCheckBox.toggled.connect(self.f_unimodal_p.setVisible)
+
+    def _updateCurrentLevelGraphs(self):
+        # Update Graph
+        self.f_unimodal.setFunction(self._func)
+        self.f_unimodal_2.setFunction(lambda x:self._func(self._func(x)))
+
+        # Update multiple iterates 
+        self.f_unimodal_p.setFunction(self._func_p)
+
+    def _plotCurrentLevelOrbits(self):
+        # Draw beta(0) points
+        # Draw b
+        self.f_b=VerticalLineG(self.canvas,self._func.p_b,color='gray',lw=0.5)
+        # Draw B
+        self.f_B=VerticalLineG(self.canvas,self._func.p_B,color='gray',lw=0.5)
+        # Draw B2
+        self.f_B2=VerticalLineG(self.canvas,self._func.p_B2,color='gray',lw=0.5)
+        
+        # Set ticks
+        self.f_Alpha0Ticks=TicksG(self.canvas,"top",
+                                [-1,1,self._func.p_c],
+                                [r"$\alpha(0)$",r"$\overline{\alpha(0)}$",r"$c$"]
+                                )
+        
+        self.f_Beta0Ticks=TicksG(self.canvas,"top",
+                                [self._func.p_b,self._func.p_B,self._func.p_B2],
+                                [r"$\beta^{0}$",r"$\overline{\beta^{1}}$"]
+                                )
+        self.f_Beta0=GroupG([self.f_b,self.f_B,self.f_B2,self.f_Beta0Ticks],visible=Setting.figureBeta0)
+        self.beta0CheckBox.setChecked(Setting.figureBeta0)
+        self.beta0CheckBox.toggled.connect(self.f_Beta0.setVisible)
+
+    def _updateCurrentLevelOrbits(self):
+        # Find fixed point
+        self.f_b.setXValue(self._func.p_b)
+        # Find a1(1)bar
+        self.f_B.setXValue(self._func.p_B)
+        # Find a0(1)bar
+        self.f_B2.setXValue(self._func.p_B2)
+
+        # Set ticks
+        self.f_Alpha0Ticks.setTicks([-1,1,self._func.p_c])
+        self.f_Beta0Ticks.setTicks([self._func.p_b,self._func.p_B,self._func.p_B2])
+
+    # Plot the intervals that defines the self-return map
+    def _plotSelfReturnBoxes(self):
+        self.f_SelfReturnBetaR=RectangleG(self.canvas,
+                self._func.p_b, self._func.p_b, #x,y
+                self._func.p_B2-self._func.p_b, self._func.p_B2-self._func.p_b, #width, height
+                visible=True, color='gray', lw=1, fill=None
+            )
+        self.f_SelfReturnBetaQ=RectangleG(self.canvas,
+                self._func.p_B, self._func.p_B, #x,y
+                self._func.p_b-self._func.p_B, self._func.p_b-self._func.p_B, #width, height
+                visible=True, color='gray', lw=1, fill=None
+            )
+        self.f_SelfReturnBeta=GroupG([self.f_SelfReturnBetaR,self.f_SelfReturnBetaQ],visible=Setting.figureSelfReturn)
+        self.selfReturnCheckBox.setChecked(Setting.figureSelfReturn)
+        self.selfReturnCheckBox.toggled.connect(self.f_SelfReturnBeta.setVisible)
+
+    def _updateSelfReturnBoxes(self):
+        # Set the self return interval
+        self.f_SelfReturnBetaR.setBounds(self._func.p_b,self._func.p_b,self._func.p_B2-self._func.p_b,self._func.p_B2-self._func.p_b)
+        self.f_SelfReturnBetaQ.setBounds(self._func.p_B,self._func.p_B,self._func.p_b-self._func.p_B,self._func.p_b-self._func.p_B)
+    
+    # plot orbits obtained from next level
+    def _plotNextLevelOrbits(self, rFunc, r_si):
         
         # build period orbit from the next level
         def _nextLevelOrbit(p_x,p_X):
@@ -250,7 +325,7 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindow.Ui_plotWindow):
         
         self.canvas.setUpdatesEnabled(True)
 
-    def _removeNextLevelOrbit(self):
+    def _removeNextLevelOrbits(self):
         # remove sub-structures
         self.alpha1CheckBox.toggled.disconnect()
         self.beta1CheckBox.toggled.disconnect()
@@ -259,65 +334,8 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindow.Ui_plotWindow):
         self.f_level1=None
         self.f_aA1List=None
         self.f_bB1List=None
-
-    # window utilities
-    # modify this method if created by mdi window
-    def openWindow(self, widget):
-        widget.show()
-
-    def focusWindow(self, widget):
-        widget.show()
-        widget.activateWindow()
-        widget.raise_()
-
-    def closeWindow(self, widget):
-        widget.close()
-
-    # unimodal map for the plot
-    def getFunction(self):
-        return self._func
-
-    @QtCore.pyqtSlot(Unimodal)
-    def setFunction(self, func):
-
-        self._func = func
-        self._updateRenormalizable()
-        if self._rChild is not None:
-            rFunc, r_s, r_si = self._renormalize(self._period)
-            if rFunc is None:
-                self.closeRChild()
-            else:
-                self._rChild.function=rFunc
-                
-                # plot sub-structures if possible
-                self._removeNextLevelOrbit()
-                self._addNextLevelOrbit(rFunc, r_si)
-                
-        self.canvas.setUpdatesEnabled(False)
-
-        # Update Graph
-        self.f_unimodal.setFunction(func)
-        self.f_unimodal_2.setFunction(lambda x:self._func(self._func(x)))
         
-        # Find fixed point
-        self.f_b.setXValue(func.p_b)
-        # Find a1(1)bar
-        self.f_B.setXValue(func.p_B)
-        # Find a0(1)bar
-        self.f_B2.setXValue(func.p_B2)
         
-        # Set the self return interval
-        self.f_SelfReturnBetaR.setBounds(func.p_b,func.p_b,func.p_B2-func.p_b,func.p_B2-func.p_b)
-        self.f_SelfReturnBetaQ.setBounds(func.p_B,func.p_B,func.p_b-func.p_B,func.p_b-func.p_B)
-        
-        # Set ticks
-        self.f_Alpha0Ticks.setTicks([-1,1,func.p_c])
-        self.f_Beta0Ticks.setTicks([func.p_b,func.p_B,func.p_B2])
-
-        self.canvas.setUpdatesEnabled(True)
-
-    function=property(getFunction, setFunction)
-
 import Setting
         
 def main():

@@ -19,8 +19,8 @@ class MPLCanvas(FigureCanvas):
 
         #super().setSizePolicy(QtWidgets.QSizePolicy.Expanding,
         #                           QtWidgets.QSizePolicy.Expanding)
-        FigureCanvas.updateGeometry(self)
-        self.setMinimumSize(0, 0)
+        #FigureCanvas.updateGeometry(self)
+        #self.setMinimumSize(0, 0)
         self._updateDirty=False
 
     def compute_initial_figure(self):
