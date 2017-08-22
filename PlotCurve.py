@@ -14,12 +14,10 @@ class GraphObjectBase():
     classdocs
     '''
     
-    def __init__(self,visible=True):
+    def __init__(self,visible=True,visibleMask=True):
         #self._visible=visible
-        self._visibleMask=True
+        self._visibleMask=visibleMask
         self._visible=visible
-        self._setVisibleInternal(visible)
-        pass
     
     # visible
     def getVisible(self):
@@ -47,34 +45,10 @@ class GraphObjectBase():
         raise NotImplementedError("GraphObjectBase.remove has to be implemented")
 
 
-#
-class GraphObject(GraphObjectBase,QtCore.QObject):
-    '''
-    classdocs
-    '''
-    
-    def __init__(self,canvas,visible=True):
-        self._canvas=canvas
-        QtCore.QObject.__init__(self,canvas)
-        GraphObjectBase.__init__(self,visible)
-    
-    # canvas
-    def getCanvas(self):
-        return self._canvas
-    @QtCore.pyqtSlot(FigureCanvas)
-    def setCanvas(self,canvas):
-        self._canvas=canvas
-    canvas=property(getCanvas, setCanvas)
-
-    @QtCore.pyqtSlot()
-    def update(self):
-        self._canvas.update()
-        pass
-
 class GroupG(GraphObjectBase,list):
     def __init__(self,*args,visible=True):
         list.__init__(self,*args)
-        GraphObjectBase.__init__(self,visible)
+        GraphObjectBase.__init__(self,visible=visible)
         
     def _setVisibleInternal(self, visible):
         for member in self:
@@ -83,19 +57,73 @@ class GroupG(GraphObjectBase,list):
     def remove(self):
         for member in self:
             member.remove()
+
+class GraphObjectOld(GraphObjectBase,QtCore.QObject):
+    '''
+    classdocs
+    '''
+    
+    def __init__(self,canvas,visible=True):
+        QtCore.QObject.__init__(self,canvas)
+        GraphObjectBase.__init__(self,visible)
+
             
 # line=matplotlib.lines.Line2D object
-class CurveG(GraphObject):
-    def __init__(self, canvas, curve, visible=True):
-        self._curve=curve
-        super().__init__(canvas, visible)
+# canvas: matplotlib canvas
+class GraphObject(GraphObjectBase,QtCore.QObject):
+    def __init__(self, canvas, visible=True):
+        self._canvas=canvas
+        QtCore.QObject.__init__(self,canvas)
+        GraphObjectBase.__init__(self,visible=visible)
+
+        # Plot only when visible
+        if visible is True:
+            self._curve=self._initilizePlot()
+            self._initilized=True
+        else:
+            self._initilized=False
+
+    # return: matplotlib artist
+    def _initilizePlot(self):
+        raise NotImplementedError("GraphObjectBase._initilize has to be implemented")
+
+    # curve: matplotlib artist
+    def _updatePlot(self,curve):
+        raise NotImplementedError("GraphObjectBase._updatePlot has to be implemented")
+
+    @QtCore.pyqtSlot()
+    def update(self):
+        if self._initilized is True:
+            self._updatePlot(self._curve)
+            self._canvas.update()
+        elif self._visible is True and self._visibleMask is True:
+            self._curve=self._initilizePlot()
+            self._initilized=True
+        #else:
+        #    self._canvas.update()
+
+    # canvas
+    # useless?
+    def getCanvas(self):
+        return self._canvas
+    @QtCore.pyqtSlot(FigureCanvas)
+    def setCanvas(self,canvas):
+        self._canvas=canvas
+    canvas=property(getCanvas, setCanvas)
         
     # visible
     def _setVisibleInternal(self,visible):
-        self._curve.set_visible(visible)
-        self.update()
+        if self._initilized is True:
+            self._curve.set_visible(visible)
+            self.update()
+        elif visible is True:
+            self._curve=self._initilizePlot()
+            self._initilized=True
+        #else:
+        #    self._canvas.update()
         
     # curve
+    # useless?
     def getCurve(self):
         return self._curve
     def setCurve(self, curve):
@@ -103,54 +131,78 @@ class CurveG(GraphObject):
     curve=property(getCurve, setCurve)
     
     def remove(self):
-        self._curve.remove()
-        self.update()
+        if self._initilized is True:
+            self._curve.remove()
+            self._curve=None
+            self._initilized=False
+            self._canvas.update()
     
-class FunctionG(CurveG):
+class FunctionG(GraphObject):
     def __init__(self, canvas, func, visible=True, **kwargs):
         self._func=func
         self._kwargs=kwargs
-        self._sample = np.arange(-1.0, 1.0, 0.001)
-        
-        # plot when visible
-        if visible == True:
-            curve, = canvas.axes.plot(self._sample, self._func(self._sample), **kwargs)
-            self._updated = True
-        else:
-            curve, = canvas.axes.plot(self._sample, self._sample, **kwargs)
-            self._updated = False
-        
-        super().__init__(canvas, curve, visible)
 
-    def _setVisibleInternal(self,visible):
-        if (self._updated == False) and (visible == True):  
-            self._curve.set_ydata(self._func(self._sample))
-            self._updated=True
+        # set sample points
+        self._sample = np.arange(-1.0, 1.001, 0.001)
 
-        self._curve.set_visible(visible)
-        self.update()
+        super().__init__(canvas, visible=visible)
+        
+    def _initilizePlot(self):
+        curve, = self._canvas.axes.plot(self._sample, self._func(self._sample), **self._kwargs)
+        return curve
+
+    def _updatePlot(self,curve):
+        curve.set_ydata(self._func(self._sample))
 
     # function
     def getFunction(self):
         return self._func
     def setFunction(self,func):
         self._func=func
-        # Update when visible
-        if self._visible == True:
-            self._curve.set_ydata(func(self._sample))
-            self.update()
-        else:
-            self._updated=False
+        self.update()
 
     function=property(getFunction, setFunction)
 
-class VerticalLineG(CurveG):
+class ContourG(GraphObject):
+    def __init__(self, canvas, func, visible=True, **kwargs):
+        self._func=func
+        self._kwargs=kwargs
+
+        # set sample points
+        x = np.arange(-1.0, 1.0, 0.001)
+        y = np.arange(-1.0, 1.1, 2)
+        self.sampleX,self.sampleY = np.meshgrid(x,y)
+        
+        super().__init__(canvas, visible=visible)
+
+    def _initilizePlot(self):
+        curve, = self._canvas.axes.contourf(self.sampleX, self.sampleY, self._func(self.sampleX,self.sampleY), **self._kwargs)
+        return curve
+    
+    def _updatePlot(self,curve):
+        curve.set_ydata(self._func(self._sample))
+
+    # function
+    def getFunction(self):
+        return self._func
+    def setFunction(self,func):
+        self._func=func
+        self.update()
+
+    function=property(getFunction, setFunction)
+
+class VerticalLineG(GraphObject):
     def __init__(self, canvas, xValue, visible=True, **kwargs):
         self._xValue=xValue
         self._kwargs=kwargs
-        curve=canvas.axes.axvline(x=xValue,**kwargs)
         
-        super().__init__(canvas, curve, visible)
+        super().__init__(canvas, visible)
+
+    def _initilizePlot(self):
+        return self._canvas.axes.axvline(x=self._xValue,**self._kwargs)
+
+    def _updatePlot(self,curve):
+        curve.set_xdata([self._xValue,self._xValue])
 
     # function
     def getXValue(self):
@@ -158,21 +210,26 @@ class VerticalLineG(CurveG):
     @QtCore.pyqtSlot(int)
     def setXValue(self,xValue):
         self._xValue=xValue
-        self._curve.set_xdata([xValue,xValue])
         self.update()
     xValue=property(getXValue, setXValue)
     
-class RectangleG(CurveG):
+class RectangleG(GraphObject):
     def __init__(self, canvas, xValue, yValue, width, height, visible=True, **kwargs):
         self._xValue=xValue
         self._yValue=yValue
         self._width=width
         self._height=height
         self._kwargs=kwargs
-        curve = patches.Rectangle((xValue,yValue), width, height,**kwargs)
-        canvas.axes.add_patch(curve)
         
-        super().__init__(canvas, curve, visible)
+        super().__init__(canvas, visible)
+
+    def _initilizePlot(self):
+        curve = patches.Rectangle((self._xValue,self._yValue), self._width, self._height,**self._kwargs)
+        self._canvas.axes.add_patch(curve)
+        return curve
+
+    def _updatePlot(self,curve):
+        curve.set_bounds(self._xValue, self._yValue, self._width, self._height)
 
     # function
     def getBounds(self):
@@ -182,11 +239,10 @@ class RectangleG(CurveG):
         self._yValue=yValue
         self._width=width
         self._height=height
-        self._curve.set_bounds(xValue, yValue, width, height)
         self.update()
     bounds=property(getBounds, setBounds)
     
-class TicksG(CurveG):
+class TicksG(GraphObject):
     positionValues = ["left", "right", "top", "bottom"]
     xPosition = ["top", "bottom"]
     yPosition = ["left", "right"]
@@ -195,61 +251,66 @@ class TicksG(CurveG):
         if position not in TicksG.positionValues:
             raise ValueError("position [%s] must be one of %s" %
                              (position, TicksG.positionValues))
-        
-        if position == "left":
-            curve=canvas.figure.add_axes(canvas.axes.get_position(True),sharex=canvas.axes,label=str(random.getrandbits(128)))
+        self._position=position
+        self._ticks=ticks
+        self._ticksLabel=ticksLabel
+     
+        super().__init__(canvas, visible)
+
+    def _initilizePlot(self):
+        if self._position == "left":
+            curve=self._canvas.figure.add_axes(self._canvas.axes.get_position(True),sharex=self._canvas.axes,label=str(random.getrandbits(128)))
             curve.yaxis.tick_left()
             curve.yaxis.set_label_position('left')
             curve.yaxis.set_offset_position('left')
-            curve.set_autoscalex_on(canvas.axes.get_autoscalex_on())
+            curve.set_autoscalex_on(self._canvas.axes.get_autoscalex_on())
             curve.xaxis.set_visible(False)
-            curve.set_yticks(ticks)
-            curve.set_yticklabels(ticksLabel)
-        elif position == "right":
-            curve=canvas.figure.add_axes(canvas.axes.get_position(True),sharex=canvas.axes,label=str(random.getrandbits(128)))
+            curve.set_yticks(self._ticks)
+            curve.set_yticklabels(self._ticksLabel)
+        elif self._position == "right":
+            curve=self._canvas.figure.add_axes(self._canvas.axes.get_position(True),sharex=self._canvas.axes,label=str(random.getrandbits(128)))
             curve.yaxis.tick_right()
             curve.yaxis.set_label_position('right')
             curve.yaxis.set_offset_position('right')
-            curve.set_autoscalex_on(canvas.axes.get_autoscalex_on())
+            curve.set_autoscalex_on(self._canvas.axes.get_autoscalex_on())
             curve.xaxis.set_visible(False)
-            curve.set_yticks(ticks)
-            curve.set_yticklabels(ticksLabel)
-        elif position == "top":
-            curve=canvas.figure.add_axes(canvas.axes.get_position(True),sharey=canvas.axes,label=str(random.getrandbits(128)))
+            curve.set_yticks(self._ticks)
+            curve.set_yticklabels(self._ticksLabel)
+        elif self._position == "top":
+            curve=self._canvas.figure.add_axes(self._canvas.axes.get_position(True),sharey=self._canvas.axes,label=str(random.getrandbits(128)))
             curve.xaxis.tick_top()
             curve.xaxis.set_label_position('top')
             #curve.xaxis.set_offset_position('top')
-            curve.set_autoscaley_on(canvas.axes.get_autoscaley_on())
+            curve.set_autoscaley_on(self._canvas.axes.get_autoscaley_on())
             curve.yaxis.set_visible(False)
-            curve.set_xticks(ticks)
-            curve.set_xticklabels(ticksLabel)
-        elif position == "bottom":
-            curve=canvas.figure.add_axes(canvas.axes.get_position(True),sharey=canvas.axes,label=str(random.getrandbits(128)))
+            curve.set_xticks(self._ticks)
+            curve.set_xticklabels(self._ticksLabel)
+        elif self._position == "bottom":
+            curve=self._canvas.figure.add_axes(self._canvas.axes.get_position(True),sharey=self._canvas.axes,label=str(random.getrandbits(128)))
             curve.xaxis.tick_bottom()
             curve.xaxis.set_label_position('bottom')
             #curve.xaxis.set_offset_position('bottom')
-            curve.set_autoscaley_on(canvas.axes.get_autoscaley_on())
+            curve.set_autoscaley_on(self._canvas.axes.get_autoscaley_on())
             curve.yaxis.set_visible(False)
-            curve.set_xticks(ticks)
-            curve.set_xticklabels(ticksLabel)
-            
+            curve.set_xticks(self._ticks)
+            curve.set_xticklabels(self._ticksLabel)
+
         curve.patch.set_visible(False)
-        self._position=position
-     
-        super().__init__(canvas, curve, visible)
-        pass
+        return curve
+    
+    def _updatePlot(self,curve):
+        if self._position in TicksG.xPosition:
+            curve.set_xticks(self._ticks)
+            curve.set_xticklabels(self._ticksLabel)
+        elif self._position in TicksG.yPosition:
+            curve.set_yticks(self._ticks)
+            curve.set_yticklabels(self._ticksLabel)
     
     def setTicks(self, ticks):
-        if self._position in TicksG.xPosition:
-            self._curve.set_xticks(ticks)
-        elif self._position in TicksG.yPosition:
-            self._curve.set_yticks(ticks)
+        self._ticks=ticks
         self.update()
         
     def setTicksLabel(self, ticksLabel):
-        if self._position in TicksG.xPosition:
-            self._curve.set_xticklabels(ticksLabel)
-        elif self._position in TicksG.yPosition:
-            self._curve.set_yticklabels(ticksLabel)
+        self._ticksLabel=ticksLabel
         self.update()
         
