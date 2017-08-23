@@ -49,6 +49,7 @@ class GroupG(GraphObjectBase,list):
     def __init__(self,*args,visible=True):
         list.__init__(self,*args)
         GraphObjectBase.__init__(self,visible=visible)
+        self._setVisibleInternal(visible=visible)
         
     def _setVisibleInternal(self, visible):
         for member in self:
@@ -58,16 +59,7 @@ class GroupG(GraphObjectBase,list):
         for member in self:
             member.remove()
 
-class GraphObjectOld(GraphObjectBase,QtCore.QObject):
-    '''
-    classdocs
-    '''
-    
-    def __init__(self,canvas,visible=True):
-        QtCore.QObject.__init__(self,canvas)
-        GraphObjectBase.__init__(self,visible)
 
-            
 # line=matplotlib.lines.Line2D object
 # canvas: matplotlib canvas
 class GraphObject(GraphObjectBase,QtCore.QObject):
@@ -79,9 +71,8 @@ class GraphObject(GraphObjectBase,QtCore.QObject):
         # Plot only when visible
         if visible is True:
             self._curve=self._initilizePlot()
-            self._initilized=True
         else:
-            self._initilized=False
+            self._curve=None
 
     # return: matplotlib artist
     def _initilizePlot(self):
@@ -93,12 +84,11 @@ class GraphObject(GraphObjectBase,QtCore.QObject):
 
     @QtCore.pyqtSlot()
     def update(self):
-        if self._initilized is True:
+        if self._curve is not None:
             self._updatePlot(self._curve)
             self._canvas.update()
         elif self._visible is True and self._visibleMask is True:
             self._curve=self._initilizePlot()
-            self._initilized=True
         #else:
         #    self._canvas.update()
 
@@ -113,12 +103,11 @@ class GraphObject(GraphObjectBase,QtCore.QObject):
         
     # visible
     def _setVisibleInternal(self,visible):
-        if self._initilized is True:
+        if self._curve is not None:
             self._curve.set_visible(visible)
             self.update()
         elif visible is True:
             self._curve=self._initilizePlot()
-            self._initilized=True
         #else:
         #    self._canvas.update()
         
@@ -131,10 +120,9 @@ class GraphObject(GraphObjectBase,QtCore.QObject):
     curve=property(getCurve, setCurve)
     
     def remove(self):
-        if self._initilized is True:
+        if self._curve is not None:
             self._curve.remove()
             self._curve=None
-            self._initilized=False
             self._canvas.update()
     
 class FunctionG(GraphObject):
@@ -163,25 +151,57 @@ class FunctionG(GraphObject):
 
     function=property(getFunction, setFunction)
 
-class ContourG(GraphObject):
+# QuadContourSet is not inherted from artist
+class ContourG(GraphObjectBase,QtCore.QObject):
     def __init__(self, canvas, func, visible=True, **kwargs):
         self._func=func
         self._kwargs=kwargs
+        self._canvas=canvas
+        QtCore.QObject.__init__(self,canvas)
+        GraphObjectBase.__init__(self,visible=visible)
 
         # set sample points
         x = np.arange(-1.0, 1.0, 0.001)
         y = np.arange(-1.0, 1.1, 2)
         self.sampleX,self.sampleY = np.meshgrid(x,y)
         
-        super().__init__(canvas, visible=visible)
-
+        print("visible", str(visible))
+        # Plot only when visible
+        if visible is True:
+            self._initilizePlot()
+            print("plot")
+        else:
+            self._curve=None
+            print("not plot")
+        
     def _initilizePlot(self):
-        curve, = self._canvas.axes.contourf(self.sampleX, self.sampleY, self._func(self.sampleX,self.sampleY), **self._kwargs)
-        return curve
+        print("initialized")
+        self._curve = self._canvas.axes.contourf(self.sampleX, self.sampleY, self._func(self.sampleX,self.sampleY),**self._kwargs)
     
-    def _updatePlot(self,curve):
-        curve.set_ydata(self._func(self._sample))
+    def _removePlot(self):
+        for item in self._curve.collections:
+            item.remove()
+        self._curve=None
+        print("removed")
+    
+    @QtCore.pyqtSlot()
+    def update(self):
+        if self._curve is not None:
+            self._removePlot()
+            self._initilizePlot()
+            self._canvas.update()
+        elif self._visible is True and self._visibleMask is True:
+            self._initilizePlot()
 
+    # visible
+    def _setVisibleInternal(self,visible):
+        if visible is False and self._curve is not None:
+            self._removePlot()
+            self._canvas.update()
+        elif visible is True and self._curve is None:
+            self._initilizePlot()
+            self._canvas.update()
+            
     # function
     def getFunction(self):
         return self._func

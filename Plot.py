@@ -5,6 +5,7 @@ import PlotWindow # This file holds our MainWindow and all design related things
                     # it also keeps events etc that we defined in Qt Designer
 
 from scipy import optimize
+import numpy as np
 
 # Matplotlib library
 from matplotlib.backends.backend_qt5agg import (
@@ -14,7 +15,7 @@ import matplotlib as mpl
 
 # renormalization 
 from Unimodal import Unimodal
-from PlotCurve import (FunctionG,VerticalLineG,RectangleG,GroupG,TicksG)
+from PlotCurve import (FunctionG,VerticalLineG,RectangleG,GroupG,TicksG,ContourG)
         
 class PlotWindow(QtWidgets.QMainWindow, PlotWindow.Ui_plotWindow):
     def __init__(self, func, level=0, rParent=None):
@@ -24,6 +25,8 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindow.Ui_plotWindow):
         self._level=level
         self._rParent=rParent
         self._rChild=None
+        self._rFunc=None
+        self._r_si=None
     
         super(self.__class__, self).__init__(rParent)
         self.setupUi(self)  # This is defined in design.py file automatically
@@ -128,6 +131,9 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindow.Ui_plotWindow):
             if rFunc is None:
                 return
 
+            self._rFunc=rFunc
+            self._r_si=r_si
+            
             self._rChild=PlotWindow(rFunc, self._level+1,self)
             self._rChild.setWindowTitle("Level "+str(self._level+1))
             self._rChild.setAttribute(QtCore.Qt.WA_DeleteOnClose)
@@ -136,6 +142,7 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindow.Ui_plotWindow):
             self.openWindow(self._rChild)
             
             self._plotNextLevelOrbits(rFunc, r_si)
+            self._plotDeepLevelOrbits()
             
             #self.f_alpha1List=
         else:
@@ -146,9 +153,12 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindow.Ui_plotWindow):
             self.closeWindow(self._rChild)
             self.levelBox.setEnabled(False)
             self._rChild=None
+            self._rFunc=None
+            self._r_si=None
 
             # remove sub-structures
             self._removeNextLevelOrbits()
+            self._removeDeepLevelOrbits()
 
     # window utilities
     # modify this method if created by mdi window
@@ -179,8 +189,11 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindow.Ui_plotWindow):
                 self._rChild.function=rFunc
                 
                 # plot sub-structures if possible
+                # todo: lazy, should impliment update
                 self._removeNextLevelOrbits()
                 self._plotNextLevelOrbits(rFunc, r_si)
+
+                self._updateDeepLevelOrbits()
                 
         self.canvas.setUpdatesEnabled(False)
 
@@ -335,7 +348,46 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindow.Ui_plotWindow):
         self.f_aA1List=None
         self.f_bB1List=None
         
+    def _plotDeepLevelOrbits(self):
+        lList=[0,0.2]
+        rList=[0.8,0.6]
         
+        def _contourRLevel(x,y):
+            i=0
+            while i<len(lList):
+                if x < lList[i] or rList[i] < x:
+                    return i 
+                i=i+1
+            return i
+
+        def _contourQLevel(x,y):
+            i=0
+            while i<len(lList):
+                f_xPoint=self._func(x)
+                if f_xPoint < lList[i] or rList[i] < f_xPoint:
+                    return i 
+                i=i+1
+            return i
+    
+        def _contourQRLevel(x,y):
+            return _contourQLevel(x,y) if x < self._func.p_b else _contourRLevel(x,y)
+            
+        _contourQRLevel=np.vectorize(_contourQRLevel,signature='(),()->()')
+        
+        #_contourQRLevel= lambda x,y:x+y
+        
+        self.f_rLevel = ContourG(self.canvas, _contourQRLevel, visible=self.levelButton.isChecked())
+        self.levelButton.toggled.connect(self.f_rLevel.setVisible)
+
+    def _updateDeepLevelOrbits(self):
+        self._removeDeepLevelOrbits()
+        self._plotDeepLevelOrbits()
+
+    def _removeDeepLevelOrbits(self):
+        self.levelButton.toggled.disconnect(self.f_rLevel.setVisible)
+        self.f_rLevel.remove()
+        self.f_rLevel=None
+
 import Setting
         
 def main():
