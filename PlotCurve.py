@@ -152,6 +152,7 @@ class FunctionG(GraphObject):
     function=property(getFunction, setFunction)
 
 # QuadContourSet is not inherted from artist
+# have to rewrite the base
 class ContourG(GraphObjectBase,QtCore.QObject):
     def __init__(self, canvas, func, visible=True, **kwargs):
         self._func=func
@@ -165,24 +166,19 @@ class ContourG(GraphObjectBase,QtCore.QObject):
         y = np.arange(-1.0, 1.1, 2)
         self.sampleX,self.sampleY = np.meshgrid(x,y)
         
-        print("visible", str(visible))
         # Plot only when visible
         if visible is True:
             self._initilizePlot()
-            print("plot")
         else:
             self._curve=None
-            print("not plot")
         
     def _initilizePlot(self):
-        print("initialized")
         self._curve = self._canvas.axes.contourf(self.sampleX, self.sampleY, self._func(self.sampleX,self.sampleY),**self._kwargs)
     
     def _removePlot(self):
         for item in self._curve.collections:
             item.remove()
         self._curve=None
-        print("removed")
     
     @QtCore.pyqtSlot()
     def update(self):
