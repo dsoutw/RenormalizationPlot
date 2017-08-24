@@ -29,9 +29,7 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindow.Ui_plotWindow):
         self._func=func
         self._level=level
         self._rParent=rParent
-        self._rChild=None
-        self._rFunc=None
-        self._r_si=None
+        self._period=2
     
         super(self.__class__, self).__init__(rParent)
         self.setupUi(self)  # This is defined in design.py file automatically
@@ -76,7 +74,6 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindow.Ui_plotWindow):
             self.parentButton.hide()
         
         # setup renormalizable features
-        self._period=2
         self.periodSpinBox.setValue(self._period)
         self.updateRChild()
         self.periodSpinBox.valueChanged.connect(self._periodSpinBoxChanged)
@@ -91,19 +88,14 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindow.Ui_plotWindow):
     # close child renormalization when the window is closed
     def closeEvent(self, evnt):
         if self._rParent is not None:
-            #print("close captured")
-            self._rParent._rChild=None
+            self._rParent._rChildClosed()
         self.closeRChild()
         super().closeEvent(evnt)
         
     # UI callbacks
     def _periodSpinBoxChanged(self, value):
         self._period=value
-        def _fp(x):
-            for i in range(value):
-                x=self._func(x)
-            return x
-        self.f_unimodal_p.setFunction(_fp)
+        self.f_unimodal_p.setFunction(lambda x: self._func.iterate(x,self._period))
         self.updateRChild()
         
     # do renormalization
@@ -152,12 +144,6 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindow.Ui_plotWindow):
             self.levelBox.setEnabled(True)
             self.openWindow(self._rChild)
             
-            # update the list for the levels
-            self._p_aLevels=[self._func.p_a,r_si(rFunc.p_a)]
-            self._p_ALevels=[self._func.p_A,r_si(rFunc.p_A)]
-            self._p_bLevels=[self._func.p_b,r_si(rFunc.p_b)]
-            self._p_BLevels=[self._func.p_B,r_si(rFunc.p_B)]
-            
             self._findPeriodicInterval()
             
             self._plotNextLevelOrbits()
@@ -175,7 +161,7 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindow.Ui_plotWindow):
 
     # Find the periodic intervals
     def _findPeriodicInterval(self):
-        # build period orbit from the next level
+        # build period intervals from the next level
         def _nextLevelOrbit(p_x,p_X):
             p_xList=[]
             for i in range(self._period):
@@ -196,6 +182,12 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindow.Ui_plotWindow):
 
         self._p_a1Orbit, self._p_A1Orbit=_nextLevelOrbit(self._r_si(self._rFunc.p_a),self._r_si(self._rFunc.p_A))
         self._p_b1Orbit, self._p_B1Orbit=_nextLevelOrbit(self._r_si(self._rFunc.p_b),self._r_si(self._rFunc.p_B))
+
+        # update the list for the levels
+        self._p_aLevels=[self._func.p_a,self._p_a1Orbit[0]]
+        self._p_ALevels=[self._func.p_A,self._p_A1Orbit[0]]
+        self._p_bLevels=[self._func.p_b,self._p_b1Orbit[0]]
+        self._p_BLevels=[self._func.p_B,self._p_B1Orbit[0]]
 
     # update status of renormlaizable
     def updateRChild(self):
@@ -228,19 +220,23 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindow.Ui_plotWindow):
     def closeRChild(self):
         if self._rChild is not None:
             self.closeWindow(self._rChild)
-            self.levelBox.setEnabled(False)
-            self._rChild=None
-            self._rFunc=None
-            self._r_s=None
-            self._r_si=None
-            self._p_a1Orbit=None
-            self._p_A1Orbit=None
-            self._p_b1Orbit=None
-            self._p_B1Orbit=None
+            self._rChildClosed()
 
-            # remove sub-structures
-            self._removeNextLevelOrbits()
-            self._removeDeepLevelOrbits()
+    # called when the child is closed.
+    def _rChildClosed(self):
+        self.levelBox.setEnabled(False)
+        self._rChild=None
+        self._rFunc=None
+        self._r_s=None
+        self._r_si=None
+        self._p_a1Orbit=None
+        self._p_A1Orbit=None
+        self._p_b1Orbit=None
+        self._p_B1Orbit=None
+
+        # remove sub-structures
+        self._removeNextLevelOrbits()
+        self._removeDeepLevelOrbits()
 
     # Notified by the child whne a child is renormalized
     # called by child window
@@ -250,10 +246,10 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindow.Ui_plotWindow):
         
         # update the list of the periodic points if new renormalization level is available
         while i-1 < len(self._rChild._p_aLevels):
-            self._p_aLevels.append(self._r_si(self._rChild._p_aLevels[i-1]))
-            self._p_ALevels.append(self._r_si(self._rChild._p_ALevels[i-1]))
-            self._p_bLevels.append(self._r_si(self._rChild._p_bLevels[i-1]))
-            self._p_BLevels.append(self._r_si(self._rChild._p_BLevels[i-1]))
+            self._p_aLevels.append(self._iRescaling(self._rChild._p_aLevels[i-1]))
+            self._p_ALevels.append(self._iRescaling(self._rChild._p_ALevels[i-1]))
+            self._p_bLevels.append(self._iRescaling(self._rChild._p_bLevels[i-1]))
+            self._p_BLevels.append(self._iRescaling(self._rChild._p_BLevels[i-1]))
             i=i+1
             updated=True
             
@@ -262,6 +258,12 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindow.Ui_plotWindow):
             print("Level ", self._level, ": ", str(self._p_aLevels))
             print("Level ", self._level+1, ": ", str(self._rChild._p_aLevels))
             
+    # The inverse function of nonlinear rescaling
+    def _iRescaling(self,y):
+        y1=self._r_si(y)
+        return optimize.brenth(lambda x: self._func.iterates(x,self._period-1)-y1,self._p_a1Orbit[0],self._p_A1Orbit[0])
+        
+        
     # unimodal map for the plot
     def getFunction(self):
         return self._func

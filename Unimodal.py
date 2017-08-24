@@ -59,6 +59,12 @@ class Unimodal:
     def __call__(self, x):
         return self._map(x)
 
+    # repeat iterate the unimodal map p-times
+    def iterates(self, x, p):
+        for t in range(p):
+            x=self._map(x)
+        return x
+    
     def renomalizable(self, period=2):
         if period == 2:
             return self.renomalizable2()
