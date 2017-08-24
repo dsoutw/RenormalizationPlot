@@ -14,6 +14,7 @@ figureMultipleIterate=False
 figureDiagonal=False
 figureBeta0=True
 figureSelfReturn=True
+figureMaxLevels=5
 
 interpolationEnabled=True
 # unit second

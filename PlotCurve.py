@@ -7,6 +7,8 @@ import numpy as np
 from PyQt5 import QtCore
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 import matplotlib.patches as patches
+import matplotlib.ticker as ticker
+
 import random
 
 class GraphObjectBase():
@@ -171,6 +173,10 @@ class FunctionG(GraphObject):
 # QuadContourSet is not inherted from artist
 # have to rewrite the base
 class ContourG(GraphObjectBase,QtCore.QObject):
+    _contour=None
+    _cbaxes=None
+    _cbar=None
+    
     def __init__(self, canvas, func, visible=True, **kwargs):
         self._func=func
         self._kwargs=kwargs
@@ -187,31 +193,42 @@ class ContourG(GraphObjectBase,QtCore.QObject):
         if visible is True:
             self._initilizePlot()
         else:
-            self._curve=None
+            self._contour=None
         
+
     def _initilizePlot(self):
-        self._curve = self._canvas.axes.contourf(self.sampleX, self.sampleY, self._func(self.sampleX,self.sampleY),**self._kwargs)
+        self._contour = self._canvas.axes.contourf(self.sampleX, self.sampleY, self._func(self.sampleX,self.sampleY),**self._kwargs)
+        self._cbaxes = self._canvas.fig.add_axes([0.9, 0.1, 0.03, 0.8]) 
+        self._cbar = self._canvas.fig.colorbar(self._contour, cax=self._cbaxes, ticks=ticker.MaxNLocator(integer=True))
+
+    def _updatePlot(self):
+        for item in self._contour.collections:
+            item.remove()
+        self._contour = self._canvas.axes.contourf(self.sampleX, self.sampleY, self._func(self.sampleX,self.sampleY),**self._kwargs)
     
     def _removePlot(self):
-        for item in self._curve.collections:
+        for item in self._contour.collections:
             item.remove()
-        self._curve=None
+        self._contour=None
+        self._cbaxes.remove()
+        self._cbaxes=None
+        self._cbar=None
     
     @QtCore.pyqtSlot()
     def update(self):
-        if self._curve is not None:
-            self._removePlot()
-            self._initilizePlot()
+        if self._contour is not None:
+            self._updatePlot()
             self._canvas.update()
         elif self._visible is True and self._visibleMask is True:
             self._initilizePlot()
 
     # visible
+    # todo: create a new axis and set the visibility of the axis 
     def _setVisibleInternal(self,visible):
-        if visible is False and self._curve is not None:
+        if visible is False and self._contour is not None:
             self._removePlot()
             self._canvas.update()
-        elif visible is True and self._curve is None:
+        elif visible is True and self._contour is None:
             self._initilizePlot()
             self._canvas.update()
             
@@ -223,7 +240,7 @@ class ContourG(GraphObjectBase,QtCore.QObject):
         self.update()
         
     def remove(self):
-        if self._curve is not None:
+        if self._contour is not None:
             self._removePlot()
             self._canvas.update()
 

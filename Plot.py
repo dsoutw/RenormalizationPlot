@@ -12,6 +12,8 @@ from matplotlib.backends.backend_qt5agg import (
     FigureCanvasQTAgg as FigureCanvas,
     NavigationToolbar2QT as NavigationToolbar)
 import matplotlib as mpl
+from matplotlib import (cm,colors)
+    
 
 # renormalization 
 from Unimodal import Unimodal
@@ -30,6 +32,11 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindow.Ui_plotWindow):
         self._level=level
         self._rParent=rParent
         self._period=2
+
+        self._p_aLevels=[self._func.p_a]
+        self._p_ALevels=[self._func.p_A]
+        self._p_bLevels=[self._func.p_b]
+        self._p_BLevels=[self._func.p_B]
     
         super(self.__class__, self).__init__(rParent)
         self.setupUi(self)  # This is defined in design.py file automatically
@@ -159,36 +166,6 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindow.Ui_plotWindow):
         else:
             self.focusWindow(self._rChild)
 
-    # Find the periodic intervals
-    def _findPeriodicInterval(self):
-        # build period intervals from the next level
-        def _nextLevelOrbit(p_x,p_X):
-            p_xList=[]
-            for i in range(self._period):
-                p_x=self._func(p_x)
-                p_xList.append(p_x)
-                
-            p_XList=[None] * self._period
-            p_XList[self._period-1]=p_X
-            i=self._period-2
-            while i >= 0:
-                if p_xList[i] < self._func.p_c:
-                    p_X=optimize.brenth(lambda x: self._func(x)-p_X,self._func.p_a,self._func.p_c)
-                else:
-                    p_X=optimize.brenth(lambda x: self._func(x)-p_X,self._func.p_c,self._func.p_A)
-                p_XList[i]=p_X
-                i=i-1
-            return p_xList, p_XList
-
-        self._p_a1Orbit, self._p_A1Orbit=_nextLevelOrbit(self._r_si(self._rFunc.p_a),self._r_si(self._rFunc.p_A))
-        self._p_b1Orbit, self._p_B1Orbit=_nextLevelOrbit(self._r_si(self._rFunc.p_b),self._r_si(self._rFunc.p_B))
-
-        # update the list for the levels
-        self._p_aLevels=[self._func.p_a,self._p_a1Orbit[0]]
-        self._p_ALevels=[self._func.p_A,self._p_A1Orbit[0]]
-        self._p_bLevels=[self._func.p_b,self._p_b1Orbit[0]]
-        self._p_BLevels=[self._func.p_B,self._p_B1Orbit[0]]
-
     # update status of renormlaizable
     def updateRChild(self):
         if(self._func.renomalizable(self._period)):
@@ -238,14 +215,44 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindow.Ui_plotWindow):
         self._removeNextLevelOrbits()
         self._removeDeepLevelOrbits()
 
-    # Notified by the child whne a child is renormalized
-    # called by child window
-    def _descendantRenormalized(self, level, window):
+    # Find the periodic intervals
+    def _findPeriodicInterval(self):
+        # build period intervals from the next level
+        def _nextLevelOrbit(p_x,p_X):
+            p_xList=[]
+            for i in range(self._period):
+                p_x=self._func(p_x)
+                p_xList.append(p_x)
+                
+            p_XList=[None] * self._period
+            p_XList[self._period-1]=p_X
+            i=self._period-2
+            while i >= 0:
+                if p_xList[i] < self._func.p_c:
+                    p_X=optimize.brenth(lambda x: self._func(x)-p_X,self._func.p_a,self._func.p_c)
+                else:
+                    p_X=optimize.brenth(lambda x: self._func(x)-p_X,self._func.p_c,self._func.p_A)
+                p_XList[i]=p_X
+                i=i-1
+            return p_xList, p_XList
+
+        self._p_a1Orbit, self._p_A1Orbit=_nextLevelOrbit(self._r_si(self._rFunc.p_a),self._r_si(self._rFunc.p_A))
+        self._p_b1Orbit, self._p_B1Orbit=_nextLevelOrbit(self._r_si(self._rFunc.p_b),self._r_si(self._rFunc.p_B))
+
+        # update the list for the levels
+        self._p_aLevels=[self._func.p_a,self._p_a1Orbit[0]]
+        self._p_ALevels=[self._func.p_A,self._p_A1Orbit[0]]
+        self._p_bLevels=[self._func.p_b,self._p_b1Orbit[0]]
+        self._p_BLevels=[self._func.p_B,self._p_B1Orbit[0]]
+        self._updateRescalingLevels()
+
+    def _updateRescalingLevels(self):
+
         i=len(self._p_aLevels)
         updated=False
         
         # update the list of the periodic points if new renormalization level is available
-        while i-1 < len(self._rChild._p_aLevels):
+        while i-1 < len(self._rChild._p_aLevels) and i <= Setting.figureMaxLevels:
             self._p_aLevels.append(self._iRescaling(self._rChild._p_aLevels[i-1]))
             self._p_ALevels.append(self._iRescaling(self._rChild._p_ALevels[i-1]))
             self._p_bLevels.append(self._iRescaling(self._rChild._p_bLevels[i-1]))
@@ -255,8 +262,14 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindow.Ui_plotWindow):
             
         if updated is True:
             self._updateDeepLevelOrbits()
-            print("Level ", self._level, ": ", str(self._p_aLevels))
-            print("Level ", self._level+1, ": ", str(self._rChild._p_aLevels))
+            #print("Level ", self._level, ": ", str(self._p_aLevels))
+            #print("Level ", self._level+1, ": ", str(self._rChild._p_aLevels))
+
+    # Notified by the child whne a child is renormalized
+    # called by child window
+    # potential bug: does not update the graph when the renormalization period is changed
+    def _descendantRenormalized(self, level, window):
+        self._updateRescalingLevels()
             
     # The inverse function of nonlinear rescaling
     def _iRescaling(self,y):
@@ -271,15 +284,13 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindow.Ui_plotWindow):
     @QtCore.pyqtSlot(Unimodal)
     def setFunction(self, func):
         self._func = func
+        self.updateRChild()
 
         self.canvas.setUpdatesEnabled(False)
         self._updateCurrentLevelGraphs()
         self._updateCurrentLevelOrbits()
         self._updateSelfReturnBoxes()
         self.canvas.setUpdatesEnabled(True)
-
-        self.updateRChild()
-
 
     function=property(getFunction, setFunction)
 
@@ -429,18 +440,12 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindow.Ui_plotWindow):
             i=0
             while i<len(lList):
                 if x < lList[i] or rList[i] < x:
-                    return i 
+                    return i-1
                 i=i+1
-            return i
+            return i-1
 
         def _contourQLevel(x,y):
-            i=0
-            while i<len(lList):
-                f_xPoint=self._func(x)
-                if f_xPoint < lList[i] or rList[i] < f_xPoint:
-                    return i 
-                i=i+1
-            return i
+            return _contourRLevel(self._func(x),y) 
     
         def _contourQRLevel(x,y):
             return _contourQLevel(x,y) if x < self._func.p_b else _contourRLevel(x,y)
@@ -448,8 +453,12 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindow.Ui_plotWindow):
         _contourQRLevel=np.vectorize(_contourQRLevel,signature='(),()->()')
         
         #_contourQRLevel= lambda x,y:x+y
+        def frange(x, y, jump):
+            while x < y:
+                yield x
+                x += jump
         
-        self.f_rLevel = ContourG(self.canvas, _contourQRLevel, visible=self.levelButton.isChecked(),levels=[-1,0,1,2,3,4,5])
+        self.f_rLevel = ContourG(self.canvas, _contourQRLevel, visible=self.levelButton.isChecked(),levels=list(frange(-0.5,Setting.figureMaxLevels+0.6,1)),cmap=cm.get_cmap("gray_r"),norm=colors.Normalize(vmin=0,vmax=10))
         self.levelButton.toggled.connect(self.f_rLevel.setVisible)
 
     def _updateDeepLevelOrbits(self):
