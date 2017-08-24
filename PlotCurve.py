@@ -14,6 +14,12 @@ class GraphObjectBase():
     classdocs
     '''
     
+    # Variable to store visible state
+    _visible=True
+    
+    # variable to store the mask for visible state 
+    _visibleMask=True
+    
     def __init__(self,visible=True,visibleMask=True):
         #self._visible=visible
         self._visibleMask=visibleMask
@@ -29,6 +35,7 @@ class GraphObjectBase():
         self._visible=visible
     visible=property(getVisible, setVisible)
 
+    # implimentation for visible if state changed
     def _setVisibleInternal(self,visible):
         raise NotImplementedError("GraphObjectBase._setVisibleInternal has to be implemented")
         
@@ -41,10 +48,12 @@ class GraphObjectBase():
         self._visibleMask=visibleMask
     visibleMask=property(getVisibleMask, setVisibleMask)
 
+    # remove the graph from the screen
     def remove(self):
         raise NotImplementedError("GraphObjectBase.remove has to be implemented")
 
-
+# Sync a group of GraphObjectBase items
+# sync methods: visible, remove
 class GroupG(GraphObjectBase,list):
     def __init__(self,*args,visible=True):
         list.__init__(self,*args)
@@ -54,15 +63,19 @@ class GroupG(GraphObjectBase,list):
     def _setVisibleInternal(self, visible):
         for member in self:
             member.setVisibleMask(visible)
-        
+    
+    # remove all artist in the list from the canvas    
     def remove(self):
         for member in self:
             member.remove()
 
-
+# Graphical object for artist
 # line=matplotlib.lines.Line2D object
 # canvas: matplotlib canvas
 class GraphObject(GraphObjectBase,QtCore.QObject):
+    _canvas=None
+    _curve=None
+    
     def __init__(self, canvas, visible=True):
         self._canvas=canvas
         QtCore.QObject.__init__(self,canvas)
@@ -89,8 +102,6 @@ class GraphObject(GraphObjectBase,QtCore.QObject):
             self._canvas.update()
         elif self._visible is True and self._visibleMask is True:
             self._curve=self._initilizePlot()
-        #else:
-        #    self._canvas.update()
 
     # canvas
     # useless?
@@ -108,8 +119,6 @@ class GraphObject(GraphObjectBase,QtCore.QObject):
             self.update()
         elif visible is True:
             self._curve=self._initilizePlot()
-        #else:
-        #    self._canvas.update()
         
     # curve
     # useless?
@@ -118,14 +127,22 @@ class GraphObject(GraphObjectBase,QtCore.QObject):
     def setCurve(self, curve):
         self._curve=curve
     curve=property(getCurve, setCurve)
-    
+
+    # remove the artist from the canvas    
     def remove(self):
         if self._curve is not None:
             self._curve.remove()
             self._curve=None
             self._canvas.update()
-    
+
+# Plot of a function
 class FunctionG(GraphObject):
+
+    # Function of one variable
+    _func=None
+    
+    # canvas: canvas to show the plot
+    # func: function of one variable
     def __init__(self, canvas, func, visible=True, **kwargs):
         self._func=func
         self._kwargs=kwargs
@@ -204,6 +221,11 @@ class ContourG(GraphObjectBase,QtCore.QObject):
     def setFunction(self,func):
         self._func=func
         self.update()
+        
+    def remove(self):
+        if self._curve is not None:
+            self._removePlot()
+            self._canvas.update()
 
     function=property(getFunction, setFunction)
 

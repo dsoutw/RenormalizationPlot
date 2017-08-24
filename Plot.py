@@ -18,6 +18,11 @@ from Unimodal import Unimodal
 from PlotCurve import (FunctionG,VerticalLineG,RectangleG,GroupG,TicksG,ContourG)
         
 class PlotWindow(QtWidgets.QMainWindow, PlotWindow.Ui_plotWindow):
+    
+    # Arguments
+    # func: unimodal class
+    # level: the level of renormalization
+    # rParent: a unimodal map for the previous level
     def __init__(self, func, level=0, rParent=None):
         #func: Unimodal
         #level: nonnegative integer
@@ -123,7 +128,7 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindow.Ui_plotWindow):
             print(str(e))
             return None
     
-    # child renormalization window
+    # open child renormalization window
     def openRChild(self):
         # create window if not exist then renormalize
         if self._rChild is None:
@@ -141,13 +146,28 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindow.Ui_plotWindow):
             self.levelBox.setEnabled(True)
             self.openWindow(self._rChild)
             
+            # update the list for the levels
+            self._p_aLevels=[self._func.p_a,r_si(rFunc.p_a)]
+            self._p_ALevels=[self._func.p_A,r_si(rFunc.p_A)]
+            self._p_bLevels=[self._func.p_b,r_si(rFunc.p_b)]
+            self._p_BLevels=[self._func.p_B,r_si(rFunc.p_B)]
+            
             self._plotNextLevelOrbits(rFunc, r_si)
             self._plotDeepLevelOrbits()
             
+            # Notify the ancestors that the unimodal map is renormalized
+            level=2
+            ancestor=self._rParent
+            while ancestor is not None:
+                ancestor._descendantRenormalized(level,self._rChild)
+                ancestor=ancestor._rParent
+                level=level+1
+
             #self.f_alpha1List=
         else:
             self.focusWindow(self._rChild)
-            
+    
+    # close child renormalization window
     def closeRChild(self):
         if self._rChild is not None:
             self.closeWindow(self._rChild)
@@ -159,7 +179,27 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindow.Ui_plotWindow):
             # remove sub-structures
             self._removeNextLevelOrbits()
             self._removeDeepLevelOrbits()
-
+    
+    # Notified by the child whne a child is renormalized
+    # called by child window
+    def _descendantRenormalized(self, level, window):
+        i=len(self._p_aLevels)
+        updated=False
+        
+        # update the list of the periodic points if new renormalization level is available
+        while i-1 < len(self._rChild._p_aLevels):
+            self._p_aLevels.append(self._r_si(self._rChild._p_aLevels[i-1]))
+            self._p_ALevels.append(self._r_si(self._rChild._p_ALevels[i-1]))
+            self._p_bLevels.append(self._r_si(self._rChild._p_bLevels[i-1]))
+            self._p_BLevels.append(self._r_si(self._rChild._p_BLevels[i-1]))
+            i=i+1
+            updated=True
+            
+        if updated is True:
+            self._updateDeepLevelOrbits()
+            print("Level ", self._level, ": ", str(self._p_aLevels))
+            print("Level ", self._level+1, ": ", str(self._rChild._p_aLevels))
+            
     # window utilities
     # modify this method if created by mdi window
     def openWindow(self, widget):
@@ -349,8 +389,8 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindow.Ui_plotWindow):
         self.f_bB1List=None
         
     def _plotDeepLevelOrbits(self):
-        lList=[0,0.2]
-        rList=[0.8,0.6]
+        lList=self._p_aLevels
+        rList=self._p_ALevels
         
         def _contourRLevel(x,y):
             i=0
@@ -376,7 +416,7 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindow.Ui_plotWindow):
         
         #_contourQRLevel= lambda x,y:x+y
         
-        self.f_rLevel = ContourG(self.canvas, _contourQRLevel, visible=self.levelButton.isChecked())
+        self.f_rLevel = ContourG(self.canvas, _contourQRLevel, visible=self.levelButton.isChecked(),levels=[-1,0,1,2,3,4,5])
         self.levelButton.toggled.connect(self.f_rLevel.setVisible)
 
     def _updateDeepLevelOrbits(self):
