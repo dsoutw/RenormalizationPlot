@@ -5,22 +5,23 @@ parameterMax=2
 #1.784972834669053
 # 11-renormalizable without interpolation
 #parameterValue=1.7849728346094484
-# 27-renormalizable with interpolation
+# //27-renormalizable with interpolation
+# mechane precision 18-renormalizable
 parameterValue=1.7849728359354726
 parameterZoom=2.0
 
-figureSecondIterate=True
-figureMultipleIterate=False
-figureDiagonal=False
+figureSecondIterate=False
+figureMultipleIterate=True
+figureDiagonal=True
 figureBeta0=True
 figureSelfReturn=True
 figureMaxLevels=5
 
 interpolationEnabled=True
 # unit second
-interpolationThreshold=0.1
+interpolationThreshold=0.05
 # precision of sampling points for the interpolation
-interpolationPrecision=0.001
+interpolationPrecision=0.0001
 
 # one-parameter unimodal map
 def func(x, mu):

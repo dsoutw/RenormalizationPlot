@@ -54,7 +54,14 @@ class MainWindow(QtWidgets.QMainWindow, MainWindow.Ui_mainWindow):
                     QtCore.Qt.WindowMinMaxButtonsHint | QtCore.Qt.WindowCloseButtonHint)
             child.mdiSubWindow.show()
         def closeMdiWindow(parent,child):
+            print("Close window ", child._level)
             self.mdiArea.removeSubWindow(child)
+            
+            #close event does not work
+            child.closeRChild()
+            if child._rParent is not None:
+                child._rParent._rChildClosed()
+                
             child.mdiSubWindow.close()
             child.mdiSubWindow=None
         def focusMdiWindow(parent,child):

@@ -84,7 +84,7 @@ class GraphObject(GraphObjectBase,QtCore.QObject):
         GraphObjectBase.__init__(self,visible=visible)
 
         # Plot only when visible
-        if visible is True:
+        if visible == True:
             self._curve=self._initilizePlot()
         else:
             self._curve=None
@@ -102,8 +102,9 @@ class GraphObject(GraphObjectBase,QtCore.QObject):
         if self._curve is not None:
             self._updatePlot(self._curve)
             self._canvas.update()
-        elif self._visible is True and self._visibleMask is True:
+        elif self._visible == True and self._visibleMask == True:
             self._curve=self._initilizePlot()
+            self._canvas.update()
 
     # canvas
     # useless?
@@ -118,9 +119,10 @@ class GraphObject(GraphObjectBase,QtCore.QObject):
     def _setVisibleInternal(self,visible):
         if self._curve is not None:
             self._curve.set_visible(visible)
-            self.update()
-        elif visible is True:
+            self._canvas.update()
+        elif visible == True:
             self._curve=self._initilizePlot()
+            self._canvas.update()
         
     # curve
     # useless?
@@ -150,7 +152,7 @@ class FunctionG(GraphObject):
         self._kwargs=kwargs
 
         # set sample points
-        self._sample = np.arange(-1.0, 1.001, 0.001)
+        self._sample = np.arange(-1.0, 1.001, 0.0001)
 
         super().__init__(canvas, visible=visible)
         
@@ -185,12 +187,12 @@ class ContourG(GraphObjectBase,QtCore.QObject):
         GraphObjectBase.__init__(self,visible=visible)
 
         # set sample points
-        x = np.arange(-1.0, 1.0, 0.001)
+        x = np.arange(-1.0, 1.0, 0.0001)
         y = np.arange(-1.0, 1.1, 2)
         self.sampleX,self.sampleY = np.meshgrid(x,y)
         
         # Plot only when visible
-        if visible is True:
+        if visible == True:
             self._initilizePlot()
         else:
             self._contour=None
@@ -219,16 +221,17 @@ class ContourG(GraphObjectBase,QtCore.QObject):
         if self._contour is not None:
             self._updatePlot()
             self._canvas.update()
-        elif self._visible is True and self._visibleMask is True:
+        elif self._visible == True and self._visibleMask == True:
             self._initilizePlot()
+            self._canvas.update()
 
     # visible
     # todo: create a new axis and set the visibility of the axis 
     def _setVisibleInternal(self,visible):
-        if visible is False and self._contour is not None:
+        if visible == False and self._contour is not None:
             self._removePlot()
             self._canvas.update()
-        elif visible is True and self._contour is None:
+        elif visible == True and self._contour is None:
             self._initilizePlot()
             self._canvas.update()
             
@@ -296,7 +299,9 @@ class RectangleG(GraphObject):
         self._height=height
         self.update()
     bounds=property(getBounds, setBounds)
-    
+
+# todo: sync axes
+# https://stackoverflow.com/questions/4999014/matplotlib-pyplot-how-to-zoom-subplots-together-and-x-scroll-separately
 class TicksG(GraphObject):
     positionValues = ["left", "right", "top", "bottom"]
     xPosition = ["top", "bottom"]
@@ -355,11 +360,15 @@ class TicksG(GraphObject):
     
     def _updatePlot(self,curve):
         if self._position in TicksG.xPosition:
+            xLimit=curve.get_xlim()
             curve.set_xticks(self._ticks)
             curve.set_xticklabels(self._ticksLabel)
+            curve.set_xlim(*xLimit)
         elif self._position in TicksG.yPosition:
+            yLimit=curve.get_ylim()
             curve.set_yticks(self._ticks)
             curve.set_yticklabels(self._ticksLabel)
+            curve.set_ylim(*yLimit)
     
     def setTicks(self, ticks):
         self._ticks=ticks

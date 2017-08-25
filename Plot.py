@@ -57,7 +57,6 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindow.Ui_plotWindow):
 
         self._plotCurrentLevelGraphs()
         self._plotCurrentLevelOrbits()
-        self._plotSelfReturnBoxes()
         
         canvas.axes.axis([-1, 1, -1, 1])
         canvas.axes.set(adjustable='box-forced',xlim=[-1,1], ylim=[-1,1],aspect='equal')
@@ -82,7 +81,8 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindow.Ui_plotWindow):
         
         # setup renormalizable features
         self.periodSpinBox.setValue(self._period)
-        self.updateRChild()
+        self.selfReturnCheckBox.setChecked(Setting.figureSelfReturn)
+        self.updateRenormalizable()
         self.periodSpinBox.valueChanged.connect(self._periodSpinBoxChanged)
         self._rChild=None
         self.renormalizeButton.clicked.connect(self.openRChild)
@@ -94,6 +94,7 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindow.Ui_plotWindow):
     # inherited from QtWidgets.QMainWindow
     # close child renormalization when the window is closed
     def closeEvent(self, evnt):
+        print("close event ", self._level)
         if self._rParent is not None:
             self._rParent._rChildClosed()
         self.closeRChild()
@@ -102,8 +103,8 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindow.Ui_plotWindow):
     # UI callbacks
     def _periodSpinBoxChanged(self, value):
         self._period=value
-        self.f_unimodal_p.setFunction(lambda x: self._func.iterate(x,self._period))
-        self.updateRChild()
+        self.f_unimodal_p.setFunction(lambda x: self._func.iterates(x,self._period))
+        self.updateRenormalizable()
         
     # do renormalization
     def _renormalize(self,period):
@@ -116,6 +117,24 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindow.Ui_plotWindow):
             print("Parameter ",str(Setting.parameterValue))
             print(str(e))
             return None
+
+    # update status of renormlaizable
+    def updateRenormalizable(self):
+        if self._func.renomalizable(self._period) == True:
+            self.renormalizableResultLabel.setText("Yes")
+            self.renormalizeButton.setEnabled(True)
+            self.selfReturnLabel.setEnabled(True)
+            self.selfReturnCheckBox.setEnabled(True)
+
+            self._updateSelfReturnBoxes()
+            self.updateRChild()                    
+        else:
+            self.renormalizableResultLabel.setText("No")
+            self.renormalizeButton.setEnabled(False)
+            self.selfReturnLabel.setEnabled(False)
+            self.selfReturnCheckBox.setEnabled(False)
+            self._removeSelfReturnBoxes()
+            self.closeRChild()
 
     # variables for renormalization
     
@@ -136,9 +155,11 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindow.Ui_plotWindow):
     def openRChild(self):
         # create window if not exist then renormalize
         if self._rChild is None:
-            rFunc, r_s, r_si =self._renormalize(self._period)
-            if rFunc is None:
+            renormalizedFunc =self._renormalize(self._period)
+            if renormalizedFunc is None:
                 return
+
+            rFunc, r_s, r_si = renormalizedFunc
 
             self._rFunc=rFunc
             self._r_s=r_s
@@ -166,32 +187,24 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindow.Ui_plotWindow):
         else:
             self.focusWindow(self._rChild)
 
-    # update status of renormlaizable
+        
     def updateRChild(self):
-        if(self._func.renomalizable(self._period)):
-            self.renormalizableResultLabel.setText("Yes")
-            self.renormalizeButton.setEnabled(True)
-
-            if self._rChild is not None:
-                rFunc, r_s, r_si = self._renormalize(self._period)
-                if rFunc is not None:
-                    # Update child
-                    self._rFunc=rFunc
-                    self._r_s=r_s
-                    self._r_si=r_si
-                    self._rChild.function=rFunc
-                    
-                    # plot sub-structures if possible
-                    self._findPeriodicInterval()
-                    self._updateNextLevelOrbits()
-                    self._updateDeepLevelOrbits()
-                else:
-                    self.closeRChild()
-                    
-        else:
-            self.renormalizableResultLabel.setText("No")
-            self.renormalizeButton.setEnabled(False)
-            self.closeRChild()
+        if self._rChild is not None:
+            renormalizedFunc = self._renormalize(self._period)
+            if renormalizedFunc is not None:
+                rFunc, r_s, r_si = renormalizedFunc
+                # Update child
+                self._rFunc=rFunc
+                self._r_s=r_s
+                self._r_si=r_si
+                self._rChild.function=rFunc
+                
+                # plot sub-structures if possible
+                self._findPeriodicInterval()
+                self._updateNextLevelOrbits()
+                self._updateDeepLevelOrbits()
+            else:
+                self.closeRChild()
     
     # close child renormalization window
     def closeRChild(self):
@@ -200,24 +213,28 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindow.Ui_plotWindow):
             self._rChildClosed()
 
     # called when the child is closed.
+    #isThisClosed=False
     def _rChildClosed(self):
-        self.levelBox.setEnabled(False)
-        self._rChild=None
-        self._rFunc=None
-        self._r_s=None
-        self._r_si=None
-        self._p_a1Orbit=None
-        self._p_A1Orbit=None
-        self._p_b1Orbit=None
-        self._p_B1Orbit=None
-
-        # remove sub-structures
-        self._removeNextLevelOrbits()
-        self._removeDeepLevelOrbits()
+        #if self.isThisClosed==False:
+            # remove sub-structures
+            self._removeNextLevelOrbits()
+            self._removeDeepLevelOrbits()
+    
+            self.levelBox.setEnabled(False)
+            self._rChild=None
+            self._rFunc=None
+            self._r_s=None
+            self._r_si=None
+            self._p_a1Orbit=None
+            self._p_A1Orbit=None
+            self._p_b1Orbit=None
+            self._p_B1Orbit=None
+            self.isThisClosed=True
 
     # Find the periodic intervals
     def _findPeriodicInterval(self):
         # build period intervals from the next level
+        # todo: move to Unimodal
         def _nextLevelOrbit(p_x,p_X):
             p_xList=[]
             for i in range(self._period):
@@ -236,7 +253,9 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindow.Ui_plotWindow):
                 i=i-1
             return p_xList, p_XList
 
-        self._p_a1Orbit, self._p_A1Orbit=_nextLevelOrbit(self._r_si(self._rFunc.p_a),self._r_si(self._rFunc.p_A))
+        #self._p_a1Orbit, self._p_A1Orbit=_nextLevelOrbit(self._r_si(self._rFunc.p_a),self._r_si(self._rFunc.p_A))
+        self._p_a1Orbit=self._func.p_a1[self._period]
+        self._p_A1Orbit=self._func.p_A1[self._period]
         self._p_b1Orbit, self._p_B1Orbit=_nextLevelOrbit(self._r_si(self._rFunc.p_b),self._r_si(self._rFunc.p_B))
 
         # update the list for the levels
@@ -260,7 +279,7 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindow.Ui_plotWindow):
             i=i+1
             updated=True
             
-        if updated is True:
+        if updated == True:
             self._updateDeepLevelOrbits()
             #print("Level ", self._level, ": ", str(self._p_aLevels))
             #print("Level ", self._level+1, ": ", str(self._rChild._p_aLevels))
@@ -284,12 +303,11 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindow.Ui_plotWindow):
     @QtCore.pyqtSlot(Unimodal)
     def setFunction(self, func):
         self._func = func
-        self.updateRChild()
+        self.updateRenormalizable()
 
         self.canvas.setUpdatesEnabled(False)
         self._updateCurrentLevelGraphs()
         self._updateCurrentLevelOrbits()
-        self._updateSelfReturnBoxes()
         self.canvas.setUpdatesEnabled(True)
 
     function=property(getFunction, setFunction)
@@ -377,98 +395,133 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindow.Ui_plotWindow):
         self.f_Alpha0Ticks.setTicks([-1,1,self._func.p_c])
         self.f_Beta0Ticks.setTicks([self._func.p_b,self._func.p_B,self._func.p_B2])
 
+
+    # For plotting the intervals that defines the self-return map
+    f_selfReturnBoxes = None
+    
     # Plot the intervals that defines the self-return map
     def _plotSelfReturnBoxes(self):
-        self.f_SelfReturnBetaR=RectangleG(self.canvas,
-                self._func.p_b, self._func.p_b, #x,y
-                self._func.p_B2-self._func.p_b, self._func.p_B2-self._func.p_b, #width, height
-                visible=True, color='gray', lw=1, fill=None
-            )
-        self.f_SelfReturnBetaQ=RectangleG(self.canvas,
-                self._func.p_B, self._func.p_B, #x,y
-                self._func.p_b-self._func.p_B, self._func.p_b-self._func.p_B, #width, height
-                visible=True, color='gray', lw=1, fill=None
-            )
-        self.f_SelfReturnBeta=GroupG([self.f_SelfReturnBetaR,self.f_SelfReturnBetaQ],visible=Setting.figureSelfReturn)
-        self.selfReturnCheckBox.setChecked(Setting.figureSelfReturn)
-        self.selfReturnCheckBox.toggled.connect(self.f_SelfReturnBeta.setVisible)
+        period=self._period
+        f_selfReturnBoxesList=[None]*period
+        for t in range(period):
+            f_selfReturnBoxesList[t]=RectangleG(self.canvas,
+                    self._func.p_a1[period][t], self._func.p_a1[period][t], #x,y
+                    self._func.p_A1[period][t]-self._func.p_a1[period][t], self._func.p_A1[period][t]-self._func.p_a1[period][t], #width, height
+                    visible=True, color='gray', lw=1, fill=None
+                )
+        self.f_selfReturnBoxes=GroupG(f_selfReturnBoxesList)
+        self.selfReturnCheckBox.toggled.connect(self.f_selfReturnBoxes.setVisible)
 
     def _updateSelfReturnBoxes(self):
-        # Set the self return interval
-        self.f_SelfReturnBetaR.setBounds(self._func.p_b,self._func.p_b,self._func.p_B2-self._func.p_b,self._func.p_B2-self._func.p_b)
-        self.f_SelfReturnBetaQ.setBounds(self._func.p_B,self._func.p_B,self._func.p_b-self._func.p_B,self._func.p_b-self._func.p_B)
+        if self.f_selfReturnBoxes is None:
+            self._plotSelfReturnBoxes()
+        else:
+            period=self._period
+            for t in range(period):
+            # Set the self return intervals
+                self.f_selfReturnBoxes[t].setBounds(
+                    self._func.p_a1[period][t], self._func.p_a1[period][t],
+                    self._func.p_A1[period][t]-self._func.p_a1[period][t], self._func.p_A1[period][t]-self._func.p_a1[period][t]
+                    )
 
+    def _removeSelfReturnBoxes(self):
+        if self.f_selfReturnBoxes is not None:
+            self.selfReturnCheckBox.toggled.disconnect()
+            self.f_selfReturnBoxes.remove()
+            self.f_selfReturnBoxes=None
         
     # plot orbits obtained from next level
+    _isNextLevelOrbitsPlotted=False
     def _plotNextLevelOrbits(self):
-        self.canvas.setUpdatesEnabled(False)
-        
-        f_a1List=[VerticalLineG(self.canvas, self._p_a1Orbit[i], visible=True) for i in range(self._period)]
-        f_A1List=[VerticalLineG(self.canvas, self._p_A1Orbit[i], visible=True) for i in range(self._period)]
-        self.f_aA1List=GroupG(f_a1List+f_A1List,visible=self.alpha1CheckBox.isChecked())
-        self.alpha1CheckBox.toggled.connect(self.f_aA1List.setVisible)
-
-        f_b1List=[VerticalLineG(self.canvas, self._p_b1Orbit[i], visible=True) for i in range(self._period)]
-        f_B1List=[VerticalLineG(self.canvas, self._p_B1Orbit[i], visible=True) for i in range(self._period)]
-        self.f_bB1List=GroupG(f_b1List+f_B1List,visible=self.beta1CheckBox.isChecked())
-        self.beta1CheckBox.toggled.connect(self.f_bB1List.setVisible)
-        
-        self.f_level1=GroupG([self.f_aA1List,self.f_bB1List],visible=self.partitionButton.isChecked())
-        self.partitionButton.toggled.connect(self.f_level1.setVisible)
-        
-        self.canvas.setUpdatesEnabled(True)
+        if self._isNextLevelOrbitsPlotted==False:
+            self.canvas.setUpdatesEnabled(False)
+            
+            f_a1List=[VerticalLineG(self.canvas, self._p_a1Orbit[i], visible=True) for i in range(self._period)]
+            f_A1List=[VerticalLineG(self.canvas, self._p_A1Orbit[i], visible=True) for i in range(self._period)]
+            self.f_aA1List=GroupG(f_a1List+f_A1List,visible=self.alpha1CheckBox.isChecked())
+            self.alpha1CheckBox.toggled.connect(self.f_aA1List.setVisible)
+    
+            f_b1List=[VerticalLineG(self.canvas, self._p_b1Orbit[i], visible=True) for i in range(self._period)]
+            f_B1List=[VerticalLineG(self.canvas, self._p_B1Orbit[i], visible=True) for i in range(self._period)]
+            self.f_bB1List=GroupG(f_b1List+f_B1List,visible=self.beta1CheckBox.isChecked())
+            self.beta1CheckBox.toggled.connect(self.f_bB1List.setVisible)
+            
+            self.f_level1=GroupG([self.f_aA1List,self.f_bB1List],visible=self.partitionButton.isChecked())
+            self.partitionButton.toggled.connect(self.f_level1.setVisible)
+            
+            self.canvas.setUpdatesEnabled(True)
+            self._isNextLevelOrbitsPlotted=True
 
     def _updateNextLevelOrbits(self):
-        self._removeNextLevelOrbits()
-        self._plotNextLevelOrbits()
+        if self._isNextLevelOrbitsPlotted==True:
+            self._removeNextLevelOrbits()
+            self._plotNextLevelOrbits()
 
     def _removeNextLevelOrbits(self):
-        # remove sub-structures
-        self.alpha1CheckBox.toggled.disconnect()
-        self.beta1CheckBox.toggled.disconnect()
-        self.partitionButton.toggled.disconnect(self.f_level1.setVisible)
-        self.f_level1.remove()
-        self.f_level1=None
-        self.f_aA1List=None
-        self.f_bB1List=None
-        
-    def _plotDeepLevelOrbits(self):
-        lList=self._p_aLevels
-        rList=self._p_ALevels
-        
-        def _contourRLevel(x,y):
-            i=0
-            while i<len(lList):
-                if x < lList[i] or rList[i] < x:
-                    return i-1
-                i=i+1
-            return i-1
-
-        def _contourQLevel(x,y):
-            return _contourRLevel(self._func(x),y) 
+        if self._isNextLevelOrbitsPlotted==True:
+            # remove sub-structures
+            try:
+                self.alpha1CheckBox.toggled.disconnect()
+            except:
+                pass
+            try:
+                self.beta1CheckBox.toggled.disconnect()
+            except:
+                pass
+            try:
+                self.partitionButton.toggled.disconnect(self.f_level1.setVisible)
+            except:
+                pass
+            self.f_level1.remove()
+            self.f_level1=None
+            self.f_aA1List=None
+            self.f_bB1List=None
+            self._isNextLevelOrbitsPlotted=False
     
-        def _contourQRLevel(x,y):
-            return _contourQLevel(x,y) if x < self._func.p_b else _contourRLevel(x,y)
+    _isDeepLevelOrbitsPlotted=False
+    def _plotDeepLevelOrbits(self):
+        if self._isDeepLevelOrbitsPlotted==False:
+            lList=self._p_aLevels
+            rList=self._p_ALevels
             
-        _contourQRLevel=np.vectorize(_contourQRLevel,signature='(),()->()')
+            def _contourRLevel(x,y):
+                i=0
+                while i<len(lList):
+                    if x < lList[i] or rList[i] < x:
+                        return i-1
+                    i=i+1
+                return i-1
+    
+            def _contourQLevel(x,y):
+                return _contourRLevel(self._func(x),y) 
         
-        #_contourQRLevel= lambda x,y:x+y
-        def frange(x, y, jump):
-            while x < y:
-                yield x
-                x += jump
-        
-        self.f_rLevel = ContourG(self.canvas, _contourQRLevel, visible=self.levelButton.isChecked(),levels=list(frange(-0.5,Setting.figureMaxLevels+0.6,1)),cmap=cm.get_cmap("gray_r"),norm=colors.Normalize(vmin=0,vmax=10))
-        self.levelButton.toggled.connect(self.f_rLevel.setVisible)
+            def _contourQRLevel(x,y):
+                return _contourQLevel(x,y) if x < self._func.p_b else _contourRLevel(x,y)
+                
+            _contourQRLevel=np.vectorize(_contourQRLevel,signature='(),()->()')
+            
+            #_contourQRLevel= lambda x,y:x+y
+            def frange(x, y, jump):
+                while x < y:
+                    yield x
+                    x += jump
+            
+            self.f_rLevel = ContourG(self.canvas, _contourQRLevel, visible=self.levelButton.isChecked(),levels=list(frange(-0.5,Setting.figureMaxLevels+0.6,1)),cmap=cm.get_cmap("gray_r"),norm=colors.Normalize(vmin=0,vmax=10))
+            self.levelButton.toggled.connect(self.f_rLevel.setVisible)
+            
+            self._isDeepLevelOrbitsPlotted=True
 
     def _updateDeepLevelOrbits(self):
-        self._removeDeepLevelOrbits()
-        self._plotDeepLevelOrbits()
+        if self._isDeepLevelOrbitsPlotted==True:
+            self._removeDeepLevelOrbits()
+            self._plotDeepLevelOrbits()
 
     def _removeDeepLevelOrbits(self):
-        self.levelButton.toggled.disconnect(self.f_rLevel.setVisible)
-        self.f_rLevel.remove()
-        self.f_rLevel=None
+        if self._isDeepLevelOrbitsPlotted==True:
+            self.levelButton.toggled.disconnect(self.f_rLevel.setVisible)
+            self.f_rLevel.remove()
+            self.f_rLevel=None
+            self._isDeepLevelOrbitsPlotted=False
 
 import Setting
         
