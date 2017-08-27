@@ -45,32 +45,6 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindow.Ui_plotWindow):
         # Adjust the size of the options to fit with the contents
         self.renormalizationScroll.setMinimumWidth(self.renormalizationContents.sizeHint().width() + self.renormalizationScroll.verticalScrollBar().sizeHint().width() )
         
-        # setup graph
-
-        # Plot the initial graph
-        self.canvas.setParent(self.centralwidget)
-        canvas=self.canvas
-        mpl.rcParams['axes.xmargin'] = 0
-        mpl.rcParams['axes.ymargin'] = 0
-
-        self.canvas.setUpdatesEnabled(False)
-
-        self._plotCurrentLevelGraphs()
-        self._plotCurrentLevelOrbits()
-        
-        canvas.axes.axis([-1, 1, -1, 1])
-        canvas.axes.set(adjustable='box-forced',xlim=[-1,1], ylim=[-1,1],aspect='equal')
-        #self.axes2.set(adjustable='box-forced',xlim=[-1,1], ylim=[-1,1],aspect='equal')
-        self.f_Alpha0Ticks.getCurve().set(adjustable='box-forced',xlim=[-1,1], ylim=[-1,1],aspect='equal')
-        self.f_Beta0Ticks.getCurve().set(adjustable='box-forced',xlim=[-1,1], ylim=[-1,1],aspect='equal')
-        #canvas.fig.tight_layout()
-        
-        self.canvas.setUpdatesEnabled(True)
-
-        # Add graph toolbar
-        self.mplToolbar = NavigationToolbar(self.canvas, self.centralwidget)
-        self.addToolBar(self.mplToolbar)
-
         # setup the parent button    
         if rParent is not None:
             def showParent():
@@ -78,7 +52,14 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindow.Ui_plotWindow):
             self.parentButton.clicked.connect(showParent)
         else:
             self.parentButton.hide()
-        
+
+        # setup graph
+        self.canvas.setParent(self.centralwidget)
+
+        # Add graph toolbar
+        self.mplToolbar = NavigationToolbar(self.canvas, self.centralwidget)
+        self.addToolBar(self.mplToolbar)
+
         # setup renormalizable features
         self.periodSpinBox.setValue(self._period)
         self.selfReturnCheckBox.setChecked(Setting.figureSelfReturn)
@@ -90,7 +71,16 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindow.Ui_plotWindow):
         
         # setup level grapgs
         self.levelBox.setEnabled(False)
-    
+
+        # Plot the initial graph
+        canvas=self.canvas
+        mpl.rcParams['axes.xmargin'] = 0
+        mpl.rcParams['axes.ymargin'] = 0
+
+        self.canvas.setUpdatesEnabled(False)
+        self._plotCurrentLevel()
+        self.canvas.setUpdatesEnabled(True)
+
     # inherited from QtWidgets.QMainWindow
     # close child renormalization when the window is closed
     def closeEvent(self, evnt):
@@ -306,8 +296,7 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindow.Ui_plotWindow):
         self.updateRenormalizable()
 
         self.canvas.setUpdatesEnabled(False)
-        self._updateCurrentLevelGraphs()
-        self._updateCurrentLevelOrbits()
+        self._updateCurrentLevel()
         self.canvas.setUpdatesEnabled(True)
 
     function=property(getFunction, setFunction)
@@ -332,6 +321,23 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindow.Ui_plotWindow):
         for i in range(self._period):
             x=self._func(x)
         return x
+    
+    def _plotCurrentLevel(self):
+        self.canvas.axes.axis([-1, 1, -1, 1])
+        self.canvas.axes.set(adjustable='box-forced',xlim=[-1,1], ylim=[-1,1],aspect='equal')
+
+        self._plotCurrentLevelGraphs()
+        self._plotCurrentLevelOrbits()
+
+        #self.canvas.fig.tight_layout()
+
+        #self.axes2.set(adjustable='box-forced',xlim=[-1,1], ylim=[-1,1],aspect='equal')
+        self.f_Alpha0Ticks.artist.set(adjustable='box-forced',xlim=[-1,1], ylim=[-1,1],aspect='equal')
+        self.f_Beta0Ticks.artist.set(adjustable='box-forced',xlim=[-1,1], ylim=[-1,1],aspect='equal')
+    
+    def _updateCurrentLevel(self):
+        self._updateCurrentLevelGraphs()
+        self._updateCurrentLevelOrbits()
      
     def _plotCurrentLevelGraphs(self):
         # Draw unimodal map        
