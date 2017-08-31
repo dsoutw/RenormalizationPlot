@@ -54,7 +54,7 @@ class MainWindow(QtWidgets.QMainWindow, MainWindow.Ui_mainWindow):
                     QtCore.Qt.WindowMinMaxButtonsHint | QtCore.Qt.WindowCloseButtonHint)
             child.mdiSubWindow.show()
         def closeMdiWindow(parent,child):
-            print("Close window ", child._level)
+            #print("Close window ", child._level)
             self.mdiArea.removeSubWindow(child)
             
             #close event does not work
@@ -116,7 +116,7 @@ class MainWindow(QtWidgets.QMainWindow, MainWindow.Ui_mainWindow):
         else:
             # revert change
             self.parameterMinEdit.setText(str(Setting.parameterMin))
-            print("revert")
+            #print("revert")
 
     def __parameterMaxBoundUpdate(self):
         if Setting.parameterMin < float(self.parameterMaxEdit.text()):
@@ -126,7 +126,7 @@ class MainWindow(QtWidgets.QMainWindow, MainWindow.Ui_mainWindow):
         else:
             # revert change
             self.parameterMaxEdit.setText(str(Setting.parameterMax))
-            print("revert")
+            #print("revert")
     
     # The current parameter will be centered and the scale will be zoomed by the factor Setting.parameterZoom
     def __parameterZoomIn(self):

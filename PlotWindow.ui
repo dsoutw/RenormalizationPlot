@@ -119,14 +119,11 @@
                 <height>0</height>
                </size>
               </property>
-              <property name="showGroupSeparator" stdset="0">
-               <bool>false</bool>
-              </property>
-              <property name="suffix">
-               <string/>
-              </property>
               <property name="minimum">
                <number>2</number>
+              </property>
+              <property name="maximum">
+               <number>20</number>
               </property>
               <property name="displayIntegerBase">
                <number>10</number>

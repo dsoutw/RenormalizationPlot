@@ -57,12 +57,12 @@ class GraphObjectBase():
         '''
         return self._visible & self._visibleMask 
 
-    # remove the graph from the screen
-    def remove(self):
-        raise NotImplementedError("GraphObjectBase.remove has to be implemented")
+    # clear the graph from the screen
+    def clear(self):
+        raise NotImplementedError("GraphObjectBase.clear has to be implemented")
 
 # Sync a group of GraphObjectBase items
-# sync methods: visible, remove
+# sync methods: visible, clear
 class GroupG(GraphObjectBase,list):
     def __init__(self,*args,visible=True):
         list.__init__(self,*args)
@@ -73,10 +73,11 @@ class GroupG(GraphObjectBase,list):
         for member in self:
             member.setVisibleMask(visible)
     
-    # remove all artist in the list from the canvas    
-    def remove(self):
+    # clear all artist in the list from the canvas    
+    def clear(self):
         for member in self:
-            member.remove()
+            member.clear()
+        del self[:]
 
 # Graphical object for artist
 # line=matplotlib.lines.Line2D object
@@ -101,8 +102,11 @@ class GraphObject(GraphObjectBase,QtCore.QObject):
         raise NotImplementedError("GraphObjectBase._initilize has to be implemented")
 
     # artist: matplotlib artist
-    def _updatePlot(self,curve):
+    def _updatePlot(self, artist):
         raise NotImplementedError("GraphObjectBase._updatePlot has to be implemented")
+
+    def _clearPlot(self, artist):
+        pass
 
     @QtCore.pyqtSlot()
     def update(self):
@@ -139,22 +143,43 @@ class GraphObject(GraphObjectBase,QtCore.QObject):
         self._artist=curve
     artist=property(getArtist, setArtist)
 
-    # remove the artist from the canvas    
-    def remove(self):
+    # clear the artist from the canvas    
+    def clear(self):
         if self._artist is not None:
+            self._clearPlot(self._artist)
             self._artist.remove()
             self._artist=None
             self._canvas.update()
 
-# Plot of a function
+def _generateSample(axis):
+    l,r = axis.get_xlim()
+    sample = np.append(np.arange(-1.0, l, 0.001), np.arange(l, r, (r-l)/1000.0))
+    sample = np.append(sample, np.arange(r, 1.001, 0.001))
+    return sample
+
 class FunctionG(GraphObject):
+    '''
+    Plot a function
+    '''
 
     # Function of one variable
     _func=None
+    _axis=None
+    _xEventId=None
+    _yEventId=None
     
-    # canvas: canvas to show the plot
-    # func: function of one variable
     def __init__(self, canvas, func, axis=None, visible=True, **kwargs):
+        '''
+        Plot a function
+        :param canvas: the canvas showing the plot
+        :type canvas:
+        :param func: function to be plot
+        :type func: function of one variable
+        :param axis: axis to be plot. 
+        :type axis:
+        :param visible: set visible 
+        :type visible:
+        '''
         self._func=func
         self._kwargs=kwargs
         if axis == None:
@@ -163,12 +188,20 @@ class FunctionG(GraphObject):
             self._axis=axis
 
         # set sample points
-        self._sample = np.arange(-1.0, 1.001, 0.0001)
+        self._sample = _generateSample(self._axis)
 
         super().__init__(canvas, visible=visible)
-        
+    
+    
     def _initilizePlot(self):
-        return self.__plot(self._axis)
+        artist = self.__plot(self._axis)
+
+        def on_xlims_change(axis):
+            self._sample = _generateSample(axis)
+            self.update()
+        self._xEventId=self._axis.callbacks.connect('xlim_changed', on_xlims_change)
+
+        return artist
 
     def __plot(self, axis):
         curve, = axis.plot(self._sample, self._func(self._sample), **self._kwargs)
@@ -181,7 +214,14 @@ class FunctionG(GraphObject):
             return None
 
     def _updatePlot(self,curve):
+        curve.set_xdata(self._sample)
         curve.set_ydata(self._func(self._sample))
+
+    def _clearPlot(self, artist):
+        if self._xEventId != None:
+            self._axis.callbacks.disconnect(self._xEventId)
+            self._xEventId=None
+        GraphObject._clearPlot(self, artist)
 
     # function
     def getFunction(self):
@@ -207,7 +247,7 @@ class ContourG(GraphObjectBase,QtCore.QObject):
         GraphObjectBase.__init__(self,visible=visible)
 
         # set sample points
-        x = np.arange(-1.0, 1.0, 0.0001)
+        x = _generateSample(self._canvas.axes)
         y = np.arange(-1.0, 1.1, 2)
         self.sampleX,self.sampleY = np.meshgrid(x,y)
         
@@ -231,14 +271,14 @@ class ContourG(GraphObjectBase,QtCore.QObject):
 
     def _updatePlot(self):
         for item in self._contour.collections:
-            item.remove()
+            item.clear()
         self._contour = self._canvas.axes.contourf(self.sampleX, self.sampleY, self._func(self.sampleX,self.sampleY),**self._kwargs)
     
     def _removePlot(self):
         for item in self._contour.collections:
-            item.remove()
+            item.clear()
         self._contour=None
-        self._cbaxes.remove()
+        self._cbaxes.clear()
         self._cbaxes=None
         self._cbar=None
     
@@ -268,7 +308,7 @@ class ContourG(GraphObjectBase,QtCore.QObject):
         self._func=func
         self.update()
         
-    def remove(self):
+    def clear(self):
         if self._contour is not None:
             self._removePlot()
             self._canvas.update()

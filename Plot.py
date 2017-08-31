@@ -84,7 +84,7 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindow.Ui_plotWindow):
     # inherited from QtWidgets.QMainWindow
     # close child renormalization when the window is closed
     def closeEvent(self, evnt):
-        print("close event ", self._level)
+        #print("close event ", self._level)
         if self._rParent is not None:
             self._rParent._rChildClosed()
         self.closeRChild()
@@ -206,7 +206,7 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindow.Ui_plotWindow):
     #isThisClosed=False
     def _rChildClosed(self):
         #if self.isThisClosed==False:
-            # remove sub-structures
+            # clear sub-structures
             self._removeNextLevelOrbits()
             self._removeDeepLevelOrbits()
     
@@ -433,7 +433,7 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindow.Ui_plotWindow):
     def _removeSelfReturnBoxes(self):
         if self.f_selfReturnBoxes is not None:
             self.selfReturnCheckBox.toggled.disconnect()
-            self.f_selfReturnBoxes.remove()
+            self.f_selfReturnBoxes.clear()
             self.f_selfReturnBoxes=None
         
     # plot orbits obtained from next level
@@ -465,7 +465,7 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindow.Ui_plotWindow):
 
     def _removeNextLevelOrbits(self):
         if self._isNextLevelOrbitsPlotted==True:
-            # remove sub-structures
+            # clear sub-structures
             try:
                 self.alpha1CheckBox.toggled.disconnect()
             except:
@@ -478,7 +478,7 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindow.Ui_plotWindow):
                 self.partitionButton.toggled.disconnect(self.f_level1.setVisible)
             except:
                 pass
-            self.f_level1.remove()
+            self.f_level1.clear()
             self.f_level1=None
             self.f_aA1List=None
             self.f_bB1List=None
@@ -525,7 +525,7 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindow.Ui_plotWindow):
     def _removeDeepLevelOrbits(self):
         if self._isDeepLevelOrbitsPlotted==True:
             self.levelButton.toggled.disconnect(self.f_rLevel.setVisible)
-            self.f_rLevel.remove()
+            self.f_rLevel.clear()
             self.f_rLevel=None
             self._isDeepLevelOrbitsPlotted=False
 
