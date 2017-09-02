@@ -271,14 +271,14 @@ class ContourG(GraphObjectBase,QtCore.QObject):
 
     def _updatePlot(self):
         for item in self._contour.collections:
-            item.clear()
+            item.remove()
         self._contour = self._canvas.axes.contourf(self.sampleX, self.sampleY, self._func(self.sampleX,self.sampleY),**self._kwargs)
     
     def _removePlot(self):
         for item in self._contour.collections:
-            item.clear()
+            item.remove()
         self._contour=None
-        self._cbaxes.clear()
+        self._cbaxes.remove()
         self._cbaxes=None
         self._cbar=None
     
@@ -294,10 +294,13 @@ class ContourG(GraphObjectBase,QtCore.QObject):
     # visible
     # todo: create a new axis and set the visibility of the axis 
     def _setVisibleInternal(self,visible):
-        if visible == False and self._contour is not None:
-            self._removePlot()
+        if self._contour != None:
+            for item in self._contour.collections:
+                item.set_visible(visible)
+            self._cbaxes.set_visible(visible)
+            #self._removePlot()
             self._canvas.update()
-        elif visible == True and self._contour is None:
+        elif visible == True and self._contour == None:
             self._initilizePlot()
             self._canvas.update()
             

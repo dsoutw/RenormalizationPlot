@@ -65,10 +65,9 @@ class Unimodal:
         # Check if it is a unimodal map with the standard convention
         # i.e. -1=f(-1)=f(1)
         self.p_a=np.float64(-1.0)
-        val=self._map(self.p_a)
-        if not np.isclose(self._map(self.p_a),self.p_a,rtol=self.__TOL_EQUAL):
-            print(val)
-            raise ValueError('Not a unimodal map: f(-1)=',val)
+        #val=self._map(self.p_a)
+        #if not np.isclose(self._map(self.p_a),self.p_a,rtol=self.__TOL_EQUAL):
+        #    raise ValueError('Not a unimodal map: f(-1)=',val)
             
         self.p_A=np.float64(1.0)
         #if not np.isclose(self._map(self.p_A),self.p_a,rtol=self.__TOL_EQUAL):
@@ -211,7 +210,7 @@ class Unimodal:
         if not __iteration(minPoint) < 0:
             return False
         
-        periodicPoint=optimize.brenth(__iteration, minPoint, maxPoint, xtol=Setting.precisionPeriodicA, rtol=Setting.precisionPeriodicR)
+        periodicPoint=optimize.brenth(__iteration, minPoint, maxPoint, xtol=np.square(np.abs(maxPoint-minPoint))*Setting.precisionPeriodicA, rtol=Setting.precisionPeriodicR)
         #print("periodic point: ",periodicPoint, "    critical value:",self.p_v)
         periodicOrbit=self.orbit(periodicPoint, period)
         periodicReflex=self.reflexOrbit(periodicOrbit)

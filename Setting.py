@@ -17,8 +17,8 @@ figureBeta0=True
 figureSelfReturn=True
 figureMaxLevels=5
 
-precisionPeriodicA=1e-07
-precisionPeriodicR=1e-07
+precisionPeriodicA=1e-06
+precisionPeriodicR=1e-05
 
 interpolationEnabled=True
 # unit second
