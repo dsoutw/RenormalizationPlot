@@ -282,9 +282,14 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindow.Ui_plotWindow):
             
     # The inverse function of nonlinear rescaling
     def _iRescaling(self,y):
+        if not (-1.0<y and y<1.0):
+            raise ValueError("_iRescaling: Unable to compute the inverse rescaling. The value ",str(y)," is out of bound")
+
         y1=self._r_si(y)
-        return optimize.brenth(lambda x: self._func.iterates(x,self._period-1)-y1,self._p_a1Orbit[0],self._p_A1Orbit[0])
-        
+            
+        def solve(x):
+            return self._func.iterates(x,self._period-1)-y1
+        return optimize.brenth(solve, self._p_a1Orbit[0],self._p_A1Orbit[0])
         
     # unimodal map for the plot
     def getFunction(self):

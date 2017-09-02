@@ -210,10 +210,11 @@ class Unimodal:
         if not __iteration(minPoint) < 0:
             return False
         
-        periodicPoint=optimize.brenth(__iteration, minPoint, maxPoint, xtol=np.square(np.abs(maxPoint-minPoint))*Setting.precisionPeriodicA, rtol=Setting.precisionPeriodicR)
+        tol=np.square(np.abs(maxPoint-minPoint))*Setting.precisionPeriodicA/2
+        periodicPoint=optimize.brenth(__iteration, minPoint, maxPoint, xtol=tol, rtol=Setting.precisionPeriodicR)
         #print("periodic point: ",periodicPoint, "    critical value:",self.p_v)
         periodicOrbit=self.orbit(periodicPoint, period)
-        periodicReflex=self.reflexOrbit(periodicOrbit)
+        periodicReflex=self.reflexOrbit(periodicOrbit,tol)
         #print("periodic point: ",periodicPoint, "    critical value:",self.p_v,"    reflection:",periodicReflex[0])
 
         # check if the interval defines a self return map
@@ -258,24 +259,24 @@ class Unimodal:
     #    The two points p_inOrbit[j] and p_outOrbit[j] have same orientation for j<len-1
     #    The two points p_inOrbit[len-1] and p_outOrbit[len-1] have opposite orientation
     #    p_inOrbit[0]=f(p_inOrbit[len-1])=f(p_outOrbit[len-1])
-    def reflexOrbit(self, p_inOrbit):
+    def reflexOrbit(self, p_inOrbit, absError=Setting.precisionPeriodicA):
         period=len(p_inOrbit)
         p_outOrbit=[None]*period
 
         point=p_inOrbit[0]        
         # Build p-1
         if p_inOrbit[period-1] < self.p_c:
-            point=optimize.brenth(lambda x: self._map(x)-point,self.p_c,self.p_A, xtol=Setting.precisionPeriodicA, rtol=Setting.precisionPeriodicR)
+            point=optimize.brenth(lambda x: self._map(x)-point,self.p_c,self.p_A, xtol=absError, rtol=Setting.precisionPeriodicR)
         else:
-            point=optimize.brenth(lambda x: self._map(x)-point,self.p_a,self.p_c, xtol=Setting.precisionPeriodicA, rtol=Setting.precisionPeriodicR)
+            point=optimize.brenth(lambda x: self._map(x)-point,self.p_a,self.p_c, xtol=absError, rtol=Setting.precisionPeriodicR)
         p_outOrbit[period-1]=point
         
         t=period-2
         while t >= 0:
             if p_inOrbit[t] < self.p_c:
-                point=optimize.brenth(lambda x: self._map(x)-point,self.p_a,self.p_c, xtol=Setting.precisionPeriodicA, rtol=Setting.precisionPeriodicR)
+                point=optimize.brenth(lambda x: self._map(x)-point,self.p_a,self.p_c, xtol=absError, rtol=Setting.precisionPeriodicR)
             else:
-                point=optimize.brenth(lambda x: self._map(x)-point,self.p_c,self.p_A, xtol=Setting.precisionPeriodicA, rtol=Setting.precisionPeriodicR)
+                point=optimize.brenth(lambda x: self._map(x)-point,self.p_c,self.p_A, xtol=absError, rtol=Setting.precisionPeriodicR)
             p_outOrbit[t]=point
             t=t-1
         return p_outOrbit
@@ -339,7 +340,10 @@ class UnimodalRescaleIterate(Unimodal):
             if self.renomalizable(period):
                 s=Affine(self._rescale2(self.p_a1[period][period-1]),np.float64(-1),self._rescale2(self.p_A1[period][period-1]),np.float64(1))
                 s_i=Affine(np.float64(-1),self._rescale2(self.p_a1[period][period-1]),np.float64(1),self._rescale2(self.p_A1[period][period-1]))
-                return UnimodalRescaleIterate(s, self._rawfunc, self._iterate*period, s_i, s(self._rescale2(self.p_c))), Affine(self.p_a1[period][period-1],np.float64(-1),self.p_A1[period][period-1],np.float64(1)), Affine(np.float64(-1),self.p_b,np.float64(1),self.p_B)
+                return (UnimodalRescaleIterate(s, self._rawfunc, self._iterate*period, s_i, s(self._rescale2(self.p_c))), 
+                    Affine(self.p_a1[period][period-1],np.float64(-1),self.p_A1[period][period-1],np.float64(1)), 
+                    Affine(np.float64(-1),self.p_a1[period][period-1],np.float64(1),self.p_A1[period][period-1])
+                    )
             else:
                 return None
         else:

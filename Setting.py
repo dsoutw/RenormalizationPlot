@@ -8,6 +8,8 @@ parameterMax=2
 # //27-renormalizable with interpolation
 # mechane precision 18-renormalizable
 parameterValue=1.7849728359354726
+# 7 period trippling renormalizable
+# parameterValue=1.9270389817953106
 parameterZoom=2.0
 
 figureSecondIterate=False
@@ -17,14 +19,14 @@ figureBeta0=True
 figureSelfReturn=True
 figureMaxLevels=5
 
-precisionPeriodicA=1e-06
-precisionPeriodicR=1e-05
+precisionPeriodicA=1e-04
+precisionPeriodicR=1e-06
 
 interpolationEnabled=True
 # unit second
 interpolationThreshold=0.05
 # precision of sampling points for the interpolation
-interpolationPrecision=0.0001
+interpolationPrecision=1e-04
 
 # one-parameter unimodal map
 def func(x, mu):
