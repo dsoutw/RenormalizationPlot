@@ -82,15 +82,15 @@ class Unimodal:
         # Find beta fixed point
         #self.p_b=optimize.fixed_point(self._map, (self.p_c+self.p_A)/np.float64(2))
         try:
-            self.p_b=optimize.brenth(lambda x: self._map(x)-x, self.p_c, self.p_A, xtol=Setting.precisionPeriodicA, rtol=Setting.precisionPeriodicR)
+            self.p_b=optimize.brentq(lambda x: self._map(x)-x, self.p_c, self.p_A, xtol=Setting.precisionPeriodicA, rtol=Setting.precisionPeriodicR)
         except BaseException as e:
             raise RuntimeError("Unimodal.__init__: Unable to find beta fixed point\n"+str(e))
         try:
-            self.p_B=optimize.brenth(self.__map_solve, self.p_a, self.p_c, args=(self.p_b,), xtol=Setting.precisionPeriodicA, rtol=Setting.precisionPeriodicR)
+            self.p_B=optimize.brentq(self.__map_solve, self.p_a, self.p_c, args=(self.p_b,), xtol=Setting.precisionPeriodicA, rtol=Setting.precisionPeriodicR)
         except BaseException as e:
             raise RuntimeError("Unimodal.__init__: Unable to find beta_bar point"+str(e))
         try:
-            self.p_B2=optimize.brenth(self.__map_solve, self.p_b, self.p_A, args=(self.p_B,), xtol=Setting.precisionPeriodicA, rtol=Setting.precisionPeriodicR)
+            self.p_B2=optimize.brentq(self.__map_solve, self.p_b, self.p_A, args=(self.p_B,), xtol=Setting.precisionPeriodicA, rtol=Setting.precisionPeriodicR)
         except BaseException as e:
             raise RuntimeError("Unimodal.__init__: Unable to find beta_2bar point"+str(e))
         
@@ -119,11 +119,12 @@ class Unimodal:
         if period not in self._renormalizable:
             if period == 2:
                 self._renormalizable[period]=self.renomalizable2()
-            elif period % 2 == 1:
-                self._renormalizable[period]=self.renomalizableOdd(period)
+            #elif period % 2 == 1:
             else:
+                self._renormalizable[period]=self.renomalizableOther(period)
+            #else:
                 # Not implimented
-                self._renormalizable[period]=False
+            #    self._renormalizable[period]=False
         return self._renormalizable[period]
 
     def renomalize(self, period=2):
@@ -176,11 +177,14 @@ class Unimodal:
             return None
     
     # todo
-    def renomalizableOdd(self,period):
+    def renomalizableOther(self,period):
         
         # period doubling renormalizable
-        if self.p_v < self.p_B2:
+        if self.p_v < self.p_c:
             return False
+        if period % 2 == 1:
+            if self.p_v < self.p_B2:
+                return False
         
         # Find all critical points
         otherLocalExtremals=[]
@@ -191,27 +195,26 @@ class Unimodal:
             maximalPoints=self.preimage(maximalPoints)
 
         # Search for the periodic points
-        maximalPoints=[x for x in maximalPoints if x<self.p_v]
-        otherLocalExtremals=[x for x in otherLocalExtremals if x<self.p_v]
-        maxPoint=max(maximalPoints)
-        minPoint=max(otherLocalExtremals)
-        #print("max:", maxPoint, ", min:", minPoint)
-
-        def __iteration(x):
-            y=x
-            for t in range(period):
-                y=self._map(y)
-            return y-x
-        
-        # need f^p(c)>c => __iteration(minPoint) > 0
-        #if not maxPoint < self.p_v:
-        if not __iteration(maxPoint) > 0:
+        maximalPoints=[x for x in maximalPoints if self.p_B<x and x<self.p_v]
+        if len(maximalPoints) < 1:
             return False
+        maxPoint=max(maximalPoints)
+        otherLocalExtremals=[x for x in otherLocalExtremals if self.p_B<x and x<maxPoint]
+        if len(otherLocalExtremals) < 1:
+            return False
+        minPoint=max(otherLocalExtremals)
+
+        # The root is the periodic point
+        def __iteration(x):
+            return self.iterates(x, period)-x
+        
+        #if not __iteration(maxPoint) > 0:
+        #    return False
         if not __iteration(minPoint) < 0:
             return False
         
         tol=np.square(np.abs(maxPoint-minPoint))*Setting.precisionPeriodicA/2
-        periodicPoint=optimize.brenth(__iteration, minPoint, maxPoint, xtol=tol, rtol=Setting.precisionPeriodicR)
+        periodicPoint=optimize.brentq(__iteration, minPoint, maxPoint, xtol=tol, rtol=Setting.precisionPeriodicR)
         #print("periodic point: ",periodicPoint, "    critical value:",self.p_v)
         periodicOrbit=self.orbit(periodicPoint, period)
         periodicReflex=self.reflexOrbit(periodicOrbit,tol)
@@ -266,17 +269,17 @@ class Unimodal:
         point=p_inOrbit[0]        
         # Build p-1
         if p_inOrbit[period-1] < self.p_c:
-            point=optimize.brenth(lambda x: self._map(x)-point,self.p_c,self.p_A, xtol=absError, rtol=Setting.precisionPeriodicR)
+            point=optimize.brentq(lambda x: self._map(x)-point,self.p_c,self.p_A, xtol=absError, rtol=Setting.precisionPeriodicR)
         else:
-            point=optimize.brenth(lambda x: self._map(x)-point,self.p_a,self.p_c, xtol=absError, rtol=Setting.precisionPeriodicR)
+            point=optimize.brentq(lambda x: self._map(x)-point,self.p_a,self.p_c, xtol=absError, rtol=Setting.precisionPeriodicR)
         p_outOrbit[period-1]=point
         
         t=period-2
         while t >= 0:
             if p_inOrbit[t] < self.p_c:
-                point=optimize.brenth(lambda x: self._map(x)-point,self.p_a,self.p_c, xtol=absError, rtol=Setting.precisionPeriodicR)
+                point=optimize.brentq(lambda x: self._map(x)-point,self.p_a,self.p_c, xtol=absError, rtol=Setting.precisionPeriodicR)
             else:
-                point=optimize.brenth(lambda x: self._map(x)-point,self.p_c,self.p_A, xtol=absError, rtol=Setting.precisionPeriodicR)
+                point=optimize.brentq(lambda x: self._map(x)-point,self.p_c,self.p_A, xtol=absError, rtol=Setting.precisionPeriodicR)
             p_outOrbit[t]=point
             t=t-1
         return p_outOrbit
@@ -293,8 +296,8 @@ class Unimodal:
             
         for pt in points:
             if pt < self.p_v:
-                result.append(optimize.brenth(lambda x: self._map(x)-pt,self.p_a,self.p_c, xtol=Setting.precisionPeriodicA, rtol=Setting.precisionPeriodicR))
-                result.append(optimize.brenth(lambda x: self._map(x)-pt,self.p_c,self.p_A, xtol=Setting.precisionPeriodicA, rtol=Setting.precisionPeriodicR))
+                result.append(optimize.brentq(lambda x: self._map(x)-pt,self.p_a,self.p_c, xtol=Setting.precisionPeriodicA, rtol=Setting.precisionPeriodicR))
+                result.append(optimize.brentq(lambda x: self._map(x)-pt,self.p_c,self.p_A, xtol=Setting.precisionPeriodicA, rtol=Setting.precisionPeriodicR))
 
         return result
     
