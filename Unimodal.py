@@ -98,7 +98,7 @@ class Unimodal:
         return self._map(x)
 
     # repeat iterate the unimodal map p-times
-    def iterates(self, x, p):
+    def iterates(self, x, p:int):
         '''
         Evaluate the iterates of the unimodal map
         :param x: point to be evaluated
@@ -110,7 +110,7 @@ class Unimodal:
             x=self._map(x)
         return x
     
-    def renomalizable(self, period=2):
+    def renomalizable(self, period:int=2):
         '''
         Check if the unimodal map is renormalizable
         :param period: the period of renormalization
@@ -127,7 +127,7 @@ class Unimodal:
             #    self._renormalizable[period]=False
         return self._renormalizable[period]
 
-    def renomalize(self, period=2):
+    def renomalize(self, period:int=2):
         # check if the function is renormalizable
         if self.renomalizable(period):
             s=Affine(self.p_a1[period][period-1],np.float64(-1),self.p_A1[period][period-1],np.float64(1))
@@ -203,6 +203,8 @@ class Unimodal:
         if len(otherLocalExtremals) < 1:
             return False
         minPoint=max(otherLocalExtremals)
+        #if (maxPoint-minPoint)/minPoint<Setting.precisionPeriodicA:
+        #    print("Insufficient precisioncy")
 
         # The root is the periodic point
         def __iteration(x):
@@ -241,7 +243,7 @@ class Unimodal:
 
     # Orbit tools
     
-    def orbit(self,point,length):
+    def orbit(self, point, length:int):
         '''
         Build an orbit starting from point
         @param point: point
@@ -308,7 +310,7 @@ class UnimodalRescaleIterate(Unimodal):
     _iterate=None
     _interpolated=False
     
-    def __init__(self, rescale1, func, iterate, rescale2, p_c):
+    def __init__(self, rescale1, func, iterate:int, rescale2, p_c):
         self._rescale1=rescale1
         self._rescale2=rescale2
         self._rawfunc=func
@@ -354,7 +356,7 @@ class UnimodalRescaleIterate(Unimodal):
         #    self.renormalize=super().renomalize
         #    self.iterates=super().iterates
 
-    def renomalize(self, period=2):
+    def renomalize(self, period:int=2):
         if self._interpolated == False:
             # check if the function is renormalizable
             if self.renomalizable(period):
@@ -398,7 +400,7 @@ class UnimodalRescaleIterate(Unimodal):
             return None
                        
     # repeat iterate the unimodal map p-times
-    def iterates(self, x, p):
+    def iterates(self, x, p:int):
         if self._interpolated == False:
             x=self._rescale2(x)
             for i in range(self._iterate*p):

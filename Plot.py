@@ -13,13 +13,13 @@ import Setting
 class PlotWindow(QtWidgets.QMainWindow, PlotWindow.Ui_plotWindow):
     _level=None
     _rParent=None
-    _period=2
+    _period:int=2
     
     # Arguments
     # func: unimodal class
     # level: the level of renormalization
     # rParent: a unimodal map for the previous level
-    def __init__(self, level=0, rParent=None):
+    def __init__(self, level:int = 0, rParent:PlotWindow = None):
         #func: Unimodal
         #level: nonnegative integer
         self._level=level
@@ -103,7 +103,7 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindow.Ui_plotWindow):
             self.selfReturnLabel.setEnabled(True)
             self.selfReturnCheckBox.setEnabled(True)
 
-            self._updateRenormalizableGraph()
+            self._plotRenormalizableGraph()
             if self._rChild != None:
                 if self._updateRChild(self._rChild, self._period)==True:
                     # plot sub-structures if possible
@@ -159,18 +159,19 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindow.Ui_plotWindow):
         
     # close child renormalization window
     def closeRChild(self):
-        if self._rChild is not None:
+        if self._rChild != None:
             self.closeWindow(self._rChild)
             self._rChildClosed()
 
     # called when the child is closed.
     #isThisClosed=False
     def _rChildClosed(self):
-        self._removeNextLevelOrbits()
-        self._removeDeepLevelOrbits()
-
-        self._rChild=None
-        self.levelBox.setEnabled(False)
+        if self._rChild != None:
+            self._removeNextLevelOrbits()
+            self._removeDeepLevelOrbits()
+    
+            self.levelBox.setEnabled(False)
+            self._rChild=None
 
 
     # window utilities

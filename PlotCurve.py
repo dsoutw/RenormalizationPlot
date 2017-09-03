@@ -28,17 +28,20 @@ class GraphObjectBase():
         self._visible=visible
     
     # visible
-    def getVisible(self):
+    def getVisible(self)->bool:
         return self._visible
     @QtCore.pyqtSlot(bool)
-    def setVisible(self,visible):
+    def setVisible(self,visible:bool):
         if (visible & self._visibleMask) != (self._visible & self._visibleMask):
             self._setVisibleInternal(visible & self._visibleMask)
         self._visible=visible
-    visible=property(getVisible, setVisible)
+    visible=property(
+        lambda self: self.getVisible(), 
+        lambda self, val: self.setVisible(val)
+        )
 
-    # implimentation for visible if state changed
     def _setVisibleInternal(self,visible):
+        # implimentation for visible if state changed
         raise NotImplementedError("GraphObjectBase._setVisibleInternal has to be implemented")
         
     def getVisibleMask(self):
@@ -48,10 +51,13 @@ class GraphObjectBase():
         if (self._visible & visibleMask) != (self._visible & self._visibleMask):
             self._setVisibleInternal(self._visible & visibleMask)
         self._visibleMask=visibleMask
-    visibleMask=property(getVisibleMask, setVisibleMask)
+    visibleMask=property(
+        lambda self: self.getVisibleMask(), 
+        lambda self, val: self.setVisibleMask(val)
+        )
 
     
-    def isShowed(self):
+    def isShowed(self)->bool:
         '''
         @return: bool. Return True if the graph is shown on the plot 
         '''
@@ -124,7 +130,10 @@ class GraphObject(GraphObjectBase,QtCore.QObject):
     @QtCore.pyqtSlot(FigureCanvas)
     def setCanvas(self,canvas):
         self._canvas=canvas
-    canvas=property(getCanvas, setCanvas)
+    canvas=property(
+        lambda self: self.getCanvas(), 
+        lambda self, val: self.setCanvas(val)
+        )
         
     # visible
     def _setVisibleInternal(self,visible):
@@ -141,7 +150,10 @@ class GraphObject(GraphObjectBase,QtCore.QObject):
         return self._artist
     def setArtist(self, curve):
         self._artist=curve
-    artist=property(getArtist, setArtist)
+    artist=property(
+        lambda self: self.getArtist(), 
+        lambda self, val: self.setArtist(val)
+        )
 
     # clear the artist from the canvas    
     def clear(self):
@@ -167,6 +179,7 @@ class FunctionG(GraphObject):
     _axis=None
     _xEventId=None
     _yEventId=None
+    _kwargs=()
     
     def __init__(self, canvas, func, axis=None, visible=True, **kwargs):
         '''
@@ -204,7 +217,7 @@ class FunctionG(GraphObject):
         return artist
 
     def __plot(self, axis):
-        curve, = axis.plot(self._sample, self._func(self._sample), **self._kwargs)
+        curve, = axis.plot(self._sample, self.function(self._sample), **self._kwargs)
         return curve
     
     def draw(self, axis):
@@ -215,7 +228,7 @@ class FunctionG(GraphObject):
 
     def _updatePlot(self,curve):
         curve.set_xdata(self._sample)
-        curve.set_ydata(self._func(self._sample))
+        curve.set_ydata(self.function(self._sample))
 
     def _clearPlot(self, artist):
         if self._xEventId != None:
@@ -229,8 +242,10 @@ class FunctionG(GraphObject):
     def setFunction(self,func):
         self._func=func
         self.update()
-
-    function=property(getFunction, setFunction)
+    function=property(
+        lambda self: self.getFunction(), 
+        lambda self, func: self.setFunction(func)
+        )
 
 # QuadContourSet is not inherted from artist
 # have to rewrite the base
@@ -259,20 +274,20 @@ class ContourG(GraphObjectBase,QtCore.QObject):
         
 
     def _initilizePlot(self):
-        self._contour = self._canvas.axes.contourf(self.sampleX, self.sampleY, self._func(self.sampleX,self.sampleY),**self._kwargs)
+        self._contour = self._canvas.axes.contourf(self.sampleX, self.sampleY, self.function(self.sampleX,self.sampleY),**self._kwargs)
         self._cbaxes = self._canvas.fig.add_axes([0.9, 0.1, 0.03, 0.8]) 
         self._cbar = self._canvas.fig.colorbar(self._contour, cax=self._cbaxes, ticks=ticker.MaxNLocator(integer=True))
 
     def draw(self, figure, axis):
         if self.isShowed():
-            contour=axis.contourf(self.sampleX, self.sampleY, self._func(self.sampleX,self.sampleY),**self._kwargs)
+            contour=axis.contourf(self.sampleX, self.sampleY, self.function(self.sampleX,self.sampleY),**self._kwargs)
             cbar=figure.add_axes([0.9, 0.1, 0.03, 0.8]) 
             figure.colorbar(contour, cax=cbar, ticks=ticker.MaxNLocator(integer=True))
 
     def _updatePlot(self):
         for item in self._contour.collections:
             item.remove()
-        self._contour = self._canvas.axes.contourf(self.sampleX, self.sampleY, self._func(self.sampleX,self.sampleY),**self._kwargs)
+        self._contour = self._canvas.axes.contourf(self.sampleX, self.sampleY, self.function(self.sampleX,self.sampleY),**self._kwargs)
     
     def _removePlot(self):
         for item in self._contour.collections:
@@ -310,6 +325,10 @@ class ContourG(GraphObjectBase,QtCore.QObject):
     def setFunction(self,func):
         self._func=func
         self.update()
+    function=property(
+        lambda self: self.getFunction(), 
+        lambda self, func: self.setFunction(func)
+        )
         
     def clear(self):
         if self._contour is not None:
@@ -320,6 +339,17 @@ class ContourG(GraphObjectBase,QtCore.QObject):
 
 class VerticalLineG(GraphObject):
     def __init__(self, canvas, xValue, axis=None, visible=True, **kwargs):
+        '''
+        Plot a vertical line on a canvas
+        :param canvas:
+        :type canvas:
+        :param xValue:
+        :type xValue:
+        :param axis:
+        :type axis:
+        :param visible:
+        :type visible:
+        '''
         self._xValue=xValue
         self._kwargs=kwargs
         if axis == None:
@@ -333,7 +363,7 @@ class VerticalLineG(GraphObject):
         return self.__plot(self._axis)
 
     def __plot(self, axis):
-        return axis.axvline(x=self._xValue,**self._kwargs)
+        return axis.axvline(x=self.xValue,**self._kwargs)
     
     def draw(self, axis):
         if self.isShowed():
@@ -342,7 +372,7 @@ class VerticalLineG(GraphObject):
             return None
 
     def _updatePlot(self,curve):
-        curve.set_xdata([self._xValue,self._xValue])
+        curve.set_xdata([self.xValue,self.xValue])
 
     # function
     def getXValue(self):
@@ -351,7 +381,10 @@ class VerticalLineG(GraphObject):
     def setXValue(self,xValue):
         self._xValue=xValue
         self.update()
-    xValue=property(getXValue, setXValue)
+    xValue=property(
+        lambda self: self.getXValue(), 
+        lambda self, value: self.setXValue(value)
+        )
     
 class RectangleG(GraphObject):
     def __init__(self, canvas, xValue, yValue, width, height, axis=None, visible=True, **kwargs):
@@ -371,7 +404,8 @@ class RectangleG(GraphObject):
         return self.__plot(self._axis)
 
     def __plot(self, axis):
-        artist = patches.Rectangle((self._xValue,self._yValue), self._width, self._height,**self._kwargs)
+        (xValue,yValue,width,height)=self.bounds
+        artist = patches.Rectangle((xValue,yValue), width, height, **self._kwargs)
         axis.add_patch(artist)
         return artist
     
@@ -382,7 +416,7 @@ class RectangleG(GraphObject):
             return None
 
     def _updatePlot(self,curve):
-        curve.set_bounds(self._xValue, self._yValue, self._width, self._height)
+        curve.set_bounds(*self.bounds)
 
     # function
     def getBounds(self):
@@ -393,7 +427,10 @@ class RectangleG(GraphObject):
         self._width=width
         self._height=height
         self.update()
-    bounds=property(getBounds, setBounds)
+    bounds=property(
+        lambda self: self.getBounds(), 
+        lambda self, *args: self.setBounds(*args)
+        )
 
 # todo: sync axes
 # https://stackoverflow.com/questions/4999014/matplotlib-pyplot-how-to-zoom-subplots-together-and-x-scroll-separately
@@ -490,11 +527,23 @@ class TicksG(GraphObject):
             curve.set_yticklabels(self._ticksLabel)
             curve.set_ylim(*yLimit)
     
+    def getTicks(self):
+        return self._ticks
     def setTicks(self, ticks):
         self._ticks=ticks
         self.update()
+    ticks=property(
+        lambda self: self.getTicks(), 
+        lambda self, *args: self.setTicks(*args)
+        )
         
+    def getTicksLabel(self):
+        return self._ticksLabel
     def setTicksLabel(self, ticksLabel):
         self._ticksLabel=ticksLabel
         self.update()
+    ticksLabel=property(
+        lambda self: self.getTicksLabel(), 
+        lambda self, *args: self.setTicksLabel(*args)
+        )
         
