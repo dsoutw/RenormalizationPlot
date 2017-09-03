@@ -155,7 +155,7 @@ def _generateSample(axis):
     l,r = axis.get_xlim()
     sample = np.append(np.arange(-1.0, l, 0.001), np.arange(l, r, (r-l)/1000.0))
     sample = np.append(sample, np.arange(r, 1.001, 0.001))
-    return sample
+    return np.float64(sample)
 
 class FunctionG(GraphObject):
     '''

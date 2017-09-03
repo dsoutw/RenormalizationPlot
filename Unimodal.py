@@ -323,12 +323,29 @@ class UnimodalRescaleIterate(Unimodal):
         end = time.time()
 
         if Setting.interpolationEnabled == True:
-            if end-start>Setting.interpolationThreshold:
-                sample=np.arange(np.float64(-1),np.float64(1),np.float64(Setting.interpolationPrecision))
+            # Test machine error
+            print(np.finfo(np.float64).eps)
+            print(np.absolute(self._rescale1.x1-self._rescale1.x2))
+            print(iterate)
+            print("rel error",np.finfo(np.float64).eps/np.absolute(self._rescale1.x1-self._rescale1.x2))
+            machineError=(np.power(np.finfo(np.float64).eps*10/np.absolute(self._rescale1.x1-self._rescale1.x2)+1,iterate)-1)*1000
+            print("guess",machineError)
+            print(isinstance(self._rescale1.x1, np.float64))
+            if machineError>Setting.interpolationPrecision:
+                self._interpolated=True
+                sampleSize=machineError*10
+                print("Warning: machine precision exceeded. the unimodal map is approximated by intepolation")
+            # Test speed
+            elif end-start>Setting.interpolationThreshold:
+                self._interpolated=True
+                sampleSize=Setting.interpolationPrecision
+                print("Warning: the unimodal map is approximated by intepolation to speed up the performance")
+
+                
+            if self._interpolated == True:
+                sample=np.arange(np.float64(-1),np.float64(1),np.float64(sampleSize))
                 data=evaluate(sample)
                 self._map=interp1d(sample, data, kind='cubic', fill_value='extrapolate')
-                self._interpolated=True
-                print("Warning: the unimodal map is approximated by intepolation to speed up the performance")
                 
         #if self._interpolated == True:
         #    self.renormalize=super().renomalize

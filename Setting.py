@@ -9,7 +9,7 @@ parameterMax=2
 # mechane precision 18-renormalizable
 parameterValue=1.7849728359354726
 # 7 period trippling renormalizable
-# parameterValue=1.9270389817953106
+# parameterValue=1.927038981795398
 parameterZoom=2.0
 
 figureSecondIterate=False
@@ -30,7 +30,8 @@ interpolationPrecision=1e-04
 
 # one-parameter unimodal map
 def func(x, mu):
-    return mu*(np.float64(1.0)+x)*(np.float64(1.0)-x)-np.float64(1.0)
+    x=np.float64(x)
+    return np.float64(mu)*(np.float64(1.0)+x)*(np.float64(1.0)-x)-np.float64(1.0)
 # critical point for the one-paraameter family
 def func_c(mu):
     return 0
