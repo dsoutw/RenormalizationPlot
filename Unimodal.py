@@ -324,13 +324,13 @@ class UnimodalRescaleIterate(Unimodal):
 
         if Setting.interpolationEnabled == True:
             # Test machine error
-            print(np.finfo(np.float64).eps)
-            print(np.absolute(self._rescale1.x1-self._rescale1.x2))
-            print(iterate)
-            print("rel error",np.finfo(np.float64).eps/np.absolute(self._rescale1.x1-self._rescale1.x2))
+            #print(np.finfo(np.float64).eps)
+            #print(np.absolute(self._rescale1.x1-self._rescale1.x2))
+            #print(iterate)
+            #print("rel error",np.finfo(np.float64).eps/np.absolute(self._rescale1.x1-self._rescale1.x2))
             machineError=(np.power(np.finfo(np.float64).eps*10/np.absolute(self._rescale1.x1-self._rescale1.x2)+1,iterate)-1)*1000
-            print("guess",machineError)
-            print(isinstance(self._rescale1.x1, np.float64))
+            #print("guess",machineError)
+            #print(isinstance(self._rescale1.x1, np.float64))
             if machineError>Setting.interpolationPrecision:
                 self._interpolated=True
                 sampleSize=machineError*10
