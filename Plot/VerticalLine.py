@@ -42,6 +42,7 @@ class VerticalLine(GraphObject):
 
     def _updatePlot(self,artist):
         artist.set_xdata([self.xValue,self.xValue])
+        return artist
 
     # function
     def getXValue(self):

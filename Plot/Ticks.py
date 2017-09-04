@@ -103,10 +103,10 @@ class Ticks(GraphObject):
             artist.set_yticks(self._ticks)
             artist.set_yticklabels(self._ticksLabel)
             artist.set_ylim(*yLimit)
+        return artist
     
     def _clearPlot(self, artist):
         self.canvas.removeAxes(artist)
-        super()._clearPlot(artist)
 
     def getTicks(self):
         return self._ticks

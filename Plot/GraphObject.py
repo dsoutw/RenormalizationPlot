@@ -7,9 +7,11 @@ Created on 2017/9/3
 from PyQt5 import QtCore
 from Plot.MPLCanvas import MPLCanvas
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.artist import Artist
 import numpy as np
+from typing import Iterable
 
-class GraphObjectBase():
+class GraphObjectBase:
     '''
     classdocs
     '''
@@ -61,6 +63,10 @@ class GraphObjectBase():
         '''
         return self._visible & self._visibleMask 
 
+    # update the graph from the screen
+    def update(self):
+        raise NotImplementedError("GraphObjectBase.update has to be implemented")
+
     # clear the graph from the screen
     def clear(self):
         raise NotImplementedError("GraphObjectBase.clear has to be implemented")
@@ -68,8 +74,8 @@ class GraphObjectBase():
 # Sync a group of GraphObjectBase items
 # sync methods: visible, clear
 class Group(GraphObjectBase,list):
-    def __init__(self,*args,visible=True):
-        list.__init__(self,*args)
+    def __init__(self,artistList:Iterable[GraphObjectBase],visible=True):
+        list.__init__(self,artistList)
         GraphObjectBase.__init__(self,visible=visible)
         self._setVisibleInternal(visible=visible)
         
@@ -78,56 +84,90 @@ class Group(GraphObjectBase,list):
             member.setVisibleMask(visible)
     
     # clear all artist in the list from the canvas    
+    def update(self):
+        for member in self:
+            member.update()
+
+    # clear all artist in the list from the canvas    
     def clear(self):
         for member in self:
             member.clear()
         del self[:]
 
-# Graphical object for artist
-# line=matplotlib.lines.Line2D object
-# canvas: matplotlib canvas
 class GraphObject(GraphObjectBase,QtCore.QObject):
-    _canvas=None
-    _artist=None
+    '''
+    An container for matplotlib artist
+    '''
+    __canvas=None
+    __artist=None
     
-    def __init__(self, canvas:MPLCanvas, visible=True):
-        self._canvas=canvas
+    def __init__(self, canvas:MPLCanvas, visible:bool=True):
+        '''
+        An container for matplotlib artist
+        :param canvas: The canvas storing the artist
+        :type canvas: MPLCanvas
+        :param visible: Set visible of the artist
+        :type visible: bool
+        '''
+        self.__canvas=canvas
         QtCore.QObject.__init__(self,canvas)
         GraphObjectBase.__init__(self,visible=visible)
 
         # Plot only when visible
         if visible == True:
-            self._artist=self._initilizePlot()
+            self.__artist=self._initilizePlot()
         else:
-            self._artist=None
+            self.__artist=None
 
     # return: matplotlib artist
-    def _initilizePlot(self):
-        raise NotImplementedError("GraphObjectBase._initilize has to be implemented")
+    def _initilizePlot(self)->Artist:
+        '''
+        Create the plot. Implimented by the child
+        This is called when a new artist is requested
+        The function returns the new MPL artist ploted on the canvas
+        @return: The new MPL artist
+        '''
+        #raise NotImplementedError("GraphObjectBase._initilize has to be implemented")
+        pass
 
-    # artist: matplotlib artist
-    def _updatePlot(self, artist):
-        raise NotImplementedError("GraphObjectBase._updatePlot has to be implemented")
+    def _updatePlot(self, artist:Artist)->Artist:
+        '''
+        Update the plot. Implimented by the child
+        This is called when the artist needs to be updated
+        The child updates the input MPL artist and returns the updated MPL artist
+        The input and output can be the same
+        :param artist: The original MPL artist
+        :type artist: matplotlib.artist
+        @return: The updated MPL artist
+        '''
+        #raise NotImplementedError("GraphObjectBase._updatePlot has to be implemented")
+        pass
 
-    def _clearPlot(self, artist):
+    def _clearPlot(self, artist:Artist):
+        '''
+        Clear the plot. Implimented by the child
+        This is called before the artist is removed
+        :param artist: The artist to be clear
+        :type artist: matplotlib.artist
+        '''
         pass
 
     @QtCore.pyqtSlot()
     def update(self):
-        if self._artist is not None:
-            self._updatePlot(self._artist)
-            self._canvas.update()
+        if self.__artist is not None:
+            self.__artist=self._updatePlot(self.__artist)
+            self.__canvas.update()
         elif self._visible == True and self._visibleMask == True:
-            self._artist=self._initilizePlot()
-            self._canvas.update()
+            self.__artist=self._initilizePlot()
+            self.__canvas.update()
 
     # canvas
     # useless?
     def getCanvas(self):
-        return self._canvas
+        return self.__canvas
     @QtCore.pyqtSlot(FigureCanvas)
     def setCanvas(self,canvas):
-        self._canvas=canvas
+        self.__canvas=canvas
     canvas=property(
         lambda self: self.getCanvas(), 
         lambda self, val: self.setCanvas(val)
@@ -135,19 +175,19 @@ class GraphObject(GraphObjectBase,QtCore.QObject):
         
     # visible
     def _setVisibleInternal(self,visible):
-        if self._artist is not None:
-            self._artist.set_visible(visible)
-            self._canvas.update()
+        if self.__artist is not None:
+            self.__artist.set_visible(visible)
+            self.__canvas.update()
         elif visible == True:
-            self._artist=self._initilizePlot()
-            self._canvas.update()
+            self.__artist=self._initilizePlot()
+            self.__canvas.update()
         
     # artist
     # useless?
     def getArtist(self):
-        return self._artist
+        return self.__artist
     def setArtist(self, curve):
-        self._artist=curve
+        self.__artist=curve
     artist=property(
         lambda self: self.getArtist(), 
         lambda self, val: self.setArtist(val)
@@ -155,11 +195,11 @@ class GraphObject(GraphObjectBase,QtCore.QObject):
 
     # clear the artist from the canvas    
     def clear(self):
-        if self._artist is not None:
-            self._clearPlot(self._artist)
-            self._artist.remove()
-            self._artist=None
-            self._canvas.update()
+        if self.__artist is not None:
+            self._clearPlot(self.__artist)
+            self.__artist.remove()
+            self.__artist=None
+            self.__canvas.update()
             
 def generateSample(axis):
     l,r = axis.get_xlim()

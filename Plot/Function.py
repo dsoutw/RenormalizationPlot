@@ -66,12 +66,12 @@ class Function(GraphObject):
     def _updatePlot(self,artist):
         artist.set_xdata(self._sample)
         artist.set_ydata(self.function(self._sample))
+        return artist
 
     def _clearPlot(self, artist):
         if self._xEventId != None:
             self._axis.callbacks.disconnect(self._xEventId)
             self._xEventId=None
-        GraphObject._clearPlot(self, artist)
 
     # function
     def getFunction(self):

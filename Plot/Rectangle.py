@@ -38,6 +38,7 @@ class Rectangle(GraphObject):
 
     def _updatePlot(self,artist):
         artist.set_bounds(*self.bounds)
+        return artist
 
     # function
     def getBounds(self):
