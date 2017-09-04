@@ -1,7 +1,7 @@
 from PyQt5 import QtCore, QtWidgets # Import the PyQt4 module we'll need
 import sys # We need sys so that we can pass argv to QApplication
 
-from Plot import PlotWindow # This file holds our MainWindow and all design related things
+from PlotWindow import PlotWindow # This file holds our MainWindow and all design related things
                     # it also keeps events etc that we defined in Qt Designer
 
 from scipy import optimize
@@ -12,7 +12,7 @@ from matplotlib import (cm,colors)
 
 # renormalization 
 from Unimodal import Unimodal
-from PlotCurve import (FunctionG,VerticalLineG,RectangleG,GroupG,TicksG,ContourG)
+import Plot
         
 class PlotUnimodalWindow(PlotWindow):
     _func=None
@@ -42,19 +42,16 @@ class PlotUnimodalWindow(PlotWindow):
     # User input
     # bug: does not update(remove) contour plot when deep level period is changed
     @QtCore.pyqtSlot(int)
-    def setPeriod(self, period:int):
+    def setPeriod(self, period):
         self.f_unimodal_p.setFunction(lambda x: self._func.iterates(x,period))
         super().setPeriod(period)
 
     def getPeriod(self):
-        return super.getPeriod()
-
-    period=property(setPeriod,getPeriod)
+        return super().getPeriod()
 
     # unimodal map for the plot
     def getFunction(self)->Unimodal:
         return self._func
-
     @QtCore.pyqtSlot(Unimodal)
     def setFunction(self, func:Unimodal):
         self._func = func
@@ -64,8 +61,10 @@ class PlotUnimodalWindow(PlotWindow):
         self.canvas.setUpdatesEnabled(True)
 
         self._updateRenormalizable()
-
-    function=property(getFunction, setFunction)
+    function=property(
+        lambda self: self.getFunction(), 
+        lambda self, func: self.setFunction(func)
+        )
 
     # Stores the renormalized function
     _rFunc=None
@@ -77,7 +76,7 @@ class PlotUnimodalWindow(PlotWindow):
             func_renormalize=self._func.renomalize(period)
         #except RuntimeError as e:
         except BaseException as e:
-            print("Unable to renormalize at level ",str(self._level))
+            print("Unable to renormalize at level ",str(self.level))
             print("Parameter ",str(Setting.parameterValue))
             print(str(e))
             return False
@@ -105,8 +104,8 @@ class PlotUnimodalWindow(PlotWindow):
         if self._renormalize(period) == False:
             return None
 
-        rChild=PlotUnimodalWindow(self._rFunc, self._level+1, self)
-        rChild.setWindowTitle("Level "+str(self._level+1))
+        rChild=PlotUnimodalWindow(self._rFunc, self.level+1, self)
+        rChild.setWindowTitle("Level "+str(self.level+1))
         rChild.setAttribute(QtCore.Qt.WA_DeleteOnClose)
         rChild.setParent(None)
         
@@ -144,7 +143,7 @@ class PlotUnimodalWindow(PlotWindow):
 
     # plot graphs for current level
     def _func_p(self, x):
-        for i in range(self._period):
+        for i in range(self.period):
             x=self._func(x)
         return x
     
@@ -170,20 +169,20 @@ class PlotUnimodalWindow(PlotWindow):
     # return: function, second iterate, multiple iterates, diagonal
     def _plotCurrentLevelGraphs(self):
         # Draw unimodal map        
-        self.f_unimodal = FunctionG(self.canvas,self._func,lw=1)
+        self.f_unimodal = Plot.Function(self.canvas,self._func,lw=1)
 
         # Draw second iterate
-        self.f_unimodal_2 = FunctionG(self.canvas,lambda x:self._func(self._func(x)),visible=Setting.figureSecondIterate,lw=1)
+        self.f_unimodal_2 = Plot.Function(self.canvas,lambda x:self._func(self._func(x)),visible=Setting.figureSecondIterate,lw=1)
         self.secondIterateCheckBox.setChecked(Setting.figureSecondIterate)
         self.secondIterateCheckBox.toggled.connect(self.f_unimodal_2.setVisible)
 
         # Draw diagonal line
-        self.f_diagonal = FunctionG(self.canvas,lambda x:x,visible=Setting.figureDiagonal,lw=1)
+        self.f_diagonal = Plot.Function(self.canvas,lambda x:x,visible=Setting.figureDiagonal,lw=1)
         self.diagonalCheckBox.setChecked(Setting.figureDiagonal)
         self.diagonalCheckBox.toggled.connect(self.f_diagonal.setVisible)
         
         # Draw multiple iterates 
-        self.f_unimodal_p = FunctionG(self.canvas,self._func_p,visible=Setting.figureMultipleIterate,lw=1)
+        self.f_unimodal_p = Plot.Function(self.canvas,self._func_p,visible=Setting.figureMultipleIterate,lw=1)
         self.iteratedGraphCheckBox.setChecked(Setting.figureMultipleIterate)
         self.iteratedGraphCheckBox.toggled.connect(self.f_unimodal_p.setVisible)
 
@@ -200,23 +199,23 @@ class PlotUnimodalWindow(PlotWindow):
     def _plotCurrentLevelOrbits(self):
         # Draw beta(0) points
         # Draw b
-        self.f_b=VerticalLineG(self.canvas,self._func.p_b,color='gray',lw=0.5)
+        self.f_b=Plot.VerticalLine(self.canvas,self._func.p_b,color='gray',lw=0.5)
         # Draw B
-        self.f_B=VerticalLineG(self.canvas,self._func.p_B,color='gray',lw=0.5)
+        self.f_B=Plot.VerticalLine(self.canvas,self._func.p_B,color='gray',lw=0.5)
         # Draw B2
-        self.f_B2=VerticalLineG(self.canvas,self._func.p_B2,color='gray',lw=0.5)
+        self.f_B2=Plot.VerticalLine(self.canvas,self._func.p_B2,color='gray',lw=0.5)
         
         # Set ticks
-        self.f_Alpha0Ticks=TicksG(self.canvas,"top",
+        self.f_Alpha0Ticks=Plot.Ticks(self.canvas,"top",
                                 [-1,1,self._func.p_c],
                                 [r"$\alpha(0)$",r"$\overline{\alpha(0)}$",r"$c$"]
                                 )
         
-        self.f_Beta0Ticks=TicksG(self.canvas,"top",
+        self.f_Beta0Ticks=Plot.Ticks(self.canvas,"top",
                                 [self._func.p_b,self._func.p_B,self._func.p_B2],
                                 [r"$\beta^{0}$",r"$\overline{\beta^{1}}$"]
                                 )
-        self.f_Beta0=GroupG([self.f_b,self.f_B,self.f_B2,self.f_Beta0Ticks],visible=Setting.figureBeta0)
+        self.f_Beta0=Plot.Group([self.f_b,self.f_B,self.f_B2,self.f_Beta0Ticks],visible=Setting.figureBeta0)
         self.beta0CheckBox.setChecked(Setting.figureBeta0)
         self.beta0CheckBox.toggled.connect(self.f_Beta0.setVisible)
 
@@ -240,15 +239,15 @@ class PlotUnimodalWindow(PlotWindow):
     # Plot the intervals that defines the self-return map
     def _plotRenormalizableGraph(self):
         if self._isRenormalizableGraphPlotted != True:
-            period=self._period
+            period=self.period
             f_selfReturnBoxesList=[None]*period
             for t in range(period):
-                f_selfReturnBoxesList[t]=RectangleG(self.canvas,
+                f_selfReturnBoxesList[t]=Plot.Rectangle(self.canvas,
                         self._func.p_a1[period][t], self._func.p_a1[period][t], #x,y
                         self._func.p_A1[period][t]-self._func.p_a1[period][t], self._func.p_A1[period][t]-self._func.p_a1[period][t], #width, height
                         visible=True, color='gray', lw=1, fill=None
                     )
-            self.f_selfReturnBoxes=GroupG(f_selfReturnBoxesList)
+            self.f_selfReturnBoxes=Plot.Group(f_selfReturnBoxesList)
             self.selfReturnCheckBox.toggled.connect(self.f_selfReturnBoxes.setVisible)
             self._isRenormalizableGraphPlotted=True
         else:
@@ -257,7 +256,7 @@ class PlotUnimodalWindow(PlotWindow):
 
     def _updateRenormalizableGraph(self):
         if self._isRenormalizableGraphPlotted == True:
-            period=self._period
+            period=self.period
             for t in range(period):
             # Set the self return intervals
                 self.f_selfReturnBoxes[t].setBounds(
@@ -293,7 +292,7 @@ class PlotUnimodalWindow(PlotWindow):
         y1=self._r_si(y)
             
         def solve(x):
-            return self._func.iterates(x,self._period-1)-y1
+            return self._func.iterates(x,self.period-1)-y1
         return optimize.brenth(solve, self._p_a1Orbit[0],self._p_A1Orbit[0])
 
     # Periodic intervals and levels 
@@ -305,9 +304,9 @@ class PlotUnimodalWindow(PlotWindow):
     # Find the periodic intervals
     def _findPeriodicInterval(self):
         # build period intervals from the next level
-        self._p_a1Orbit=self._func.p_a1[self._period]
-        self._p_A1Orbit=self._func.p_A1[self._period]
-        self._p_b1Orbit=self._func.orbit(self._func(self._r_si(self._rFunc.p_b)),self._period)
+        self._p_a1Orbit=self._func.p_a1[self.period]
+        self._p_A1Orbit=self._func.p_A1[self.period]
+        self._p_b1Orbit=self._func.orbit(self._func(self._r_si(self._rFunc.p_b)),self.period)
         self._p_B1Orbit=self._func.reflexOrbit(self._p_b1Orbit)
 
     def _findRescalingLevels(self):
@@ -341,17 +340,17 @@ class PlotUnimodalWindow(PlotWindow):
             self.canvas.setUpdatesEnabled(False)
             
             self._findPeriodicInterval()
-            f_a1List=[VerticalLineG(self.canvas, self._p_a1Orbit[i], visible=True) for i in range(self._period)]
-            f_A1List=[VerticalLineG(self.canvas, self._p_A1Orbit[i], visible=True) for i in range(self._period)]
-            self.f_aA1List=GroupG(f_a1List+f_A1List,visible=self.alpha1CheckBox.isChecked())
+            f_a1List=[Plot.VerticalLine(self.canvas, self._p_a1Orbit[i], visible=True) for i in range(self.period)]
+            f_A1List=[Plot.VerticalLine(self.canvas, self._p_A1Orbit[i], visible=True) for i in range(self.period)]
+            self.f_aA1List=Plot.Group(f_a1List+f_A1List,visible=self.alpha1CheckBox.isChecked())
             self.alpha1CheckBox.toggled.connect(self.f_aA1List.setVisible)
     
-            f_b1List=[VerticalLineG(self.canvas, self._p_b1Orbit[i], visible=True) for i in range(self._period)]
-            f_B1List=[VerticalLineG(self.canvas, self._p_B1Orbit[i], visible=True) for i in range(self._period)]
-            self.f_bB1List=GroupG(f_b1List+f_B1List,visible=self.beta1CheckBox.isChecked())
+            f_b1List=[Plot.VerticalLine(self.canvas, self._p_b1Orbit[i], visible=True) for i in range(self.period)]
+            f_B1List=[Plot.VerticalLine(self.canvas, self._p_B1Orbit[i], visible=True) for i in range(self.period)]
+            self.f_bB1List=Plot.Group(f_b1List+f_B1List,visible=self.beta1CheckBox.isChecked())
             self.beta1CheckBox.toggled.connect(self.f_bB1List.setVisible)
             
-            self.f_level1=GroupG([self.f_aA1List,self.f_bB1List],visible=self.partitionButton.isChecked())
+            self.f_level1=Plot.Group([self.f_aA1List,self.f_bB1List],visible=self.partitionButton.isChecked())
             self.partitionButton.toggled.connect(self.f_level1.setVisible)
             
             self.canvas.setUpdatesEnabled(True)
@@ -418,7 +417,7 @@ class PlotUnimodalWindow(PlotWindow):
                     yield x
                     x += jump
             
-            self.f_rLevel = ContourG(self.canvas, _contourQRLevel, visible=self.levelButton.isChecked(),levels=list(frange(-0.5,Setting.figureMaxLevels+0.6,1)),cmap=cm.get_cmap("gray_r"),norm=colors.Normalize(vmin=0,vmax=10))
+            self.f_rLevel = Plot.Contour(self.canvas, _contourQRLevel, visible=self.levelButton.isChecked(),levels=list(frange(-0.5,Setting.figureMaxLevels+0.6,1)),cmap=cm.get_cmap("gray_r"),norm=colors.Normalize(vmin=0,vmax=10))
             self.levelButton.toggled.connect(self.f_rLevel.setVisible)
             
             self._isDeepLevelOrbitsPlotted=True
