@@ -44,6 +44,7 @@ class PlotUnimodalWindow(PlotWindow):
     @QtCore.pyqtSlot(int)
     def setPeriod(self, period):
         self.f_unimodal_p.setFunction(lambda x: self._func.iterates(x,period))
+        self._updateRenormalizable()
         super().setPeriod(period)
 
     def getPeriod(self):

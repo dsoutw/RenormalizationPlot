@@ -85,7 +85,6 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindowUI.Ui_plotWindow):
         if period != self.__period:
             self.__period=period
             self.periodSpinBox.setValue(period)
-            self._updateRenormalizable()
     def getPeriod(self):
         return self.__period
     period=property(
@@ -185,7 +184,7 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindowUI.Ui_plotWindow):
     # close child renormalization window
         if self._rChild != None:
             self.closeWindow(self._rChild)
-            self._rChildClosed()
+            #self._rChildClosed()
 
     # called when the child is closed.
     #isThisClosed=False

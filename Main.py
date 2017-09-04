@@ -48,25 +48,25 @@ class MainWindow(QtWidgets.QMainWindow, MainWindowUI.Ui_mainWindow):
         self.parameterZOutButton.clicked.connect(self.__parameterZoomOut)
         
         # overwrite the window utilities to support mdi window
-        def openMdiWindow(parent,child):
-            child.mdiSubWindow=self.mdiArea.addSubWindow(child,
+        def openMdiWindow(sender,window):
+            window.mdiSubWindow=self.mdiArea.addSubWindow(window,
                     QtCore.Qt.SubWindow | QtCore.Qt.CustomizeWindowHint | QtCore.Qt.WindowSystemMenuHint |
                     QtCore.Qt.WindowMinMaxButtonsHint | QtCore.Qt.WindowCloseButtonHint)
-            child.mdiSubWindow.show()
-        def closeMdiWindow(parent,child):
+            window.mdiSubWindow.show()
+        def closeMdiWindow(sender,window):
             #print("Close window ", child._level)
-            self.mdiArea.removeSubWindow(child)
             
             #close event does not work
-            child.closeRChild()
-            if child.__rParent is not None:
-                child.__rParent._rChildClosed()
+            #child.closeRChild()
+            #if child.__rParent is not None:
+            #    child.__rParent._rChildClosed()
                 
-            child.mdiSubWindow.close()
-            child.mdiSubWindow=None
-        def focusMdiWindow(parent,child):
-            child.mdiSubWindow.show()
-            self.mdiArea.setActiveSubWindow(child.mdiSubWindow)
+            window.mdiSubWindow.close()
+            #self.mdiArea.removeSubWindow(window.mdiSubWindow)
+            window.mdiSubWindow=None
+        def focusMdiWindow(sender,window):
+            window.mdiSubWindow.show()
+            self.mdiArea.setActiveSubWindow(window.mdiSubWindow)
         PlotUnimodalWindow.openWindow=openMdiWindow
         PlotUnimodalWindow.closeWindow=closeMdiWindow
         PlotUnimodalWindow.focusWindow=focusMdiWindow
