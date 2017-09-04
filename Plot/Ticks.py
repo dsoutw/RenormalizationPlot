@@ -105,8 +105,9 @@ class Ticks(ArtistBase):
             artist.set_ylim(*yLimit)
         return artist
     
-    def _clearPlotBefore(self, artist):
+    def _clearPlot(self, artist):
         self.canvas.removeAxes(artist)
+        super().__clearPlot(artist)
 
     def getTicks(self):
         return self._ticks

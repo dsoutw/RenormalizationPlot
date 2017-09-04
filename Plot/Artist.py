@@ -12,7 +12,7 @@ from PyQt5 import QtCore
 
 class ArtistBase(GraphObjectBase,QtCore.QObject):
     '''
-    An container for matplotlib artist
+    An abstract container for matplotlib artist
     '''
     __canvas=None
     __artist=None
@@ -20,7 +20,7 @@ class ArtistBase(GraphObjectBase,QtCore.QObject):
     
     def __init__(self, canvas:MPLCanvas, visible:bool=True):
         '''
-        An container for matplotlib artist
+        An abstract container for matplotlib artist
         :param canvas: The canvas storing the artist
         :type canvas: MPLCanvas
         :param visible: Set visible of the artist
@@ -61,14 +61,15 @@ class ArtistBase(GraphObjectBase,QtCore.QObject):
         raise NotImplementedError("GraphObjectBase._updatePlot has to be implemented")
         pass
 
-    def _clearPlotBefore(self, artist:MPLArtist):
+    def _clearPlot(self, artist:MPLArtist):
         '''
-        Clear the plot. Implimented by the child
-        This is called before the artist is removed
+        Clear the plot.
+        The default behavior is to call artist.remove
+        Override this method if want to change the default behavior
         :param artist: The artist to be clear
         :type artist: matplotlib.artist
         '''
-        pass
+        artist.remove()
 
     @QtCore.pyqtSlot()
     def update(self):
@@ -124,8 +125,7 @@ class ArtistBase(GraphObjectBase,QtCore.QObject):
     # clear the artist from the canvas    
     def clear(self):
         if self.__artist is not None:
-            self._clearPlotBefore(self.__artist)
-            self.__artist.remove()
+            self._clearPlot(self.__artist)
             self.__artist=None
             self.__canvas.update()
             

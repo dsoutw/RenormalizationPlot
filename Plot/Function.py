@@ -46,6 +46,7 @@ class Function(ArtistBase):
     def _initilizePlot(self):
         artist = self.__plot(self._axis)
 
+        # update the resolution automatically when the plot is zoomed
         def on_xlims_change(axis):
             self._sample = generateSample(axis)
             self.update()
@@ -68,10 +69,11 @@ class Function(ArtistBase):
         artist.set_ydata(self.function(self._sample))
         return artist
 
-    def _clearPlotBefore(self, artist):
+    def _clearPlot(self, artist):
         if self._xEventId != None:
             self._axis.callbacks.disconnect(self._xEventId)
             self._xEventId=None
+        super().__clearPlot(artist)
 
     # function
     def getFunction(self):
