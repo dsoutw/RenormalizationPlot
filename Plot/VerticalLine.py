@@ -3,10 +3,10 @@ Created on 2017/9/3
 
 @author: dsou
 '''
-from Plot.GraphObject import GraphObject
+from Plot.Artist import ArtistBase
 from PyQt5 import QtCore
 
-class VerticalLine(GraphObject):
+class VerticalLine(ArtistBase):
     def __init__(self, canvas, xValue, axis=None, visible=True, **kwargs):
         '''
         Plot a vertical line on a canvas

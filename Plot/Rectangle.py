@@ -4,10 +4,10 @@ Created on 2017/9/3
 @author: dsou
 '''
 
-from Plot.GraphObject import GraphObject
+from Plot.Artist import ArtistBase
 import matplotlib.patches as patches
 
-class Rectangle(GraphObject):
+class Rectangle(ArtistBase):
     def __init__(self, canvas, xValue, yValue, width, height, axis=None, visible=True, **kwargs):
         self._xValue=xValue
         self._yValue=yValue

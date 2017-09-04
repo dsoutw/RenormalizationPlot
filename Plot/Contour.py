@@ -4,7 +4,8 @@ Created on 2017/9/3
 @author: dsou
 '''
 
-from Plot.GraphObject import GraphObjectBase,generateSample
+from Plot.GraphObject import GraphObjectBase
+from Plot.Artist import generateSample
 from PyQt5 import QtCore
 import numpy as np
 import matplotlib.ticker as ticker

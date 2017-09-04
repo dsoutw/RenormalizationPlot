@@ -4,12 +4,12 @@ Created on 2017/9/3
 @author: dsou
 '''
 
-from Plot.GraphObject import GraphObject
+from Plot.Artist import ArtistBase
 import random
 
 # todo: sync axes
 # https://stackoverflow.com/questions/4999014/matplotlib-pyplot-how-to-zoom-subplots-together-and-x-scroll-separately
-class Ticks(GraphObject):
+class Ticks(ArtistBase):
     positionValues = ["left", "right", "top", "bottom"]
     xPosition = ["top", "bottom"]
     yPosition = ["left", "right"]
@@ -105,7 +105,7 @@ class Ticks(GraphObject):
             artist.set_ylim(*yLimit)
         return artist
     
-    def _clearPlot(self, artist):
+    def _clearPlotBefore(self, artist):
         self.canvas.removeAxes(artist)
 
     def getTicks(self):

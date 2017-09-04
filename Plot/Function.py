@@ -4,9 +4,9 @@ Created on 2017/9/3
 @author: dsou
 '''
 
-from Plot.GraphObject import GraphObject,generateSample
+from Plot.Artist import ArtistBase,generateSample
 
-class Function(GraphObject):
+class Function(ArtistBase):
     '''
     Plot a function
     '''
@@ -68,7 +68,7 @@ class Function(GraphObject):
         artist.set_ydata(self.function(self._sample))
         return artist
 
-    def _clearPlot(self, artist):
+    def _clearPlotBefore(self, artist):
         if self._xEventId != None:
             self._axis.callbacks.disconnect(self._xEventId)
             self._xEventId=None
