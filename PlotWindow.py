@@ -1,6 +1,6 @@
 from PyQt5 import QtCore, QtWidgets # Import the PyQt4 module we'll need
 
-import PlotWindow # This file holds our MainWindow and all design related things
+import PlotWindowUI # This file holds our MainWindow and all design related things
                     # it also keeps events etc that we defined in Qt Designer
 
 # Matplotlib library
@@ -10,21 +10,21 @@ import matplotlib as mpl
     
 import Setting
         
-class PlotWindow(QtWidgets.QMainWindow, PlotWindow.Ui_plotWindow):
-    _level=None
-    _rParent=None
-    _period:int=2
+class PlotWindow(QtWidgets.QMainWindow, PlotWindowUI.Ui_plotWindow):
+    __level=None
+    __rParent=None
+    __period:int=2
     
     # Arguments
     # func: unimodal class
     # level: the level of renormalization
     # rParent: a unimodal map for the previous level
-    def __init__(self, level:int = 0, rParent:PlotWindow = None):
+    def __init__(self, level:int = 0, rParent = None):
         #func: Unimodal
         #level: nonnegative integer
-        self._level=level
-        self._rParent=rParent
-        self._period=2
+        self.__level=level
+        self.__rParent=rParent
+        self.__period=2
 
         super().__init__(rParent)
         self.setupUi(self)  # This is defined in design.py file automatically
@@ -57,7 +57,7 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindow.Ui_plotWindow):
         self.canvas.setUpdatesEnabled(True)
 
         # setup renormalizable features
-        self.periodSpinBox.setValue(self._period)
+        self.periodSpinBox.setValue(self.__period)
         self.selfReturnCheckBox.setChecked(Setting.figureSelfReturn)
         self.periodSpinBox.valueChanged.connect(self.setPeriod)
         self._rChild=None
@@ -70,34 +70,46 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindow.Ui_plotWindow):
         # setup level grapgs
         self.levelBox.setEnabled(False)
 
+    def closeEvent(self, evnt):
     # inherited from QtWidgets.QMainWindow
     # close child renormalization when the window is closed
-    def closeEvent(self, evnt):
-        #print("close event ", self._level)
-        if self._rParent is not None:
-            self._rParent._rChildClosed()
+        if self.__rParent is not None:
+            self.__rParent._rChildClosed()
         self.closeRChild()
         super().closeEvent(evnt)
+
+    # Properties
         
-    # UI callbacks
     @QtCore.pyqtSlot(int)
     def setPeriod(self, period):
-        if period != self._period:
-            self._period=period
+        if period != self.__period:
+            self.__period=period
             self.periodSpinBox.setValue(period)
             self._updateRenormalizable()
-    
     def getPeriod(self):
-        return self._period
-    
-    period=property(setPeriod,getPeriod)
+        return self.__period
+    period=property(
+        lambda self: self.getPeriod(), 
+        lambda self, func: self.setPeriod(func)
+        )
+
+    @QtCore.pyqtSlot(int)
+    def setLevel(self, level):
+        self.__level=level
+    def getLevel(self):
+        return self.__level
+    level=property(
+        lambda self: self.getLevel(), 
+        lambda self, func: self.setLevel(func)
+        )
+
     
     def _renormalizable(self, period):
         raise NotImplementedError("PlotWindow._renormalizable")
 
     # update status of renormlaizable
     def _updateRenormalizable(self):
-        if self._renormalizable(self._period) == True:
+        if self._renormalizable(self.__period) == True:
             self.renormalizableResultLabel.setText("Yes")
             self.renormalizeButton.setEnabled(True)
             self.selfReturnLabel.setEnabled(True)
@@ -105,7 +117,7 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindow.Ui_plotWindow):
 
             self._plotRenormalizableGraph()
             if self._rChild != None:
-                if self._updateRChild(self._rChild, self._period)==True:
+                if self._updateRChild(self._rChild, self.__period)==True:
                     # plot sub-structures if possible
                     self._updateRChildGraph()
                 else:
@@ -126,17 +138,30 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindow.Ui_plotWindow):
     # Stores the child window 
     _rChild=None
 
-    def _newRChild(self, period):
+    def _newRChild(self, period:int):
+        '''
+        Create a renormalized function window
+        :param period: The period of renormalization
+        :type period: int
+        @return: The new window. Return Null if false
+        @type return: PlotWindow
+        '''
         raise NotImplementedError("PlotWindow._renormalizable")
 
-    def _updateRChild(self, period):
+    def _updateRChild(self, period:int):
+        '''
+        Update the renormalized function window
+        Called when the renormalized function is modified
+        :param period: The period of renormalization
+        :type period: int
+        '''
         raise NotImplementedError("PlotWindow._renormalizable")
     
-    # open child renormalization window
     def openRChild(self):
+    # open child renormalization window
         # create window if not exist then renormalize
         if self._rChild == None:
-            self._rChild =self._newRChild(self._period)
+            self._rChild =self._newRChild(self.__period)
             if self._rChild == None:
                 return
 
@@ -148,17 +173,16 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindow.Ui_plotWindow):
             
             # Notify the ancestors that the unimodal map is renormalized
             level=2
-            ancestor=self._rParent
+            ancestor=self.__rParent
             while ancestor is not None:
                 ancestor._descendantRenormalized(level,self._rChild)
-                ancestor=ancestor._rParent
+                ancestor=ancestor.__rParent
                 level=level+1
         else:
             self.focusWindow(self._rChild)
-
         
-    # close child renormalization window
     def closeRChild(self):
+    # close child renormalization window
         if self._rChild != None:
             self.closeWindow(self._rChild)
             self._rChildClosed()

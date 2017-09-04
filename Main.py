@@ -2,7 +2,7 @@ from PyQt5 import QtCore, QtWidgets, QtGui # Import the PyQt4 module we'll need
 import sys # We need sys so that we can pass argv to QApplication
 
 import Setting
-import MainWindow # This file holds our MainWindow and all design related things
+import MainWindowUI # This file holds our MainWindow and all design related things
                     # it also keeps events etc that we defined in Qt Designer
 from PlotUnimodal import PlotUnimodalWindow
 from Unimodal import Unimodal
@@ -14,7 +14,7 @@ def parameterToPercentage(value):
 def percentageToParameter(percentage):
     return float(Setting.parameterMin)+(percentage*(float(Setting.parameterMax)-float(Setting.parameterMin)))
 
-class MainWindow(QtWidgets.QMainWindow, MainWindow.Ui_mainWindow):
+class MainWindow(QtWidgets.QMainWindow, MainWindowUI.Ui_mainWindow):
     
     def __init__(self):
         # Explaining super is out of the scope of this article
@@ -59,8 +59,8 @@ class MainWindow(QtWidgets.QMainWindow, MainWindow.Ui_mainWindow):
             
             #close event does not work
             child.closeRChild()
-            if child._rParent is not None:
-                child._rParent._rChildClosed()
+            if child.__rParent is not None:
+                child.__rParent._rChildClosed()
                 
             child.mdiSubWindow.close()
             child.mdiSubWindow=None
