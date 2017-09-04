@@ -63,9 +63,9 @@ class Function(GraphObject):
         else:
             return None
 
-    def _updatePlot(self,curve):
-        curve.set_xdata(self._sample)
-        curve.set_ydata(self.function(self._sample))
+    def _updatePlot(self,artist):
+        artist.set_xdata(self._sample)
+        artist.set_ydata(self.function(self._sample))
 
     def _clearPlot(self, artist):
         if self._xEventId != None:

@@ -5,6 +5,7 @@ Created on 2017/9/3
 '''
 
 from PyQt5 import QtCore
+from Plot.MPLCanvas import MPLCanvas
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 import numpy as np
 
@@ -89,7 +90,7 @@ class GraphObject(GraphObjectBase,QtCore.QObject):
     _canvas=None
     _artist=None
     
-    def __init__(self, canvas, visible=True):
+    def __init__(self, canvas:MPLCanvas, visible=True):
         self._canvas=canvas
         QtCore.QObject.__init__(self,canvas)
         GraphObjectBase.__init__(self,visible=visible)

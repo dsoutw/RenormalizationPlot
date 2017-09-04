@@ -40,8 +40,8 @@ class VerticalLine(GraphObject):
         else:
             return None
 
-    def _updatePlot(self,curve):
-        curve.set_xdata([self.xValue,self.xValue])
+    def _updatePlot(self,artist):
+        artist.set_xdata([self.xValue,self.xValue])
 
     # function
     def getXValue(self):

@@ -150,16 +150,11 @@ class PlotUnimodalWindow(PlotWindow):
     # Plot Functions
     def _plotCurrentLevel(self):
         self.canvas.axes.axis([-1, 1, -1, 1])
-        self.canvas.axes.set(adjustable='box-forced',xlim=[-1,1], ylim=[-1,1],aspect='equal')
 
         self._plotCurrentLevelGraphs()
         self._plotCurrentLevelOrbits()
-
+        self.canvas.setAxesOptions(adjustable='box-forced',xlim=[-1,1], ylim=[-1,1],aspect='equal')
         #self.canvas.fig.tight_layout()
-
-        #self.axes2.set(adjustable='box-forced',xlim=[-1,1], ylim=[-1,1],aspect='equal')
-        self.f_Alpha0Ticks.artist.set(adjustable='box-forced',xlim=[-1,1], ylim=[-1,1],aspect='equal')
-        self.f_Beta0Ticks.artist.set(adjustable='box-forced',xlim=[-1,1], ylim=[-1,1],aspect='equal')
 
 
     def _updateCurrentLevel(self):

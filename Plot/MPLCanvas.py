@@ -6,10 +6,12 @@ from matplotlib.figure import Figure
 
 class MPLCanvas(FigureCanvas):
     """Ultimately, this is a QWidget (as well as a FigureCanvasAgg, etc.)."""
+    __axesList=[]
 
     def __init__(self, rParent=None, width=4, height=4, dpi=100):
         self.fig = Figure(figsize=(width, height), dpi=dpi)
         self.axes = self.fig.add_subplot(111)
+        self.__axesList=[self.axes]
 
         self.compute_initial_figure()
 
@@ -52,9 +54,24 @@ class MPLCanvas(FigureCanvas):
                 self._updateDirty = False
         FigureCanvas.setUpdatesEnabled(self, enable)
         
-    #@QtCore.pyqtSlot(int, int, int, int)
-    #def update(self, x, y, w, h):
-    #    FigureCanvas.update(self, x, y, w, h)
+    __axesOptions={}
+    def setAxesOptions(self,**kwargs):
+        self.__axesOptions.update(kwargs)
+        for axes in self.__axesList:
+            axes.set(**kwargs)
+    def getAxesOptions(self):
+        return self.__axesOptions
+    axesOptions=property(
+        lambda self: self.getAxesOptions(), 
+        lambda self, **kwargs: self.setAxesOptions(**kwargs)
+        )
+    
+    def addAxes(self, axes):
+        axes.set(**self.axesOptions)
+        self.__axesList.append(axes)
+    
+    def removeAxes(self, axes):
+        self.__axesList.remove(axes)
         
     #def paintEvent(self, e):
     #    if self._updatePlot == True:

@@ -33,7 +33,9 @@ class Ticks(GraphObject):
         super().__init__(canvas, visible)
 
     def _initilizePlot(self):
-        return self.__plot(self._figure, self._axis)
+        artist = self.__plot(self._figure, self._axis)
+        self.canvas.addAxes(artist)
+        return artist
 
     def __plot(self, figure, axis):
         if self._position == "left":
@@ -90,18 +92,22 @@ class Ticks(GraphObject):
         else:
             return None
     
-    def _updatePlot(self,curve):
+    def _updatePlot(self,artist):
         if self._position in Ticks.xPosition:
-            xLimit=curve.get_xlim()
-            curve.set_xticks(self._ticks)
-            curve.set_xticklabels(self._ticksLabel)
-            curve.set_xlim(*xLimit)
+            xLimit=artist.get_xlim()
+            artist.set_xticks(self._ticks)
+            artist.set_xticklabels(self._ticksLabel)
+            artist.set_xlim(*xLimit)
         elif self._position in Ticks.yPosition:
-            yLimit=curve.get_ylim()
-            curve.set_yticks(self._ticks)
-            curve.set_yticklabels(self._ticksLabel)
-            curve.set_ylim(*yLimit)
+            yLimit=artist.get_ylim()
+            artist.set_yticks(self._ticks)
+            artist.set_yticklabels(self._ticksLabel)
+            artist.set_ylim(*yLimit)
     
+    def _clearPlot(self, artist):
+        self.canvas.removeAxes(artist)
+        super()._clearPlot(artist)
+
     def getTicks(self):
         return self._ticks
     def setTicks(self, ticks):
