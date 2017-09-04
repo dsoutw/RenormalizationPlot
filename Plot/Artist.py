@@ -16,6 +16,7 @@ class ArtistBase(GraphObjectBase,QtCore.QObject):
     '''
     __canvas=None
     __artist=None
+    __updateDirty=False
     
     def __init__(self, canvas:MPLCanvas, visible:bool=True):
         '''
@@ -32,6 +33,7 @@ class ArtistBase(GraphObjectBase,QtCore.QObject):
         # Plot only when visible
         if visible == True:
             self.__artist=self._initilizePlot()
+            self.__updateDirty=False
         else:
             self.__artist=None
 
@@ -71,10 +73,15 @@ class ArtistBase(GraphObjectBase,QtCore.QObject):
     @QtCore.pyqtSlot()
     def update(self):
         if self.__artist is not None:
-            self.__artist=self._updatePlot(self.__artist)
+            if self.isShowed():
+                self.__artist=self._updatePlot(self.__artist)
+                self.__updateDirty=False
+            else:
+                self.__updateDirty=True
             self.__canvas.update()
         elif self._visible == True and self._visibleMask == True:
             self.__artist=self._initilizePlot()
+            self.__updateDirty=False
             self.__canvas.update()
 
     # canvas
@@ -92,10 +99,15 @@ class ArtistBase(GraphObjectBase,QtCore.QObject):
     # visible
     def _setVisibleInternal(self,visible):
         if self.__artist is not None:
+            if visible and self.__updateDirty:
+                # Only update the contents when the plot is visible
+                self.__artist=self._updatePlot(self.__artist)
+                self.__updateDirty=False
             self.__artist.set_visible(visible)
             self.__canvas.update()
         elif visible == True:
             self.__artist=self._initilizePlot()
+            self.__updateDirty=False
             self.__canvas.update()
         
     # artist
