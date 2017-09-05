@@ -4,7 +4,7 @@ Created on 2017/9/3
 @author: dsou
 '''
 
-from Plot.GraphObject import GraphObjectBase
+from Plot.GraphObject import GraphObject
 from Plot.Artist import generateSample
 from PyQt5 import QtCore
 import numpy as np
@@ -12,7 +12,7 @@ import matplotlib.ticker as ticker
 
 # QuadContourSet is not inherted from artist
 # have to rewrite the base
-class Contour(GraphObjectBase,QtCore.QObject):
+class Contour(GraphObject,QtCore.QObject):
     _contour=None
     _cbaxes=None
     _cbar=None
@@ -22,7 +22,7 @@ class Contour(GraphObjectBase,QtCore.QObject):
         self._kwargs=kwargs
         self.__canvas=canvas
         QtCore.QObject.__init__(self,canvas)
-        GraphObjectBase.__init__(self,visible=visible)
+        GraphObject.__init__(self,visible=visible)
 
         # set sample points
         x = generateSample(self.__canvas.axes)

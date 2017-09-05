@@ -7,10 +7,10 @@ from matplotlib.artist import Artist as MPLArtist
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from Plot.MPLCanvas import MPLCanvas
 import numpy as np
-from Plot.GraphObject import GraphObjectBase
+from Plot.GraphObject import GraphObject
 from PyQt5 import QtCore
 
-class ArtistBase(GraphObjectBase,QtCore.QObject):
+class ArtistBase(GraphObject,QtCore.QObject):
     '''
     An abstract container for matplotlib artist
     '''
@@ -28,7 +28,7 @@ class ArtistBase(GraphObjectBase,QtCore.QObject):
         '''
         self.__canvas=canvas
         QtCore.QObject.__init__(self,canvas)
-        GraphObjectBase.__init__(self,visible=visible)
+        GraphObject.__init__(self,visible=visible)
 
         # Plot only when visible
         if visible == True:
@@ -45,7 +45,7 @@ class ArtistBase(GraphObjectBase,QtCore.QObject):
         The function returns the new MPL artist ploted on the canvas
         @return: The new MPL artist
         '''
-        raise NotImplementedError("GraphObjectBase._initilize has to be implemented")
+        raise NotImplementedError("GraphObject._initilize has to be implemented")
         pass
 
     def _updatePlot(self, artist:MPLArtist)->MPLArtist:
@@ -58,7 +58,7 @@ class ArtistBase(GraphObjectBase,QtCore.QObject):
         :type artist: matplotlib.artist
         @return: The updated MPL artist
         '''
-        raise NotImplementedError("GraphObjectBase._updatePlot has to be implemented")
+        raise NotImplementedError("GraphObject._updatePlot has to be implemented")
         pass
 
     def _clearPlot(self, artist:MPLArtist):
@@ -74,7 +74,7 @@ class ArtistBase(GraphObjectBase,QtCore.QObject):
     @QtCore.pyqtSlot()
     def update(self):
         if self.__artist is not None:
-            if self.isShowed():
+            if self.isShowed()==True:
                 self.__artist=self._updatePlot(self.__artist)
                 self.__updateDirty=False
             else:
@@ -124,7 +124,7 @@ class ArtistBase(GraphObjectBase,QtCore.QObject):
 
     # clear the artist from the canvas    
     def clear(self):
-        if self.__artist is not None:
+        if self.__artist != None:
             self._clearPlot(self.__artist)
             self.__artist=None
             self.__canvas.update()

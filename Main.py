@@ -4,7 +4,7 @@ import sys # We need sys so that we can pass argv to QApplication
 import Setting
 import MainWindowUI # This file holds our MainWindow and all design related things
                     # it also keeps events etc that we defined in Qt Designer
-from PlotUnimodal import PlotUnimodalWindow
+from UnimodalWindow import UnimodalWindow
 from Unimodal import Unimodal
 
 def parameterToPercentage(value):
@@ -67,12 +67,12 @@ class MainWindow(QtWidgets.QMainWindow, MainWindowUI.Ui_mainWindow):
         def focusMdiWindow(sender,window):
             window.mdiSubWindow.show()
             self.mdiArea.setActiveSubWindow(window.mdiSubWindow)
-        PlotUnimodalWindow.openWindow=openMdiWindow
-        PlotUnimodalWindow.closeWindow=closeMdiWindow
-        PlotUnimodalWindow.focusWindow=focusMdiWindow
+        UnimodalWindow.openWindow=openMdiWindow
+        UnimodalWindow.closeWindow=closeMdiWindow
+        UnimodalWindow.focusWindow=focusMdiWindow
 
         # Create the window for the original plot
-        self.__originalPlot=PlotUnimodalWindow(
+        self.__originalPlot=UnimodalWindow(
             Unimodal(lambda x:Setting.func(x,Setting.parameterValue),Setting.func_c(Setting.parameterValue)),
             0)
         self.__originalPlot.setWindowTitle("Original Function")

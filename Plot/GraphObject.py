@@ -7,7 +7,7 @@ Created on 2017/9/3
 from PyQt5 import QtCore
 from typing import Iterable
 
-class GraphObjectBase:
+class GraphObject:
     '''
     classdocs
     '''
@@ -38,7 +38,7 @@ class GraphObjectBase:
 
     def _setVisibleInternal(self,visible):
         # implimentation for visible if state changed
-        raise NotImplementedError("GraphObjectBase._setVisibleInternal has to be implemented")
+        raise NotImplementedError("GraphObject._setVisibleInternal has to be implemented")
         
     def getVisibleMask(self):
         return self._visibleMask
@@ -61,33 +61,50 @@ class GraphObjectBase:
 
     # update the graph from the screen
     def update(self):
-        raise NotImplementedError("GraphObjectBase.update has to be implemented")
+        raise NotImplementedError("GraphObject.update has to be implemented")
 
     # clear the graph from the screen
     def clear(self):
-        raise NotImplementedError("GraphObjectBase.clear has to be implemented")
+        raise NotImplementedError("GraphObject.clear has to be implemented")
 
-# Sync a group of GraphObjectBase items
+# Sync a group of GraphObject items
 # sync methods: visible, clear
-class Group(GraphObjectBase,list):
-    def __init__(self,artistList:Iterable[GraphObjectBase],visible=True):
-        list.__init__(self,artistList)
-        GraphObjectBase.__init__(self,visible=visible)
+class Group(GraphObject):
+    __graphList=[]
+    def __init__(self,graphList:Iterable[GraphObject],visible=True):
+        self.__graphList=list(graphList)
+        GraphObject.__init__(self,visible=visible)
         self._setVisibleInternal(visible=visible)
         
     def _setVisibleInternal(self, visible):
-        for member in self:
+        for member in self.__graphList:
             member.setVisibleMask(visible)
     
     # clear all artist in the list from the canvas    
     def update(self):
-        for member in self:
+        for member in self.__graphList:
             member.update()
 
     # clear all artist in the list from the canvas    
     def clear(self):
-        for member in self:
+        for member in self.__graphList:
             member.clear()
-        del self[:]
-
+        del self.__graphList[:]
+        
+    '''
+    List methods
+    '''
+    def __getitem__(self,key):
+        return self.__graphList[key]
+    def __setitem__(self,key,value):
+        self.__graphList[key]=value
+    def __iter__(self):
+        return self.__graphList
+    def append(self,x:GraphObject):
+        x.setVisibleMask(self.visible)
+        self.__graphList.append(x)
+    def extend(self,l:Iterable[GraphObject]):
+        for member in l:
+            member.setVisibleMask(self.visible)
+        self.__graphList.extend(l)
 

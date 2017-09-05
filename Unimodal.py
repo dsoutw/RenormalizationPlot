@@ -110,7 +110,7 @@ class Unimodal:
             x=self._map(x)
         return x
     
-    def renomalizable(self, period:int=2):
+    def renormalizable(self, period:int=2):
         '''
         Check if the unimodal map is renormalizable
         :param period: the period of renormalization
@@ -129,7 +129,7 @@ class Unimodal:
 
     def renomalize(self, period:int=2):
         # check if the function is renormalizable
-        if self.renomalizable(period):
+        if self.renormalizable(period):
             s=Affine(self.p_a1[period][period-1],np.float64(-1),self.p_A1[period][period-1],np.float64(1))
             s_i=Affine(np.float64(-1),self.p_a1[period][period-1],np.float64(1),self.p_A1[period][period-1])
             #return Unimodal(lambda x: s(self._map(self._map(s_i(x)))),s(self.p_c))
@@ -359,7 +359,7 @@ class UnimodalRescaleIterate(Unimodal):
     def renomalize(self, period:int=2):
         if self._interpolated == False:
             # check if the function is renormalizable
-            if self.renomalizable(period):
+            if self.renormalizable(period):
                 s=Affine(self._rescale2(self.p_a1[period][period-1]),np.float64(-1),self._rescale2(self.p_A1[period][period-1]),np.float64(1))
                 s_i=Affine(np.float64(-1),self._rescale2(self.p_a1[period][period-1]),np.float64(1),self._rescale2(self.p_A1[period][period-1]))
                 return (UnimodalRescaleIterate(s, self._rawfunc, self._iterate*period, s_i, s(self._rescale2(self.p_c))), 

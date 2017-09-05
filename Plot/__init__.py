@@ -1,4 +1,4 @@
-from Plot.GraphObject import Group
+from Plot.GraphObject import GraphObject,Group
 from Plot.Artist import ArtistBase
 from Plot.Function import Function
 from Plot.Contour import Contour
