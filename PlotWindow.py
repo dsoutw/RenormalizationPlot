@@ -70,6 +70,8 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindowUI.Ui_plotWindow):
         self.iteratedGraphCheckBox.setChecked(Setting.figureMultipleIterate)
         self.diagonalCheckBox.setChecked(Setting.figureDiagonal)
         self.beta0CheckBox.setChecked(Setting.figureBeta0)
+        self.alpha1CheckBox.setChecked(Setting.figureAlpha1)
+        self.beta1CheckBox.setChecked(Setting.figureBeta1)
 
         # update renormalizable
         #self._updateRenormalizable()

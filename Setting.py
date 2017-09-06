@@ -18,6 +18,8 @@ figureDiagonal=True
 figureBeta0=True
 figureSelfReturn=True
 figureMaxLevels=5
+figureAlpha1=True
+figureBeta1=True
 
 precisionPeriodicA=1e-08
 precisionPeriodicR=1e-06
