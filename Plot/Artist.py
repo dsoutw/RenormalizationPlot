@@ -73,17 +73,16 @@ class ArtistBase(GraphObject,QtCore.QObject):
 
     @QtCore.pyqtSlot()
     def update(self):
-        if self.__artist is not None:
-            if self.isShowed()==True:
+        if self.isShowed()==True:
+            if self.__artist is not None:
                 self.__artist=self._updatePlot(self.__artist)
+                self.__canvas.update()
                 self.__updateDirty=False
             else:
-                self.__updateDirty=True
-            self.__canvas.update()
-        elif self._visible == True and self._visibleMask == True:
-            self.__artist=self._initilizePlot()
-            self.__updateDirty=False
-            self.__canvas.update()
+                self.__artist=self._initilizePlot()
+                self.__updateDirty=False
+        else:
+            self.__updateDirty=True
 
     # canvas
     # useless?

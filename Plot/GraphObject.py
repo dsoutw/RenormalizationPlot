@@ -44,8 +44,8 @@ class GraphObject:
         return self._visibleMask
     @QtCore.pyqtSlot(bool)
     def setVisibleMask(self,visibleMask):
-        if (self._visible & visibleMask) != (self._visible & self._visibleMask):
-            self._setVisibleInternal(self._visible & visibleMask)
+        if (self._visible and visibleMask) != (self._visible and self._visibleMask):
+            self._setVisibleInternal(self._visible and visibleMask)
         self._visibleMask=visibleMask
     visibleMask=property(
         lambda self: self.getVisibleMask(), 
@@ -57,7 +57,7 @@ class GraphObject:
         '''
         @return: bool. Return True if the graph is shown on the plot 
         '''
-        return self._visible & self._visibleMask 
+        return self._visible and self._visibleMask 
 
     # update the graph from the screen
     def update(self):
@@ -105,6 +105,6 @@ class Group(GraphObject):
         self.__graphList.append(x)
     def extend(self,l:Iterable[GraphObject]):
         for member in l:
-            member.setVisibleMask(self.visible)
+            member.setVisibleMask(self.isShowed())
         self.__graphList.extend(l)
 
