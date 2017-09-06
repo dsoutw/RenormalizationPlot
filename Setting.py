@@ -19,7 +19,7 @@ figureBeta0=True
 figureSelfReturn=True
 figureMaxLevels=5
 
-precisionPeriodicA=1e-04
+precisionPeriodicA=1e-08
 precisionPeriodicR=1e-06
 
 interpolationEnabled=True

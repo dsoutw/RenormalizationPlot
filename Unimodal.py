@@ -33,7 +33,7 @@ class Unimodal:
     __TOL_EQUAL = np.float64(1e-02)
     
     _map = None
-    _renormalizable={}
+    __renormalizable={}
     p_a1={}
     p_A1={}
     
@@ -55,7 +55,7 @@ class Unimodal:
         
         
     def _setupVariable(self):
-        self._renormalizable={}
+        self.__renormalizable={}
         self.p_a1={}
         self.p_A1={}
         
@@ -116,16 +116,16 @@ class Unimodal:
         :param period: the period of renormalization
         :type period: positive integer
         '''
-        if period not in self._renormalizable:
+        if period not in self.__renormalizable:
             if period == 2:
-                self._renormalizable[period]=self.renomalizable2()
+                self.__renormalizable[period]=self.renomalizable2()
             #elif period % 2 == 1:
             else:
-                self._renormalizable[period]=self.renomalizableOther(period)
+                self.__renormalizable[period]=self.renomalizableOther(period)
             #else:
                 # Not implimented
-            #    self._renormalizable[period]=False
-        return self._renormalizable[period]
+            #    self.__renormalizable[period]=False
+        return self.__renormalizable[period]
 
     def renomalize(self, period:int=2):
         # check if the function is renormalizable

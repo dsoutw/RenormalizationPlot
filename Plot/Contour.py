@@ -16,9 +16,11 @@ class Contour(GraphObject,QtCore.QObject):
     _contour=None
     _cbaxes=None
     _cbar=None
+
+    __updateDirty=False
     
     def __init__(self, canvas, func, visible=True, **kwargs):
-        self._func=func
+        self.__func=func
         self._kwargs=kwargs
         self.__canvas=canvas
         QtCore.QObject.__init__(self,canvas)
@@ -32,6 +34,7 @@ class Contour(GraphObject,QtCore.QObject):
         # Plot only when visible
         if visible == True:
             self._initilizePlot()
+            self.__updateDirty=False
         else:
             self._contour=None
         
@@ -63,8 +66,12 @@ class Contour(GraphObject,QtCore.QObject):
     @QtCore.pyqtSlot()
     def update(self):
         if self._contour is not None:
-            self._updatePlot()
-            self.__canvas.update()
+            if self.isShowed()==True:
+                self._updatePlot()
+                self.__canvas.update()
+                self.__updateDirty=False
+            else:
+                self.__updateDirty=True
         elif self._visible == True and self._visibleMask == True:
             self._initilizePlot()
             self.__canvas.update()
@@ -73,10 +80,13 @@ class Contour(GraphObject,QtCore.QObject):
     # todo: create a new axis and set the visibility of the axis 
     def _setVisibleInternal(self,visible):
         if self._contour != None:
-            for item in self._contour.collections:
-                item.set_visible(visible)
+            if visible and self.__updateDirty:
+                self._updatePlot()
+                self.__updateDirty=False
+            else:
+                for item in self._contour.collections:
+                    item.set_visible(visible)
             self._cbaxes.set_visible(visible)
-            #self._removePlot()
             self.__canvas.update()
         elif visible == True and self._contour == None:
             self._initilizePlot()
@@ -84,9 +94,9 @@ class Contour(GraphObject,QtCore.QObject):
             
     # function
     def getFunction(self):
-        return self._func
+        return self.__func
     def setFunction(self,func):
-        self._func=func
+        self.__func=func
         self.update()
     function=property(
         lambda self: self.getFunction(), 

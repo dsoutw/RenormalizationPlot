@@ -12,7 +12,7 @@ class Function(ArtistBase):
     '''
 
     # Function of one variable
-    _func=None
+    __func=None
     _axis=None
     _xEventId=None
     _yEventId=None
@@ -30,7 +30,7 @@ class Function(ArtistBase):
         :param visible: set visible 
         :type visible:
         '''
-        self._func=func
+        self.__func=func
         self._kwargs=kwargs
         if axis == None:
             self._axis=canvas.axes
@@ -77,9 +77,9 @@ class Function(ArtistBase):
 
     # function
     def getFunction(self):
-        return self._func
+        return self.__func
     def setFunction(self,func):
-        self._func=func
+        self.__func=func
         self.update()
     function=property(
         lambda self: self.getFunction(), 

@@ -20,7 +20,7 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindowUI.Ui_plotWindow):
     # func: unimodal class
     # level: the level of renormalization
     # rParent: a unimodal map for the previous level
-    def __init__(self, renormalizable:bool=False, level:int = 0, rParent:'PlotWindow' = None):
+    def __init__(self, level:int = 0, rParent:'PlotWindow' = None, renormalizable:bool=False):
         #func: Unimodal
         #level: nonnegative integer
         self.__level=level
@@ -54,14 +54,14 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindowUI.Ui_plotWindow):
         mpl.rcParams['axes.ymargin'] = 0
 
         self.canvas.setUpdatesEnabled(False)
-        self._plotCurrentLevel()
+        self.__plotCurrentLevel()
         self.canvas.setUpdatesEnabled(True)
 
         # setup renormalizable features
         self.periodSpinBox.setValue(self.__period)
         self.selfReturnCheckBox.setChecked(Setting.figureSelfReturn)
         self.periodSpinBox.valueChanged.connect(self.setPeriod)
-        self._rChild=None
+        self.__rChild=None
         self.renormalizeButton.clicked.connect(self.openRChild)
         self.canvas.setMinimumSize(0,0)
 
@@ -83,8 +83,6 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindowUI.Ui_plotWindow):
         # setup level grapgs
         self.levelBox.setEnabled(False)
         
-        self.updatePlot()
-
 
     def __setRenormalizableText(self,value:bool):
         text={True:"Yes",False:"No"} 
@@ -94,7 +92,7 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindowUI.Ui_plotWindow):
     # inherited from QtWidgets.QMainWindow
     # close child renormalization when the window is closed
         if self.__rParent is not None:
-            self.__rParent._rChildClosed()
+            self.__rParent.__rChildClosed()
         self.closeRChild()
         super().closeEvent(evnt)
 
@@ -108,7 +106,7 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindowUI.Ui_plotWindow):
         if period != self.__period:
             self.__period=period
             self.periodSpinBox.setValue(period)
-            self._updatePeriod()
+            self.__updatePeriod()
     def getPeriod(self)->int:
         return self.__period
     period=property(
@@ -126,7 +124,6 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindowUI.Ui_plotWindow):
         lambda self, level: self.setLevel(level)
         )
 
-
     renormalizableChanged = QtCore.pyqtSignal(bool)
     @QtCore.pyqtSlot(bool)
     def setRenormalizable(self, value:bool):
@@ -143,38 +140,12 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindowUI.Ui_plotWindow):
     def renormalizableChangedEvent(self,value:bool):
         return True
     
-        
-#     def _renormalizable(self, period:int):
-#         raise NotImplementedError("PlotWindow._renormalizable")
-# 
-#     # update status of renormlaizable
-#     def _updateRenormalizable(self):
-#         if self._renormalizable(self.period) == True:
-#             self.renormalizableResultLabel.setText("Yes")
-#             self.renormalizeButton.setEnabled(True)
-#             self.selfReturnLabel.setEnabled(True)
-#             self.selfReturnCheckBox.setEnabled(True)
-# 
-#             self._plotRenormalizableGraph(self.period)
-#             if self._rChild != None:
-#                 if self._updateRChildEvent(self._rChild, self.period)==True:
-#                     # plot sub-structures if possible
-#                     self._updateRChildGraph()
-#                 else:
-#                     self._removeRChildGraph()
-#                     self.closeRChild()
-#         else:
-#             self.renormalizableResultLabel.setText("No")
-#             self.renormalizeButton.setEnabled(False)
-#             self.selfReturnLabel.setEnabled(False)
-#             self.selfReturnCheckBox.setEnabled(False)
-#             
-#             self._removeRenormalizableGraph()
-#             self._removeRChildGraph()
-#             self.closeRChild()
-
+    '''
+    Child window
+    '''
+    
     # Stores the child window 
-    _rChild:'PlotWindow'=None
+    __rChild:'PlotWindow'=None
 
     def _newRChildEvent(self, period:int)->'PlotWindow':
         '''
@@ -186,7 +157,17 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindowUI.Ui_plotWindow):
         '''
         raise NotImplementedError("PlotWindow._renormalizable")
 
-    def _updateRChildEvent(self, period:int):
+    def _updateRChildEvent(self, rChild:'PlotWindow', period:int):
+        '''
+        Update the renormalized function window
+        Called when the renormalized function is modified
+        :param period: The period of renormalization
+        :type period: int
+        @return: True if success, False=close child
+        '''
+        raise NotImplementedError("PlotWindow._renormalizable")
+
+    def _closeRChildEvent(self):
         '''
         Update the renormalized function window
         Called when the renormalized function is modified
@@ -195,54 +176,62 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindowUI.Ui_plotWindow):
         '''
         raise NotImplementedError("PlotWindow._renormalizable")
     
+    def _descendantRenormalizedEvent(self):
+        raise NotImplementedError("PlotWindow._renormalizable")
+    
     def openRChild(self):
     # open child renormalization window
         # create window if not exist then renormalize
-        if self._rChild == None:
-            self._rChild =self._newRChildEvent(self.__period)
-            if self._rChild == None:
+        if self.__rChild == None:
+            self.__rChild =self._newRChildEvent(self.__period)
+            if self.__rChild == None:
                 return
 
             self.levelBox.setEnabled(True)
-            self.openWindow(self._rChild)
+            self.openWindow(self.__rChild)
+            self.__plotRChildGraph()
             
-            self._findPeriodicInterval()
-            self._plotRChildGraph()
+            #self.__plotRChildGraph()
             
             # Notify the ancestors that the unimodal map is renormalized
             level=2
             ancestor=self.__rParent
             while ancestor is not None:
-                ancestor._descendantRenormalized(level,self._rChild)
+                ancestor._descendantRenormalizedEvent(level,self.__rChild)
                 ancestor=ancestor.__rParent
                 level=level+1
         else:
-            self.focusWindow(self._rChild)
+            self.focusWindow(self.__rChild)
 
     def updateRChild(self):
-        if self._rChild != None:
+        if self.__rChild != None:
             if self.renormalizable:
-                self._updateRChildEvent(self.period)
-            else:
-                self.closeRChild()
+                if self._updateRChildEvent(self.__rChild,self.period):
+                    return
+            self.closeRChild()
         
     def closeRChild(self):
     # close child renormalization window
-        if self._rChild != None:
-            self.closeWindow(self._rChild)
-            #self._rChildClosed()
+        if self.__rChild != None:
+            self.closeWindow(self.__rChild)
+            #self.__rChildClosed()
 
     # called when the child is closed.
     #isThisClosed=False
-    def _rChildClosed(self):
-        if self._rChild != None:
-            self._removeNextLevelOrbits()
-            self._removeDeepLevelOrbits()
+    def __rChildClosed(self):
+        if self.__rChild != None:
+            self._closeRChildEvent()
+            self.__removeNextLevelOrbits()
+            self.__removeDeepLevelOrbits()
     
             self.levelBox.setEnabled(False)
-            self._rChild=None
+            self.__rChild=None
 
 
+    def getRChild(self):
+        return self.__rChild
+    rChild=property(lambda self: self.getRChild())
+    
     # window utilities
     # modify this method if created by mdi window
     def openWindow(self, widget:'PlotWindow'):
@@ -262,36 +251,41 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindowUI.Ui_plotWindow):
     '''
     def updatePlot(self):
         self.canvas.setUpdatesEnabled(False)
-        self._updateCurrentLevel()
-        self._updateRenormalizableGraph()
-        self._updateRChildGraph()
+        self.__updateCurrentLevel()
+        self.__updateRenormalizableGraph()
+        self.__updateRChildGraph()
         self.canvas.setUpdatesEnabled(True)
 
     def updateRenormalizablePlot(self):
         self.canvas.setUpdatesEnabled(False)
-        self._updateRenormalizableGraph()
-        self._updateRChildGraph()
+        self.__updateRenormalizableGraph()
+        self.__updateRChildGraph()
+        self.canvas.setUpdatesEnabled(True)
+
+    def updateRescalingLevelPlot(self):
+        self.canvas.setUpdatesEnabled(False)
+        self._updateRescalingLevels()
         self.canvas.setUpdatesEnabled(True)
 
     '''
     Plot current level
     '''
     
-    def _plotCurrentLevel(self):
-        self._plotCurrentLevelGraphs()
-        self._plotCurrentLevelOrbits()
-        self._plotPeriod()
+    def __plotCurrentLevel(self):
+        self.__plotCurrentLevelGraphs()
+        self.__plotCurrentLevelOrbits()
+        self.__plotPeriod()
 
-    def _updateCurrentLevel(self):
-        self._updateCurrentLevelGraphs()
-        self._updateCurrentLevelOrbits()
-        self._updatePeriod()
+    def __updateCurrentLevel(self):
+        self.__updateCurrentLevelGraphs()
+        self.__updateCurrentLevelOrbits()
+        self.__updatePeriod()
 
     '''
     Plot current level graphs
     '''
         
-    def _plotCurrentLevelGraphs(self):
+    def __plotCurrentLevelGraphs(self):
         # Plot function
         self._plotFunction()
         
@@ -303,7 +297,7 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindowUI.Ui_plotWindow):
         gDiagonal = self._plotDiagonal(visible=self.diagonalCheckBox.isChecked())
         self.diagonalCheckBox.toggled.connect(gDiagonal.setVisible)
         
-    def _updateCurrentLevelGraphs(self):
+    def __updateCurrentLevelGraphs(self):
         self._updateFunction()
         self._updateFunctionSecond()
     
@@ -325,14 +319,14 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindowUI.Ui_plotWindow):
     Plot Current Level Orbits
     '''
    
-    def _plotCurrentLevelOrbits(self):
+    def __plotCurrentLevelOrbits(self):
         self._plotAlpha0()
 
         # Plot the beta orbits
         gBeta0=self._plotBeta0(visible=self.beta0CheckBox.isChecked())
         self.beta0CheckBox.toggled.connect(gBeta0.setVisible)
 
-    def _updateCurrentLevelOrbits(self):
+    def __updateCurrentLevelOrbits(self):
         self._updateAlpha0()
         self._updateBeta0()
 
@@ -350,25 +344,26 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindowUI.Ui_plotWindow):
     Plot current level period plots
     '''
 
-    def _plotPeriod(self):
+    def __plotPeriod(self):
         # Plot multiple iterate
-        gFunctionIterates = self._plotFunctionIterates(visible=self.iteratedGraphCheckBox.isChecked())
+        gFunctionIterates = self._plotFunctionIterates(self.period,visible=self.iteratedGraphCheckBox.isChecked())
         self.iteratedGraphCheckBox.toggled.connect(gFunctionIterates.setVisible)
         
-    def _updatePeriod(self):
-        self._updateFunctionIterates()
+    def __updatePeriod(self):
+        self._updateFunctionIterates(self.period)
 
-    def _plotFunctionIterates(self)->Plot.GraphObject:
+    def _plotFunctionIterates(self,period:int,visible:bool=True)->Plot.GraphObject:
         raise NotImplementedError("PlotWindow._plotFunctionIterates")
-    def _updateFunctionIterates(self):
+    def _updateFunctionIterates(self,period:int):
         raise NotImplementedError("PlotWindow._updateFunctionIterates")
     
     '''
     Plot Renormalizable Objects
     '''
+    
     __isSelfReturnIntervalsPlotted=False
     __selfReturnIntervalsSlot=None
-    def _plotRenormalizableGraph(self):
+    def __plotRenormalizableGraph(self):
         if self.__isSelfReturnIntervalsPlotted == False:
             # Plot the intervals that defines the self-return map 
             gSelfReturnIntervals=self._plotSelfReturnIntervals(self.period,visible=self.selfReturnCheckBox.isChecked())
@@ -378,13 +373,13 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindowUI.Ui_plotWindow):
         else:
             self._updateSelfReturnIntervals(self.period)
 
-    def _updateRenormalizableGraph(self):
+    def __updateRenormalizableGraph(self):
         if self.renormalizable:
-            self._plotRenormalizableGraph()
+            self.__plotRenormalizableGraph()
         else:
-            self._removeRenormalizableGraph()
+            self.__removeRenormalizableGraph()
 
-    def _removeRenormalizableGraph(self):
+    def __removeRenormalizableGraph(self):
         if self.__isSelfReturnIntervalsPlotted == True:
             try:
                 self.selfReturnCheckBox.toggled.disconnect(self.__selfReturnIntervalsSlot)
@@ -405,50 +400,50 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindowUI.Ui_plotWindow):
     '''
     Plot RChild objects
     '''
-    def _plotRChildGraph(self):
-        self._plotNextLevelOrbits()
-        self._plotDeepLevelOrbits()
+    def __plotRChildGraph(self):
+        self.__plotNextLevelOrbits()
+        self.__plotDeepLevelOrbits()
 
-    def _updateRChildGraph(self):
-        if self._rChild != None:
-            self._updateNextLevelOrbits()
-            self._updateDeepLevelOrbits()
+    def __updateRChildGraph(self):
+        if self.__rChild != None:
+            self.__updateNextLevelOrbits()
+            self.__updateDeepLevelOrbits()
         else:
-            self._removeRChildGraph()
+            self.__removeRChildGraph()
 
-    def _removeRChildGraph(self):
-        self._removeNextLevelOrbits()
-        self._removeDeepLevelOrbits()
+    def __removeRChildGraph(self):
+        self.__removeNextLevelOrbits()
+        self.__removeDeepLevelOrbits()
         
     ''' Next Level Orbits '''
     # plot orbits obtained from next level
-    _isNextLevelOrbitsPlotted=False
-    _level1Slot=None
-    def _plotNextLevelOrbits(self):
-        if self._isNextLevelOrbitsPlotted==False:
+    __isNextLevelOrbitsPlotted=False
+    __level1Slot=None
+    def __plotNextLevelOrbits(self):
+        if self.__isNextLevelOrbitsPlotted==False:
             gAlpha1=self._plotAlpha1(visible=self.alpha1CheckBox.isChecked())
             self.alpha1CheckBox.toggled.connect(gAlpha1.setVisible)
 
             gBeta1=self._plotBeta1(visible=self.beta1CheckBox.isChecked())
             self.beta1CheckBox.toggled.connect(gBeta1.setVisible)
     
-            gLevel1=Plot.Group([self.gAlpha1,self.f_bB1List],visible=self.partitionButton.isChecked())
-            self._level1Slot=gLevel1.setVisible
-            self.partitionButton.toggled.connect(self._level1Slot)
+            gLevel1=Plot.Group([self.gAlpha1,self.gBeta1],visible=self.partitionButton.isChecked())
+            self.__level1Slot=gLevel1.setVisible
+            self.partitionButton.toggled.connect(self.__level1Slot)
             
-            self._isNextLevelOrbitsPlotted=True
+            self.__isNextLevelOrbitsPlotted=True
         else:
             self._updateAlpha1()
             self._updateBeta1()
 
-    def _updateNextLevelOrbits(self):
+    def __updateNextLevelOrbits(self):
         if self.renormalizable:
-            self._plotNextLevelOrbits()
+            self.__plotNextLevelOrbits()
         else:
-            self._removeNextLevelOrbits()
+            self.__removeNextLevelOrbits()
 
-    def _removeNextLevelOrbits(self):
-        if self._isNextLevelOrbitsPlotted==True:
+    def __removeNextLevelOrbits(self):
+        if self.__isNextLevelOrbitsPlotted==True:
             # clear sub-structures
             try:
                 self.alpha1CheckBox.toggled.disconnect()
@@ -459,13 +454,13 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindowUI.Ui_plotWindow):
             except:
                 pass
             try:
-                self.partitionButton.toggled.disconnect(self._level1Slot)
+                self.partitionButton.toggled.disconnect(self.__level1Slot)
             except:
                 pass
-            self._level1Slot=None
+            self.__level1Slot=None
             self._removeAlpha1()
             self._removeBeta1()
-            self._isNextLevelOrbitsPlotted=False
+            self.__isNextLevelOrbitsPlotted=False
             
     def _plotAlpha1(self,visible:bool=True)->Plot.GraphObject:
         raise NotImplementedError("PlotWindow._plotAlpha1")
@@ -481,3 +476,38 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindowUI.Ui_plotWindow):
     def _removeBeta1(self):
         raise NotImplementedError("PlotWindow._removeBeta1")
 
+    ''' Deep Level Orbits '''
+   
+    _isDeepLevelOrbitsPlotted=False
+    _rescalingLevelSlot=None
+    def __plotDeepLevelOrbits(self):
+        if self._isDeepLevelOrbitsPlotted==False:
+            gRescalingLevels=self._plotRescalingLevels(visible=self.levelButton.isChecked())
+            self._rescalingLevelSlot=gRescalingLevels.setVisible
+            self.levelButton.toggled.connect(self._rescalingLevelSlot)
+            self._isDeepLevelOrbitsPlotted=True
+        else:
+            self._updateRescalingLevels()
+
+    def __updateDeepLevelOrbits(self):
+        if self.__rChild!=None:
+            self.__plotDeepLevelOrbits()
+        else:
+            self.__removeDeepLevelOrbits()
+
+    def __removeDeepLevelOrbits(self):
+        if self._isDeepLevelOrbitsPlotted==True:
+            try:
+                self.levelButton.toggled.disconnect(self._rescalingLevelSlot)
+            except:
+                pass
+            self._rescalingLevelSlot=None
+            self._removeRescalingLevels()
+            self._isDeepLevelOrbitsPlotted=False
+            
+    def _plotRescalingLevels(self,visible:bool=True)->Plot.GraphObject:
+        raise NotImplementedError("PlotWindow._plotRescalingLevels")
+    def _updateRescalingLevels(self):
+        raise NotImplementedError("PlotWindow._updateRescalingBoundaries")
+    def _removeRescalingLevels(self):
+        raise NotImplementedError("PlotWindow._removeRescalingLevels")
