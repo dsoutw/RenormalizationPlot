@@ -228,7 +228,7 @@ class Unimodal:
         periodicPoint=optimize.brentq(__iteration, minPoint, maxPoint, xtol=tol, rtol=Setting.precisionPeriodicR)
         #print("periodic point: ",periodicPoint, "    critical value:",self.p_v)
         periodicOrbit=self.orbit(periodicPoint, period)
-        print(periodicOrbit)
+        #print(periodicOrbit)
         try:
             periodicReflex=self.reflexOrbit(periodicOrbit,tol)
         except BaseException as e:
