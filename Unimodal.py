@@ -206,6 +206,15 @@ class Unimodal:
         #if (maxPoint-minPoint)/minPoint<Setting.precisionPeriodicA:
         #    print("Insufficient precisioncy")
 
+        # Test min point
+        if period%2 ==0:
+            if minPoint<self.p_b:
+                # Avoid finding a fixed point
+                return False
+        else:
+            if minPoint<self.p_B:
+                return False
+
         # The root is the periodic point
         def __iteration(x):
             return self.iterates(x, period)-x
@@ -219,7 +228,13 @@ class Unimodal:
         periodicPoint=optimize.brentq(__iteration, minPoint, maxPoint, xtol=tol, rtol=Setting.precisionPeriodicR)
         #print("periodic point: ",periodicPoint, "    critical value:",self.p_v)
         periodicOrbit=self.orbit(periodicPoint, period)
-        periodicReflex=self.reflexOrbit(periodicOrbit,tol)
+        print(periodicOrbit)
+        try:
+            periodicReflex=self.reflexOrbit(periodicOrbit,tol)
+        except BaseException as e:
+            print("Unimodal: renomalizableOther: Cannot find reflex orbit")
+            print(str(e))
+            return False
         #print("periodic point: ",periodicPoint, "    critical value:",self.p_v,"    reflection:",periodicReflex[0])
 
         # check if the interval defines a self return map

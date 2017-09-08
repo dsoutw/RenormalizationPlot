@@ -21,7 +21,7 @@ figureMaxLevels=5
 figureAlpha1=True
 figureBeta1=True
 
-precisionPeriodicA=1e-08
+precisionPeriodicA=1e-10
 precisionPeriodicR=1e-06
 
 interpolationEnabled=True
