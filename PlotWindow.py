@@ -60,6 +60,7 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindowUI.Ui_plotWindow):
         # setup renormalizable features
         self.periodSpinBox.setValue(self.__period)
         self.selfReturnCheckBox.setChecked(Setting.figureSelfReturn)
+        self.orderCheckBox.setChecked(Setting.figureSelfReturn)
         self.periodSpinBox.valueChanged.connect(self.setPeriod)
         self.__rChild=None
         self.renormalizeButton.clicked.connect(self.openRChild)
@@ -80,6 +81,8 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindowUI.Ui_plotWindow):
         self.renormalizableChanged.connect(self.renormalizeButton.setEnabled)
         self.renormalizableChanged.connect(self.selfReturnLabel.setEnabled)
         self.renormalizableChanged.connect(self.selfReturnCheckBox.setEnabled)
+        self.renormalizableChanged.connect(self.orderLabel.setEnabled)
+        self.renormalizableChanged.connect(self.orderCheckBox.setEnabled)
         self.renormalizableChanged.emit(renormalizable)
         
         # setup level grapgs
@@ -365,15 +368,22 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindowUI.Ui_plotWindow):
     
     __isSelfReturnIntervalsPlotted=False
     __selfReturnIntervalsSlot=None
+    __selfReturnOrderSlot=None
     def __plotRenormalizableGraph(self):
         if self.__isSelfReturnIntervalsPlotted == False:
             # Plot the intervals that defines the self-return map 
-            gSelfReturnIntervals=self._plotSelfReturnIntervals(self.period,visible=self.selfReturnCheckBox.isChecked())
-            self.__selfReturnIntervalsSlot=gSelfReturnIntervals.setVisible
+            gSelfReturnIntervals=self._plotSelfReturnIntervals(self.period,visible=True)
+            gSelfReturnOrder=self._plotSelfReturnOrder(self.period,visible=self.orderCheckBox.isChecked())
+            gSelfReturn=Plot.Group([gSelfReturnIntervals,gSelfReturnOrder],visible=self.selfReturnCheckBox.isChecked())
+            self.__selfReturnOrderSlot=gSelfReturnOrder.setVisible
+            self.__selfReturnIntervalsSlot=gSelfReturn.setVisible
+            self.orderCheckBox.toggled.connect(self.__selfReturnOrderSlot)
             self.selfReturnCheckBox.toggled.connect(self.__selfReturnIntervalsSlot)
+            
             self.__isSelfReturnIntervalsPlotted=True
         else:
             self._updateSelfReturnIntervals(self.period)
+            self._updateSelfReturnOrder(self.period)
 
     def __updateRenormalizableGraph(self):
         if self.renormalizable:
@@ -385,10 +395,12 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindowUI.Ui_plotWindow):
         if self.__isSelfReturnIntervalsPlotted == True:
             try:
                 self.selfReturnCheckBox.toggled.disconnect(self.__selfReturnIntervalsSlot)
+                self.orderCheckBox.toggled.disconnect(self.__selfReturnOrderSlot)
             except:
                 pass
             self.__selfReturnIntervalsSlot=None
             self._removeSelfReturnIntervals()
+            self._removeSelfReturnOrder()
             self.__isSelfReturnIntervalsPlotted = False
     
     def _plotSelfReturnIntervals(self,period)->Plot.GraphObject:
@@ -397,6 +409,13 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindowUI.Ui_plotWindow):
         raise NotImplementedError("PlotWindow._updateSelfReturnIntervals")
     def _removeSelfReturnIntervals(self):
         raise NotImplementedError("PlotWindow._removeSelfReturnIntervals")
+
+    def _plotSelfReturnOrder(self,period)->Plot.GraphObject:
+        raise NotImplementedError("PlotWindow._plotSelfReturnOrder")
+    def _updateSelfReturnOrder(self,period):
+        raise NotImplementedError("PlotWindow._updateSelfReturnOrder")
+    def _removeSelfReturnOrder(self):
+        raise NotImplementedError("PlotWindow._removeSelfReturnOrder")
     
 
     '''

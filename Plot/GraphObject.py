@@ -28,8 +28,8 @@ class GraphObject:
         return self._visible
     @QtCore.pyqtSlot(bool)
     def setVisible(self,visible:bool):
-        if (visible & self._visibleMask) != (self._visible & self._visibleMask):
-            self._setVisibleInternal(visible & self._visibleMask)
+        if (visible and self._visibleMask) != (self._visible and self._visibleMask):
+            self._setVisibleInternal(visible and self._visibleMask)
         self._visible=visible
     visible=property(
         lambda self: self.getVisible(), 

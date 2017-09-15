@@ -171,9 +171,9 @@ class UnimodalPlot:
 			f_selfReturnBoxesList[t]=Plot.Rectangle(self.canvas,
 					self.function.p_a1[period][t], self.function.p_a1[period][t], #x,y
 					self.function.p_A1[period][t]-self.function.p_a1[period][t], self.function.p_A1[period][t]-self.function.p_a1[period][t], #width, height
-					visible=visible, color='gray', lw=1, fill=None
+					visible=True, color='gray', lw=1, fill=None
 				)
-		self.gSelfReturnIntervals=Plot.Group(f_selfReturnBoxesList)
+		self.gSelfReturnIntervals=Plot.Group(f_selfReturnBoxesList,visible=visible)
 		return self.gSelfReturnIntervals
 	def _updateSelfReturnIntervals(self,period):
 		for t in range(period):
@@ -186,6 +186,28 @@ class UnimodalPlot:
 		self.gSelfReturnIntervals.clear()
 		self.gSelfReturnIntervals=None
 
+	gSelfReturnOrder = None
+	def _plotSelfReturnOrder(self,period,visible:bool=True)->Plot.GraphObject:
+		f_selfReturnOrderList=[None]*period
+		for t in range(period):
+			f_selfReturnOrderList[t]=Plot.Text(self.canvas,
+					str(t),
+					((self.function.p_a1[period][t]+self.function.p_A1[period][t])/2,max(self.function.p_a1[period][t],self.function.p_A1[period][t])),
+					(0,1),
+					visible=True,
+					horizontalalignment='center'
+				)
+		self.gSelfReturnOrder=Plot.Group(f_selfReturnOrderList,visible=visible)
+		return self.gSelfReturnOrder
+	def _updateSelfReturnOrder(self,period):
+		for t in range(period):
+		# Set the self return intervals
+			self.gSelfReturnOrder[t].setPosition(
+				((self.function.p_a1[period][t]+self.function.p_A1[period][t])/2,max(self.function.p_a1[period][t],self.function.p_A1[period][t])),
+				)
+	def _removeSelfReturnOrder(self):
+		self.gSelfReturnOrder.clear()
+		self.gSelfReturnOrder=None
 
 	'''
 	Plot RChild objects
