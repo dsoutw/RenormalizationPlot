@@ -4,11 +4,11 @@ Created on 2017/9/4
 @author: dsou
 '''
 from matplotlib.artist import Artist as MPLArtist
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from Plot.MPLCanvas import MPLCanvas
 import numpy as np
 from Plot.GraphObject import GraphObject
 from PyQt5 import QtCore
+import typing
 
 class ArtistBase(GraphObject,QtCore.QObject):
     '''
@@ -18,7 +18,7 @@ class ArtistBase(GraphObject,QtCore.QObject):
     __artist=None
     __updateDirty=False
     
-    def __init__(self, canvas:MPLCanvas, visible:bool=True):
+    def __init__(self, parent:GraphObject=None, visible:bool=True):
         '''
         An abstract container for matplotlib artist
         :param canvas: The canvas storing the artist
@@ -26,16 +26,8 @@ class ArtistBase(GraphObject,QtCore.QObject):
         :param visible: Set visible of the artist
         :type visible: bool
         '''
-        self.__canvas=canvas
-        QtCore.QObject.__init__(self,canvas)
-        GraphObject.__init__(self,visible=visible)
-
-        # Plot only when visible
-        if visible == True:
-            self.__artist=self._initilizePlot()
-            self.__updateDirty=False
-        else:
-            self.__artist=None
+        GraphObject.__init__(self,visible=visible,parent=parent)
+        QtCore.QObject.__init__(self,self.canvas)
 
     # return: matplotlib artist
     def _initilizePlot(self)->MPLArtist:
@@ -69,52 +61,50 @@ class ArtistBase(GraphObject,QtCore.QObject):
         :param artist: The artist to be clear
         :type artist: matplotlib.artist
         '''
-        artist.remove()
+        if not isinstance(artist, list):
+            artist.remove()
+        else:
+            for element in artist:
+                element.remove()
 
     @QtCore.pyqtSlot()
     def update(self):
-        if self.isShowed()==True:
-            if self.__artist is not None:
-                self.__artist=self._updatePlot(self.__artist)
-                self.__canvas.update()
-                self.__updateDirty=False
+        if self.canvas is not None:
+            if self.isShowed() is True:
+                if self.__artist is not None:
+                    self.__artist=self._updatePlot(self.__artist)
+                    self.canvas.update()
+                    self.__updateDirty=False
+                else:
+                    self.__artist=self._initilizePlot()
+                    self.__updateDirty=False
             else:
-                self.__artist=self._initilizePlot()
-                self.__updateDirty=False
-        else:
-            self.__updateDirty=True
+                self.__updateDirty=True
 
-    # canvas
-    # useless?
-    def getCanvas(self):
-        return self.__canvas
-    @QtCore.pyqtSlot(FigureCanvas)
-    def setCanvas(self,canvas:FigureCanvas):
-        self.__canvas=canvas
-    canvas=property(
-        lambda self: self.getCanvas(), 
-        lambda self, val: self.setCanvas(val)
-        )
-        
     # visible
     def _setVisibleInternal(self,visible):
-        if self.__artist is not None:
-            if visible and self.__updateDirty:
-                # Only update the contents when the plot is visible
-                self.__artist=self._updatePlot(self.__artist)
+        if self.canvas is not None:
+            if self.__artist is not None:
+                if visible and self.__updateDirty:
+                    # Only update the contents when the plot is visible
+                    self.__artist=self._updatePlot(self.__artist)
+                    self.__updateDirty=False
+                if not isinstance(self.__artist, list):
+                    self.__artist.set_visible(visible)
+                else:
+                    for element in self.__artist:
+                        element.set_visible(visible)
+                self.canvas.update()
+            elif visible is True:
+                self.__artist=self._initilizePlot()
                 self.__updateDirty=False
-            self.__artist.set_visible(visible)
-            self.__canvas.update()
-        elif visible == True:
-            self.__artist=self._initilizePlot()
-            self.__updateDirty=False
-            self.__canvas.update()
+                self.canvas.update()
         
     # artist
     # useless?
-    def getArtist(self)->MPLArtist:
+    def getArtist(self)->typing.Union[MPLArtist,typing.List[MPLArtist]]:
         return self.__artist
-    def setArtist(self, artist:MPLArtist):
+    def setArtist(self, artist:typing.Union[MPLArtist,typing.List[MPLArtist]]):
         self.__artist=artist
     artist=property(
         lambda self: self.getArtist(), 
@@ -126,8 +116,22 @@ class ArtistBase(GraphObject,QtCore.QObject):
         if self.__artist != None:
             self._clearPlot(self.__artist)
             self.__artist=None
-            self.__canvas.update()
+            self.canvas.update()
             
+    def canvasChangedEvent(self, oldCanvas, newCanvas):
+        if (oldCanvas is not None) and (self.__artist is not None):
+            self._clearPlot(self.__artist)
+            self.__artist=None
+            oldCanvas.update()
+
+        if (newCanvas is not None) and self.isShowed():
+            self.__artist=self._initilizePlot()
+            self.__updateDirty=False
+        else:
+            self.__artist=None            
+                        
+        GraphObject.canvasChangedEvent(self, oldCanvas, newCanvas)
+    
 def generateSample(axis):
     l,r = axis.get_xlim()
     sample = np.append(np.arange(-1.0, l, 0.001), np.arange(l, r, (r-l)/1000.0))

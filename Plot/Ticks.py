@@ -34,6 +34,7 @@ class Ticks(ArtistBase):
 
     def _initilizePlot(self):
         artist = self.__plot(self._figure, self._axis)
+        artist.__ticksCanvas=self.canvas
         self.canvas.addAxes(artist)
         return artist
 
@@ -106,8 +107,8 @@ class Ticks(ArtistBase):
         return artist
     
     def _clearPlot(self, artist):
-        self.canvas.removeAxes(artist)
-        super().__clearPlot(artist)
+        artist.__ticksCanvas.removeAxes(artist)
+        super()._clearPlot(artist)
 
     def getTicks(self):
         return self._ticks
