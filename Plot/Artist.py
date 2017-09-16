@@ -7,6 +7,7 @@ from matplotlib.artist import Artist as MPLArtist
 from Plot.MPLCanvas import MPLCanvas
 import numpy as np
 from Plot.GraphObject import GraphObject
+from Plot.CanvasBase import CanvasBase
 from PyQt5 import QtCore
 import typing
 
@@ -18,7 +19,7 @@ class ArtistBase(GraphObject,QtCore.QObject):
     __artist=None
     __updateDirty=False
     
-    def __init__(self, parent:GraphObject=None, visible:bool=True):
+    def __init__(self, parent:CanvasBase=None, visible:bool=True):
         '''
         An abstract container for matplotlib artist
         :param canvas: The canvas storing the artist

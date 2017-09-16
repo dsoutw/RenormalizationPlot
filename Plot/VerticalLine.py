@@ -7,7 +7,7 @@ from Plot.Artist import ArtistBase
 from PyQt5 import QtCore
 
 class VerticalLine(ArtistBase):
-    def __init__(self, canvas, xValue, axis=None, visible=True, **kwargs):
+    def __init__(self, parent, xValue, axis=None, visible=True, **kwargs):
         '''
         Plot a vertical line on a canvas
         :param canvas:
@@ -22,11 +22,11 @@ class VerticalLine(ArtistBase):
         self._xValue=xValue
         self._kwargs=kwargs
         if axis == None:
-            self._axis=canvas.axes
+            self._axis=parent.axes
         else:
             self._axis=axis
         
-        super().__init__(canvas, visible)
+        super().__init__(parent, visible)
 
     def _initilizePlot(self):
         return self.__plot(self._axis)

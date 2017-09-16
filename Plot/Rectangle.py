@@ -8,18 +8,18 @@ from Plot.Artist import ArtistBase
 import matplotlib.patches as patches
 
 class Rectangle(ArtistBase):
-    def __init__(self, canvas, xValue, yValue, width, height, axis=None, visible=True, **kwargs):
+    def __init__(self, parent, xValue, yValue, width, height, axis=None, visible=True, **kwargs):
         self._xValue=xValue
         self._yValue=yValue
         self._width=width
         self._height=height
         self._kwargs=kwargs
         if axis == None:
-            self._axis=canvas.axes
+            self._axis=parent.axes
         else:
             self._axis=axis
         
-        super().__init__(canvas, visible)
+        super().__init__(parent, visible)
 
     def _initilizePlot(self):
         return self.__plot(self._axis)
