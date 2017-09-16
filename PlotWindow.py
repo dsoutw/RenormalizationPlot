@@ -2,6 +2,7 @@ from PyQt5 import QtCore, QtWidgets # Import the PyQt4 module we'll need
 
 import PlotWindowUI # This file holds our MainWindow and all design related things
                     # it also keeps events etc that we defined in Qt Designer
+from Binding import Binding
 import Plot
 # Matplotlib library
 from matplotlib.backends.backend_qt5agg import (
@@ -11,13 +12,19 @@ from abc import ABCMeta,abstractmethod
 
 import Setting
         
-class PlotWindow(QtWidgets.QMainWindow, PlotWindowUI.Ui_plotWindow):
-    __metaclass__=ABCMeta
+class PlotWindow(Binding, QtWidgets.QMainWindow, PlotWindowUI.Ui_plotWindow):
+    #__metaclass__=ABCMeta
     __level:int=None
     __rParent:'PlotWindow'=None
     __period:int=2
     __renormalizable:bool=None
     
+    # Work around for pointers
+    __bindingList={
+        "gFunction":(),
+        "gFunctionSecond":("secondIterateCheckBox",)
+        }
+
     # Arguments
     # func: unimodal class
     # level: the level of renormalization
@@ -29,8 +36,21 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindowUI.Ui_plotWindow):
         self.__rParent=rParent
         self.__period=2
 
-        super().__init__(rParent)
-        self.setupUi(self)  # This is defined in design.py file automatically
+        QtWidgets.QMainWindow.__init__(self,rParent)
+
+        self.ui = self
+        self.ui.setupUi(self)
+        
+        # Apply settings
+        self.secondIterateCheckBox.setChecked(Setting.figureSecondIterate)
+        self.iteratedGraphCheckBox.setChecked(Setting.figureMultipleIterate)
+        self.diagonalCheckBox.setChecked(Setting.figureDiagonal)
+        self.beta0CheckBox.setChecked(Setting.figureBeta0)
+        self.alpha1CheckBox.setChecked(Setting.figureAlpha1)
+        self.beta1CheckBox.setChecked(Setting.figureBeta1)
+        
+        Binding.__init__(self, self, self.__bindingList)
+        #self.setupUi(self)  # This is defined in design.py file automatically
                             # It sets up layout and widgets that are defined
 
         # Adjust the size of the options to fit with the contents
@@ -68,13 +88,6 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindowUI.Ui_plotWindow):
         self.renormalizeButton.clicked.connect(self.openRChild)
         self.canvas.setMinimumSize(0,0)
 
-        # Apply settings
-        self.secondIterateCheckBox.setChecked(Setting.figureSecondIterate)
-        self.iteratedGraphCheckBox.setChecked(Setting.figureMultipleIterate)
-        self.diagonalCheckBox.setChecked(Setting.figureDiagonal)
-        self.beta0CheckBox.setChecked(Setting.figureBeta0)
-        self.alpha1CheckBox.setChecked(Setting.figureAlpha1)
-        self.beta1CheckBox.setChecked(Setting.figureBeta1)
 
         # update renormalizable
         #self._updateRenormalizable()
@@ -298,11 +311,11 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindowUI.Ui_plotWindow):
         
     def __plotCurrentLevelGraphs(self):
         # Plot function
-        self._plotFunction()
+        self.gFunction=self._plotFunction()
         
         # Plot second iterate
-        gFunctionSecond=self._plotFunctionSecond(visible=self.secondIterateCheckBox.isChecked())
-        self.secondIterateCheckBox.toggled.connect(gFunctionSecond.setVisible)
+        self.gFunctionSecond=self._plotFunctionSecond(visible=self.secondIterateCheckBox.isChecked())
+        #self.secondIterateCheckBox.toggled.connect(gFunctionSecond.setVisible)
         
         # Draw diagonal line
         gDiagonal = self._plotDiagonal(visible=self.diagonalCheckBox.isChecked())

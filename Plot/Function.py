@@ -32,29 +32,24 @@ class Function(ArtistBase):
         '''
         self.__func=func
         self._kwargs=kwargs
-        if axis == None:
-            self._axis=parent.axes
-        else:
-            self._axis=axis
 
         # set sample points
-        self._sample = generateSample(self._axis)
-
         super().__init__(parent, visible=visible)
     
     
     def _initilizePlot(self):
-        artist = self.__plot(self._axis)
+        artist = self.__plot(self.canvas.axes)
 
         # update the resolution automatically when the plot is zoomed
         def on_xlims_change(axis):
             self._sample = generateSample(axis)
             self.update()
-        self._xEventId=self._axis.callbacks.connect('xlim_changed', on_xlims_change)
+        self._xEventId=self.canvas.axes.callbacks.connect('xlim_changed', on_xlims_change)
 
         return artist
 
     def __plot(self, axis):
+        self._sample = generateSample(axis)
         curve, = axis.plot(self._sample, self.function(self._sample), **self._kwargs)
         return curve
     
@@ -71,7 +66,7 @@ class Function(ArtistBase):
 
     def _clearPlot(self, artist):
         if self._xEventId != None:
-            self._axis.callbacks.disconnect(self._xEventId)
+            self.canvas.axes.callbacks.disconnect(self._xEventId)
             self._xEventId=None
         super().__clearPlot(artist)
 

@@ -12,7 +12,7 @@ from Unimodal import Unimodal
 
         
 class UnimodalWindow(UnimodalPlot,PlotWindow):
-    
+        
     def __init__(self, func:Unimodal, level:int = 0, rParent:PlotWindow=None):
         '''
         Create a window for a unimodal map

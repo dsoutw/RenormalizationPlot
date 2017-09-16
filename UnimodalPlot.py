@@ -94,14 +94,12 @@ class UnimodalPlot:
 	'''Current level graphs'''
 	
 	def _plotFunction(self,visible:bool=True)->Plot.GraphObject:
-		self.gFunction = Plot.Function(self.canvas,self.function,visible=visible,lw=1)
-		return self.gFunction
+		return Plot.Function(None,self.function,visible=visible,lw=1)
 	def _updateFunction(self):
 		self.gFunction.setFunction(self.function)
 
 	def _plotFunctionSecond(self,visible:bool=True)->Plot.GraphObject:
-		self.gFunctionSecond = Plot.Function(self.canvas,lambda x:self.function.iterates(x,2),visible=visible,lw=1)
-		return self.gFunctionSecond
+		return Plot.Function(self.canvas,lambda x:self.function.iterates(x,2),visible=visible,lw=1)
 	def _updateFunctionSecond(self):
 		self.gFunctionSecond.setFunction(lambda x:self.function.iterates(x,2))
 
