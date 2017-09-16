@@ -1,6 +1,9 @@
 '''
 Created on 2017/9/16
 
+Bind graph objects with UI components
+Use string to work around on nonexistence of pointers
+
 @author: dsou
 '''
 import typing
@@ -19,7 +22,7 @@ class Binding(object):
         '''
         
         self.__graphList=dict.fromkeys(binding.keys())
-        self.__uiBindList={graphName: tuple((getattr(ui,uiName) for uiName in uiList)) for graphName, uiList in binding.items()}
+        self.__uiBindList={graphName: [getattr(ui,uiName) for uiName in uiList] for graphName, uiList in binding.items()}
         #getattr(self,"gFunction")
     
     def __dir__(self, *args, **kwargs):

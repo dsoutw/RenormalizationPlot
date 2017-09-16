@@ -19,7 +19,9 @@ class PlotWindow(Binding, QtWidgets.QMainWindow, PlotWindowUI.Ui_plotWindow):
     __period:int=2
     __renormalizable:bool=None
     
-    # Work around for pointers
+    ''' bindingList format
+    graph object: (checkable component, enable other components when the graph is setted...)  
+    '''
     __bindingList={
         "gFunction":(),
         "gFunctionSecond":("secondIterateCheckBox",)
