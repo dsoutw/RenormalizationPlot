@@ -7,10 +7,12 @@ import Plot
 from matplotlib.backends.backend_qt5agg import (
     NavigationToolbar2QT as NavigationToolbar)
 import matplotlib as mpl
-    
+from abc import ABCMeta,abstractmethod
+
 import Setting
         
 class PlotWindow(QtWidgets.QMainWindow, PlotWindowUI.Ui_plotWindow):
+    __metaclass__=ABCMeta
     __level:int=None
     __rParent:'PlotWindow'=None
     __period:int=2
@@ -152,6 +154,7 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindowUI.Ui_plotWindow):
     # Stores the child window 
     __rChild:'PlotWindow'=None
 
+    @abstractmethod
     def _newRChildEvent(self, period:int)->'PlotWindow':
         '''
         Create a renormalized function window
@@ -162,6 +165,7 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindowUI.Ui_plotWindow):
         '''
         raise NotImplementedError("PlotWindow._renormalizable")
 
+    @abstractmethod
     def _updateRChildEvent(self, rChild:'PlotWindow', period:int):
         '''
         Update the renormalized function window
@@ -172,6 +176,7 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindowUI.Ui_plotWindow):
         '''
         raise NotImplementedError("PlotWindow._renormalizable")
 
+    @abstractmethod
     def _closeRChildEvent(self):
         '''
         Update the renormalized function window
@@ -181,6 +186,7 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindowUI.Ui_plotWindow):
         '''
         raise NotImplementedError("PlotWindow._renormalizable")
     
+    @abstractmethod
     def _descendantRenormalizedEvent(self):
         raise NotImplementedError("PlotWindow._renormalizable")
     

@@ -4,17 +4,18 @@ Created on 2017/9/4
 @author: dsou
 '''
 from matplotlib.artist import Artist as MPLArtist
-from Plot.MPLCanvas import MPLCanvas
 import numpy as np
 from Plot.GraphObject import GraphObject
 from Plot.CanvasBase import CanvasBase
 from PyQt5 import QtCore
 import typing
+from abc import ABCMeta,abstractmethod
 
 class ArtistBase(GraphObject,QtCore.QObject):
     '''
     An abstract container for matplotlib artist
     '''
+    __metaclass__=ABCMeta
     __canvas=None
     __artist=None
     __updateDirty=False
@@ -30,7 +31,7 @@ class ArtistBase(GraphObject,QtCore.QObject):
         GraphObject.__init__(self,visible=visible,parent=parent)
         QtCore.QObject.__init__(self,self.canvas)
 
-    # return: matplotlib artist
+    @abstractmethod
     def _initilizePlot(self)->MPLArtist:
         '''
         Create the plot. Implimented by the child
@@ -41,6 +42,7 @@ class ArtistBase(GraphObject,QtCore.QObject):
         raise NotImplementedError("GraphObject._initilize has to be implemented")
         pass
 
+    @abstractmethod
     def _updatePlot(self, artist:MPLArtist)->MPLArtist:
         '''
         Update the plot. Implimented by the child
