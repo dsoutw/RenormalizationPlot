@@ -3,12 +3,13 @@ from PyQt5 import QtCore
 # Matplotlib library
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
+from Plot.CanvasBase import CanvasBase
 
-class MPLCanvas(FigureCanvas):
+class MPLCanvas(FigureCanvas,CanvasBase):
     """Ultimately, this is a QWidget (as well as a FigureCanvasAgg, etc.)."""
     __axesList=[]
 
-    def __init__(self, rParent=None, width=4, height=4, dpi=100):
+    def __init__(self, parent=None, width=4, height=4, dpi=100):
         self.fig = Figure(figsize=(width, height), dpi=dpi)
         self.axes = self.fig.add_subplot(111)
         self.__axesList=[self.axes]
@@ -16,7 +17,8 @@ class MPLCanvas(FigureCanvas):
         self.compute_initial_figure()
 
         FigureCanvas.__init__(self,self.fig)
-        self.setParent(rParent)
+        CanvasBase.__init__(self, parent=None)
+        self.setParent(parent)
         #self._updatePlot=False
 
         #super().setSizePolicy(QtWidgets.QSizePolicy.Expanding,
@@ -73,8 +75,5 @@ class MPLCanvas(FigureCanvas):
     def removeAxes(self, axes):
         self.__axesList.remove(axes)
         
-    #def paintEvent(self, e):
-    #    if self._updatePlot == True:
-    #        self.draw()
-    #        self._updatePlot=False
-    #    return FigureCanvas.paintEvent(self, e)
+    def getCanvas(self):
+        return self

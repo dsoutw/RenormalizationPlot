@@ -374,7 +374,7 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindowUI.Ui_plotWindow):
             # Plot the intervals that defines the self-return map 
             gSelfReturnIntervals=self._plotSelfReturnIntervals(self.period,visible=True)
             gSelfReturnOrder=self._plotSelfReturnOrder(self.period,visible=self.orderCheckBox.isChecked())
-            gSelfReturn=Plot.Group([gSelfReturnIntervals,gSelfReturnOrder],visible=self.selfReturnCheckBox.isChecked())
+            gSelfReturn=Plot.Group([gSelfReturnIntervals,gSelfReturnOrder],visible=self.selfReturnCheckBox.isChecked(),parent=self.canvas)
             self.__selfReturnOrderSlot=gSelfReturnOrder.setVisible
             self.__selfReturnIntervalsSlot=gSelfReturn.setVisible
             self.orderCheckBox.toggled.connect(self.__selfReturnOrderSlot)
@@ -448,7 +448,7 @@ class PlotWindow(QtWidgets.QMainWindow, PlotWindowUI.Ui_plotWindow):
             gBeta1=self._plotBeta1(visible=self.beta1CheckBox.isChecked())
             self.beta1CheckBox.toggled.connect(gBeta1.setVisible)
     
-            gLevel1=Plot.Group([self.gAlpha1,self.gBeta1],visible=self.partitionButton.isChecked())
+            gLevel1=Plot.Group([self.gAlpha1,self.gBeta1],visible=self.partitionButton.isChecked(),parent=self.canvas)
             self.__level1Slot=gLevel1.setVisible
             self.partitionButton.toggled.connect(self.__level1Slot)
             

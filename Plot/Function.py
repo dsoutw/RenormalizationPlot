@@ -18,7 +18,7 @@ class Function(ArtistBase):
     _yEventId=None
     _kwargs=()
     
-    def __init__(self, canvas, func, axis=None, visible=True, **kwargs):
+    def __init__(self, parent, func, axis=None, visible=True, **kwargs):
         '''
         Plot a function
         :param canvas: the canvas showing the plot
@@ -33,14 +33,14 @@ class Function(ArtistBase):
         self.__func=func
         self._kwargs=kwargs
         if axis == None:
-            self._axis=canvas.axes
+            self._axis=parent.axes
         else:
             self._axis=axis
 
         # set sample points
         self._sample = generateSample(self._axis)
 
-        super().__init__(canvas, visible=visible)
+        super().__init__(parent, visible=visible)
     
     
     def _initilizePlot(self):

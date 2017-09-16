@@ -5,32 +5,34 @@ Created on 2017/9/3
 '''
 
 from PyQt5 import QtCore
-from typing import Iterable
+from Plot.CanvasBase import CanvasBase
+import typing
 
-class GraphObject:
+class GraphObject(CanvasBase):
     '''
     classdocs
     '''
     
     # Variable to store visible state
-    _visible=True
+    __visible=True
     
     # variable to store the mask for visible state 
-    _visibleMask=True
+    __visibleMask=True
     
-    def __init__(self,visible=True,visibleMask=True):
-        #self._visible=visible
-        self._visibleMask=visibleMask
-        self._visible=visible
+    def __init__(self,visible=True,visibleMask=True,parent=None):
+        #self.__visible=visible
+        self.__visibleMask=visibleMask
+        self.__visible=visible
+        CanvasBase.__init__(self, parent)
     
     # visible
     def getVisible(self)->bool:
-        return self._visible
+        return self.__visible
     @QtCore.pyqtSlot(bool)
     def setVisible(self,visible:bool):
-        if (visible and self._visibleMask) != (self._visible and self._visibleMask):
-            self._setVisibleInternal(visible and self._visibleMask)
-        self._visible=visible
+        if (visible and self.__visibleMask) != (self.__visible and self.__visibleMask):
+            self._setVisibleInternal(visible and self.__visibleMask)
+        self.__visible=visible
     visible=property(
         lambda self: self.getVisible(), 
         lambda self, val: self.setVisible(val)
@@ -41,12 +43,12 @@ class GraphObject:
         raise NotImplementedError("GraphObject._setVisibleInternal has to be implemented")
         
     def getVisibleMask(self):
-        return self._visibleMask
+        return self.__visibleMask
     @QtCore.pyqtSlot(bool)
     def setVisibleMask(self,visibleMask):
-        if (self._visible and visibleMask) != (self._visible and self._visibleMask):
-            self._setVisibleInternal(self._visible and visibleMask)
-        self._visibleMask=visibleMask
+        if (self.__visible and visibleMask) != (self.__visible and self.__visibleMask):
+            self._setVisibleInternal(self.__visible and visibleMask)
+        self.__visibleMask=visibleMask
     visibleMask=property(
         lambda self: self.getVisibleMask(), 
         lambda self, val: self.setVisibleMask(val)
@@ -57,11 +59,7 @@ class GraphObject:
         '''
         @return: bool. Return True if the graph is shown on the plot 
         '''
-        return self._visible and self._visibleMask 
-
-    # update the graph from the screen
-    def update(self):
-        raise NotImplementedError("GraphObject.update has to be implemented")
+        return self.__visible and self.__visibleMask
 
     # clear the graph from the screen
     def clear(self):
@@ -70,10 +68,13 @@ class GraphObject:
 # Sync a group of GraphObject items
 # sync methods: visible, clear
 class Group(GraphObject):
-    __graphList=[]
-    def __init__(self,graphList:Iterable[GraphObject],visible=True):
+    __graphList:typing.List[GraphObject]=[]
+    def __init__(self,graphList:typing.Iterable[GraphObject],visible=True,parent=None):
+        for member in graphList:
+            member.parent=self
+
         self.__graphList=list(graphList)
-        GraphObject.__init__(self,visible=visible)
+        GraphObject.__init__(self,visible=visible,parent=parent)
         self._setVisibleInternal(visible=visible)
         
     def _setVisibleInternal(self, visible):
@@ -88,8 +89,14 @@ class Group(GraphObject):
     # clear all artist in the list from the canvas    
     def clear(self):
         for member in self.__graphList:
+            member.setParent(None)
             member.clear()
         del self.__graphList[:]
+    
+    def canvasChangedEvent(self, oldCanvas, newCanvas):
+        for member in self.__graphList:
+            member.canvasChangedEvent(oldCanvas, newCanvas)
+        GraphObject.canvasChangedEvent(self, oldCanvas, newCanvas)
         
     '''
     List methods
@@ -97,14 +104,18 @@ class Group(GraphObject):
     def __getitem__(self,key):
         return self.__graphList[key]
     def __setitem__(self,key,value):
+        self.__graphList[key].parent=None
         self.__graphList[key]=value
+        value.parent=self
     def __iter__(self):
         return self.__graphList
     def append(self,x:GraphObject):
         x.setVisibleMask(self.visible)
+        x.parent=self
         self.__graphList.append(x)
-    def extend(self,l:Iterable[GraphObject]):
+    def extend(self,l:typing.Iterable[GraphObject]):
         for member in l:
             member.setVisibleMask(self.isShowed())
+            member.parent=self
         self.__graphList.extend(l)
 

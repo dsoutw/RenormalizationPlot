@@ -146,7 +146,7 @@ class UnimodalPlot:
 								[self.function.p_b,self.function.p_B,self.function.p_B2],
 								[r"$\beta^{0}$",r"$\overline{\beta^{1}}$"]
 								)
-		self.gBeta0=Plot.Group([self.gBeta0_0,self.gBeta0_Bar0,self.gBeta0_Bar1,self.gBeta0Ticks],visible=visible)
+		self.gBeta0=Plot.Group([self.gBeta0_0,self.gBeta0_Bar0,self.gBeta0_Bar1,self.gBeta0Ticks],visible=visible,parent=self.canvas)
 		return self.gBeta0
 	def _updateBeta0(self):
 		# Find fixed point
@@ -173,7 +173,7 @@ class UnimodalPlot:
 					self.function.p_A1[period][t]-self.function.p_a1[period][t], self.function.p_A1[period][t]-self.function.p_a1[period][t], #width, height
 					visible=True, color='gray', lw=1, fill=None
 				)
-		self.gSelfReturnIntervals=Plot.Group(f_selfReturnBoxesList,visible=visible)
+		self.gSelfReturnIntervals=Plot.Group(f_selfReturnBoxesList,visible=visible,parent=self.canvas)
 		return self.gSelfReturnIntervals
 	def _updateSelfReturnIntervals(self,period):
 		for t in range(period):
@@ -197,7 +197,7 @@ class UnimodalPlot:
 					visible=True,
 					horizontalalignment='center'
 				)
-		self.gSelfReturnOrder=Plot.Group(f_selfReturnOrderList,visible=visible)
+		self.gSelfReturnOrder=Plot.Group(f_selfReturnOrderList,visible=visible,parent=self.canvas)
 		return self.gSelfReturnOrder
 	def _updateSelfReturnOrder(self,period):
 		for t in range(period):
@@ -218,7 +218,7 @@ class UnimodalPlot:
 	def _plotAlpha1(self,visible:bool=True)->Plot.GraphObject:
 		f_a1List=PlotVetricalLines(self.canvas,self.orbit_alpha1)
 		f_A1List=PlotVetricalLines(self.canvas,self.orbit_Alpha1)
-		self.gAlpha1=Plot.Group(f_a1List+f_A1List,visible=visible)
+		self.gAlpha1=Plot.Group(f_a1List+f_A1List,visible=visible,parent=self.canvas)
 		return self.gAlpha1
 	def _updateAlpha1(self):
 		self.gAlpha1.clear()
@@ -232,7 +232,7 @@ class UnimodalPlot:
 	def _plotBeta1(self,visible:bool=True)->Plot.GraphObject:
 		f_b1List=PlotVetricalLines(self.canvas,self.orbit_beta1)
 		f_B1List=PlotVetricalLines(self.canvas,self.orbit_Beta1)
-		self.gBeta1=Plot.Group(f_b1List+f_B1List,visible=visible)
+		self.gBeta1=Plot.Group(f_b1List+f_B1List,visible=visible,parent=self.canvas)
 		return self.gBeta1
 	def _updateBeta1(self):
 		self.gBeta1.clear()
