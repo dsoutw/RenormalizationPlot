@@ -29,6 +29,10 @@ class GraphObject(CanvasBase):
         for key, value in kwargs.items():
             setattr(self, key, value)
     
+    def __del__(self):
+        self.parent=None
+        pass
+    
     # visible
     def getVisible(self)->bool:
         return self.__visible
@@ -66,6 +70,7 @@ class GraphObject(CanvasBase):
         return self.__visible and self.__visibleMask
 
     # clear the graph from the screen
+    # todo: remove this method
     def clear(self):
         raise NotImplementedError("GraphObject.clear has to be implemented")
 
