@@ -15,15 +15,22 @@ class Binding(object):
     '''
     __graphList:dict={}
     __uiBindList:dict={}
+    __uiEnableMaskList:dict={}
 
-    def __init__(self, ui:object, binding:typing.Dict[str,tuple]):
+    def __init__(self, ui:object, binding:typing.Dict[str,dict]):
         '''
         Constructor
         '''
         
         self.__graphList=dict.fromkeys(binding.keys())
-        self.__uiBindList={graphName: [getattr(ui,uiName) for uiName in uiList] for graphName, uiList in binding.items()}
-        #getattr(self,"gFunction")
+        self.__uiBindList={graphName: [getattr(ui,uiName) for uiName in options.get('link',())] for graphName, options in binding.items()}
+        self.__uiEnableMaskList={graphName: getattr(ui,options.get('enable',""),None) for graphName, options in binding.items()}
+        
+        for graphName, uiEnableMaskComponent in self.__uiEnableMaskList.items():
+            if uiEnableMaskComponent is not None:
+                def setEnable():
+                    self.__setEnable(graphName)
+                uiEnableMaskComponent.toggled.connect(setEnable)
     
     def __dir__(self, *args, **kwargs):
         return super().__dir__( *args, **kwargs).extend(self.__graphList.keys())
@@ -49,6 +56,7 @@ class Binding(object):
         oldGraph:Plot.GraphObject=self.__graphList[name]
         newGraph:Plot.GraphObject=value
         uiList=self.__uiBindList[name]
+        self.__graphList[name]=newGraph
         
         if oldGraph!=newGraph:
             # Disconnect graph with UI
@@ -60,13 +68,13 @@ class Binding(object):
                 except Exception as e:
                     warnings.warn(str(e))
                 oldGraph.parent=None
-            
-            # Connect graph with UI
-            enableUI:bool=newGraph is not None
-            for component in uiList:
-                component.setEnabled(enableUI)
-
-            if enableUI:
+                
+            self.__setEnable(name)
+            #enableUI:bool=newGraph is not None
+            #for component in uiList:
+            #    component.setEnabled(enableUI)
+                
+            if newGraph is not None:
                 # Disconnect clickable with visible
                 if len(uiList) >= 1:
                     newGraph.setVisible(uiList[0].isChecked())
@@ -74,5 +82,13 @@ class Binding(object):
                 else:
                     newGraph.setVisible(True)
                 newGraph.parent=self.ui.canvas
-            
-        self.__graphList[name]=newGraph
+
+    def isEnabled(self,name):
+        if self.__uiEnableMaskList[name] is None:
+            return self.__graphList[name] is not None
+        else:
+            return (self.__graphList[name] is not None) and self.__uiEnableMaskList[name].isChecked()
+    
+    def __setEnable(self,name):
+        for component in self.__uiBindList[name]:
+            component.setEnabled(self.isEnabled(name))

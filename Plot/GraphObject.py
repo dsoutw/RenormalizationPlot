@@ -30,7 +30,7 @@ class GraphObject(CanvasBase):
             setattr(self, key, value)
     
     def __del__(self):
-        self.parent=None
+        #self.parent=None
         pass
     
     # visible

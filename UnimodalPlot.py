@@ -88,55 +88,6 @@ class UnimodalPlot:
 		)
 
 	'''
-	Plot renormalizable objects
-	'''
-
-	# For plotting the intervals that defines the self-return map
-	gSelfReturnIntervals = None
-	def _plotSelfReturnIntervals(self,period,visible:bool=True)->Plot.GraphObject:
-		f_selfReturnBoxesList=[None]*period
-		for t in range(period):
-			f_selfReturnBoxesList[t]=Plot.Rectangle(
-				self.function.p_a1[period][t], self.function.p_a1[period][t], #x,y
-				self.function.p_A1[period][t]-self.function.p_a1[period][t], self.function.p_A1[period][t]-self.function.p_a1[period][t], #width, height
-				plotOptions={'color':'gray', 'lw':1, 'fill':None}
-				)
-		self.gSelfReturnIntervals=Plot.Group(f_selfReturnBoxesList,visible=visible,parent=self.canvas)
-		return self.gSelfReturnIntervals
-	def _updateSelfReturnIntervals(self,period):
-		for t in range(period):
-		# Set the self return intervals
-			self.gSelfReturnIntervals[t].setBounds(
-				self.function.p_a1[period][t], self.function.p_a1[period][t],
-				self.function.p_A1[period][t]-self.function.p_a1[period][t], self.function.p_A1[period][t]-self.function.p_a1[period][t]
-				)
-	def _removeSelfReturnIntervals(self):
-		self.gSelfReturnIntervals.clear()
-		self.gSelfReturnIntervals=None
-
-	gSelfReturnOrder = None
-	def _plotSelfReturnOrder(self,period,visible:bool=True)->Plot.GraphObject:
-		f_selfReturnOrderList=[None]*period
-		for t in range(period):
-			f_selfReturnOrderList[t]=Plot.Text(
-					str(t),
-					((self.function.p_a1[period][t]+self.function.p_A1[period][t])/2,max(self.function.p_a1[period][t],self.function.p_A1[period][t])),
-					(0,1),
-					plotOptions={'horizontalalignment':'center'}
-				)
-		self.gSelfReturnOrder=Plot.Group(f_selfReturnOrderList,visible=visible,parent=self.canvas)
-		return self.gSelfReturnOrder
-	def _updateSelfReturnOrder(self,period):
-		for t in range(period):
-		# Set the self return intervals
-			self.gSelfReturnOrder[t].setPosition(
-				((self.function.p_a1[period][t]+self.function.p_A1[period][t])/2,max(self.function.p_a1[period][t],self.function.p_A1[period][t])),
-				)
-	def _removeSelfReturnOrder(self):
-		self.gSelfReturnOrder.clear()
-		self.gSelfReturnOrder=None
-
-	'''
 	Plot RChild objects
 	'''
 	

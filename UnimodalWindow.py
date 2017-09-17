@@ -33,15 +33,16 @@ class UnimodalWindow(UnimodalPlot,PlotWindow):
         UnimodalPlot.__init__(self, func)
         PlotWindow.__init__(self, level, rParent)
 
-        self.__plotCurrentLevel()
-
         self.canvas.setAxesOptions(adjustable='box-forced',xlim=[-1,1], ylim=[-1,1],aspect='equal')
         self.setRenormalizable(self.__renormalizable(self.period))
         self.updateRenormalizablePlot()
         #self.canvas.fig.tight_layout()
 
+        self.__plotCurrentLevel()
+        self.__updateRenormalizableGraph()
+        
     '''
-    Plot current level graphs
+    Plot current level
     '''
     def __plotCurrentLevel(self):
         self.canvas.setUpdatesEnabled(False)
@@ -76,7 +77,7 @@ class UnimodalWindow(UnimodalPlot,PlotWindow):
 
         
     '''
-    Plot Current Level Orbits
+    Update Current Level
     '''
     def __updateCurrentLevel(self):
         self.gFunction.setFunction(self.function)
@@ -87,9 +88,55 @@ class UnimodalWindow(UnimodalPlot,PlotWindow):
         self.gBeta0_0.setXValue(self.function.p_b)
         self.gBeta0_Bar0.setXValue(self.function.p_B)
         self.gBeta0_Bar1.setXValue(self.function.p_B2)
-        self.gBeta0Ticks.setTicks([self.function.p_b,self.function.p_B,self.function.p_B2])       
-
+        self.gBeta0Ticks.setTicks([self.function.p_b,self.function.p_B,self.function.p_B2])
         
+    '''
+    Plot renormalizable objects
+    '''
+    __isSelfReturnIntervalsPlotted=False
+    def __plotRenormalizableGraph(self):
+        period=self.period
+        if self.__isSelfReturnIntervalsPlotted == False:
+            # Plot the intervals that defines the self-return map 
+            self.gSelfReturnIntervals=Plot.Group([Plot.Rectangle(
+                self.function.p_a1[period][t], self.function.p_a1[period][t], #x,y
+                self.function.p_A1[period][t]-self.function.p_a1[period][t], self.function.p_A1[period][t]-self.function.p_a1[period][t], #width, height
+                plotOptions={'color':'gray', 'lw':1, 'fill':None}
+                ) for t in range(period)])
+            self.gSelfReturnOrder=Plot.Group([Plot.Text(
+                str(t),
+                ((self.function.p_a1[period][t]+self.function.p_A1[period][t])/2,max(self.function.p_a1[period][t],self.function.p_A1[period][t])),
+                (0,1),
+                plotOptions={'horizontalalignment':'center'}
+                ) for t in range(period)])
+            self.gSelfReturn=Plot.Group([self.gSelfReturnIntervals,self.gSelfReturnOrder])
+            
+            self.__isSelfReturnIntervalsPlotted=True
+        else:
+            for t in range(period):
+                # Set the self return intervals
+                self.gSelfReturnIntervals[t].setBounds(
+                    self.function.p_a1[period][t], self.function.p_a1[period][t],
+                    self.function.p_A1[period][t]-self.function.p_a1[period][t], self.function.p_A1[period][t]-self.function.p_a1[period][t]
+                    )
+                # Set the self return intervals
+                self.gSelfReturnOrder[t].setPosition(
+                    ((self.function.p_a1[period][t]+self.function.p_A1[period][t])/2,max(self.function.p_a1[period][t],self.function.p_A1[period][t])),
+                    )
+
+    def __updateRenormalizableGraph(self):
+        if self.renormalizable:
+            self.__plotRenormalizableGraph()
+        else:
+            self.__removeRenormalizableGraph()
+
+    def __removeRenormalizableGraph(self):
+        if self.__isSelfReturnIntervalsPlotted == True:
+            self.gSelfReturn=None
+            self.gSelfReturnOrder=None
+            self.gSelfReturnIntervals=None
+            self.__isSelfReturnIntervalsPlotted = False        
+            
     '''
     Properties
     '''
@@ -102,6 +149,7 @@ class UnimodalWindow(UnimodalPlot,PlotWindow):
         self.setRenormalizable(self.__renormalizable(period))
         self.updateRChild()
         self.gFunctionIterates.update()
+        self.__updateRenormalizableGraph()
         self.updateRenormalizablePlot()
         #self._updateRenormalizable()
 
@@ -117,6 +165,7 @@ class UnimodalWindow(UnimodalPlot,PlotWindow):
         self.setRenormalizable(self.__renormalizable(self.period))
         self.updateRChild()
         self.__updateCurrentLevel()
+        self.__updateRenormalizableGraph()
         self.updatePlot()
         self.canvas.setUpdatesEnabled(True)
 

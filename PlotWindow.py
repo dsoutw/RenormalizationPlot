@@ -24,13 +24,16 @@ class PlotWindow(Binding, QtWidgets.QMainWindow, PlotWindowUI.Ui_plotWindow):
     '''
     __bindingList={
         # current level
-        'gFunction':(),
-        'gFunctionSecond':('secondIterateCheckBox',),
-        'gFunctionIterates':('iteratedGraphCheckBox',),
-        'gDiagonal':('diagonalCheckBox',),
-        'gAlpha0':(),
-        'gBeta0':('beta0CheckBox',),
+        'gFunction':{},
+        'gFunctionSecond':{'link':('secondIterateCheckBox',)},
+        'gFunctionIterates':{'link':('iteratedGraphCheckBox',)},
+        'gDiagonal':{'link':('diagonalCheckBox',)},
+        'gAlpha0':{},
+        'gBeta0':{'link':('beta0CheckBox',)},
         # renormalization
+        'gSelfReturnIntervals':{},
+        'gSelfReturnOrder':{'link':('orderCheckBox',),'enable':'selfReturnCheckBox'},
+        'gSelfReturn':{'link':('selfReturnCheckBox','selfReturnLabel')},
         }
 
     # Arguments
@@ -99,10 +102,6 @@ class PlotWindow(Binding, QtWidgets.QMainWindow, PlotWindowUI.Ui_plotWindow):
         self.__renormalizable=renormalizable
         self.renormalizableChanged.connect(self.__setRenormalizableText)
         self.renormalizableChanged.connect(self.renormalizeButton.setEnabled)
-        self.renormalizableChanged.connect(self.selfReturnLabel.setEnabled)
-        self.renormalizableChanged.connect(self.selfReturnCheckBox.setEnabled)
-        self.renormalizableChanged.connect(self.orderLabel.setEnabled)
-        self.renormalizableChanged.connect(self.orderCheckBox.setEnabled)
         self.renormalizableChanged.emit(renormalizable)
         
         # setup level grapgs
@@ -279,13 +278,11 @@ class PlotWindow(Binding, QtWidgets.QMainWindow, PlotWindowUI.Ui_plotWindow):
     '''
     def updatePlot(self):
         self.canvas.setUpdatesEnabled(False)
-        self.__updateRenormalizableGraph()
         self.__updateRChildGraph()
         self.canvas.setUpdatesEnabled(True)
 
     def updateRenormalizablePlot(self):
         self.canvas.setUpdatesEnabled(False)
-        self.__updateRenormalizableGraph()
         self.__updateRChildGraph()
         self.canvas.setUpdatesEnabled(True)
 
@@ -299,42 +296,7 @@ class PlotWindow(Binding, QtWidgets.QMainWindow, PlotWindowUI.Ui_plotWindow):
     Plot Renormalizable Objects
     '''
     
-    __isSelfReturnIntervalsPlotted=False
-    __selfReturnIntervalsSlot=None
-    __selfReturnOrderSlot=None
-    def __plotRenormalizableGraph(self):
-        if self.__isSelfReturnIntervalsPlotted == False:
-            # Plot the intervals that defines the self-return map 
-            gSelfReturnIntervals=self._plotSelfReturnIntervals(self.period,visible=True)
-            gSelfReturnOrder=self._plotSelfReturnOrder(self.period,visible=self.orderCheckBox.isChecked())
-            gSelfReturn=Plot.Group([gSelfReturnIntervals,gSelfReturnOrder],visible=self.selfReturnCheckBox.isChecked(),parent=self.canvas)
-            self.__selfReturnOrderSlot=gSelfReturnOrder.setVisible
-            self.__selfReturnIntervalsSlot=gSelfReturn.setVisible
-            self.orderCheckBox.toggled.connect(self.__selfReturnOrderSlot)
-            self.selfReturnCheckBox.toggled.connect(self.__selfReturnIntervalsSlot)
-            
-            self.__isSelfReturnIntervalsPlotted=True
-        else:
-            self._updateSelfReturnIntervals(self.period)
-            self._updateSelfReturnOrder(self.period)
 
-    def __updateRenormalizableGraph(self):
-        if self.renormalizable:
-            self.__plotRenormalizableGraph()
-        else:
-            self.__removeRenormalizableGraph()
-
-    def __removeRenormalizableGraph(self):
-        if self.__isSelfReturnIntervalsPlotted == True:
-            try:
-                self.selfReturnCheckBox.toggled.disconnect(self.__selfReturnIntervalsSlot)
-                self.orderCheckBox.toggled.disconnect(self.__selfReturnOrderSlot)
-            except:
-                pass
-            self.__selfReturnIntervalsSlot=None
-            self._removeSelfReturnIntervals()
-            self._removeSelfReturnOrder()
-            self.__isSelfReturnIntervalsPlotted = False
     
     def _plotSelfReturnIntervals(self,period)->Plot.GraphObject:
         raise NotImplementedError("PlotWindow._plotSelfReturnIntervals")
