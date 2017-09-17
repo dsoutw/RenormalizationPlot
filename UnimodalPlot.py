@@ -14,8 +14,8 @@ def frange(x, y, jump):
 		yield x
 		x += jump
 
-def PlotVetricalLines(canvas,pointList):
-	return [Plot.VerticalLine(canvas, point, visible=True) for point in pointList]
+def PlotVetricalLines(pointList):
+	return [Plot.VerticalLine(point, visible=True) for point in pointList]
 
 class UnimodalPlot:
 	'''
@@ -96,10 +96,10 @@ class UnimodalPlot:
 	def _plotSelfReturnIntervals(self,period,visible:bool=True)->Plot.GraphObject:
 		f_selfReturnBoxesList=[None]*period
 		for t in range(period):
-			f_selfReturnBoxesList[t]=Plot.Rectangle(self.canvas,
-					self.function.p_a1[period][t], self.function.p_a1[period][t], #x,y
-					self.function.p_A1[period][t]-self.function.p_a1[period][t], self.function.p_A1[period][t]-self.function.p_a1[period][t], #width, height
-					visible=True, color='gray', lw=1, fill=None
+			f_selfReturnBoxesList[t]=Plot.Rectangle(
+				self.function.p_a1[period][t], self.function.p_a1[period][t], #x,y
+				self.function.p_A1[period][t]-self.function.p_a1[period][t], self.function.p_A1[period][t]-self.function.p_a1[period][t], #width, height
+				plotOptions={'color':'gray', 'lw':1, 'fill':None}
 				)
 		self.gSelfReturnIntervals=Plot.Group(f_selfReturnBoxesList,visible=visible,parent=self.canvas)
 		return self.gSelfReturnIntervals
@@ -118,12 +118,11 @@ class UnimodalPlot:
 	def _plotSelfReturnOrder(self,period,visible:bool=True)->Plot.GraphObject:
 		f_selfReturnOrderList=[None]*period
 		for t in range(period):
-			f_selfReturnOrderList[t]=Plot.Text(self.canvas,
+			f_selfReturnOrderList[t]=Plot.Text(
 					str(t),
 					((self.function.p_a1[period][t]+self.function.p_A1[period][t])/2,max(self.function.p_a1[period][t],self.function.p_A1[period][t])),
 					(0,1),
-					visible=True,
-					horizontalalignment='center'
+					plotOptions={'horizontalalignment':'center'}
 				)
 		self.gSelfReturnOrder=Plot.Group(f_selfReturnOrderList,visible=visible,parent=self.canvas)
 		return self.gSelfReturnOrder
@@ -144,28 +143,28 @@ class UnimodalPlot:
 	''' Next Level Orbits '''
 
 	def _plotAlpha1(self,visible:bool=True)->Plot.GraphObject:
-		f_a1List=PlotVetricalLines(self.canvas,self.orbit_alpha1)
-		f_A1List=PlotVetricalLines(self.canvas,self.orbit_Alpha1)
+		f_a1List=PlotVetricalLines(self.orbit_alpha1)
+		f_A1List=PlotVetricalLines(self.orbit_Alpha1)
 		self.gAlpha1=Plot.Group(f_a1List+f_A1List,visible=visible,parent=self.canvas)
 		return self.gAlpha1
 	def _updateAlpha1(self):
 		self.gAlpha1.clear()
-		f_a1List=PlotVetricalLines(self.canvas,self.orbit_alpha1)
-		f_A1List=PlotVetricalLines(self.canvas,self.orbit_Alpha1)
+		f_a1List=PlotVetricalLines(self.orbit_alpha1)
+		f_A1List=PlotVetricalLines(self.orbit_Alpha1)
 		self.gAlpha1.extend(f_a1List+f_A1List)
 	def _removeAlpha1(self):
 		self.gAlpha1.clear()
 		self.gAlpha1=None
 
 	def _plotBeta1(self,visible:bool=True)->Plot.GraphObject:
-		f_b1List=PlotVetricalLines(self.canvas,self.orbit_beta1)
-		f_B1List=PlotVetricalLines(self.canvas,self.orbit_Beta1)
+		f_b1List=PlotVetricalLines(self.orbit_beta1)
+		f_B1List=PlotVetricalLines(self.orbit_Beta1)
 		self.gBeta1=Plot.Group(f_b1List+f_B1List,visible=visible,parent=self.canvas)
 		return self.gBeta1
 	def _updateBeta1(self):
 		self.gBeta1.clear()
-		f_b1List=PlotVetricalLines(self.canvas,self.orbit_beta1)
-		f_B1List=PlotVetricalLines(self.canvas,self.orbit_Beta1)
+		f_b1List=PlotVetricalLines(self.orbit_beta1)
+		f_B1List=PlotVetricalLines(self.orbit_Beta1)
 		self.gBeta1.extend(f_b1List+f_B1List)
 	def _removeBeta1(self):
 		self.gBeta1.clear()
@@ -195,7 +194,8 @@ class UnimodalPlot:
 			
 		_contourQRLevel=np.vectorize(_contourQRLevel,signature='(),()->()')
 		
-		self.gRescalingLevels = Plot.Contour(self.canvas, _contourQRLevel, visible=visible,levels=list(frange(-0.5,Setting.figureMaxLevels+0.6,1)),cmap=cm.get_cmap("gray_r"),norm=colors.Normalize(vmin=0,vmax=10))
+		self.gRescalingLevels = Plot.Contour(_contourQRLevel, visible=visible, parent=self.canvas,
+			plotOptions={'levels':list(frange(-0.5,Setting.figureMaxLevels+0.6,1)),'cmap':cm.get_cmap("gray_r"),'norm':colors.Normalize(vmin=0,vmax=10)})
 		return self.gRescalingLevels
 	def _updateRescalingLevels(self):
 		self.gRescalingLevels.update()

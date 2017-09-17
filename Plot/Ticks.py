@@ -14,7 +14,7 @@ class Ticks(ArtistBase):
     xPosition = ["top", "bottom"]
     yPosition = ["left", "right"]
     
-    def __init__(self, parent, position, ticks=[], ticksLabel=[], figure=None, axis=None, visible=True):
+    def __init__(self, position, ticks=[], ticksLabel=[], **kwargs):
         if position not in Ticks.positionValues:
             raise ValueError("position [%s] must be one of %s" %
                              (position, Ticks.positionValues))
@@ -22,7 +22,7 @@ class Ticks(ArtistBase):
         self._ticks=ticks
         self._ticksLabel=ticksLabel
      
-        super().__init__(parent, visible)
+        super().__init__(**kwargs)
 
     def _initilizePlot(self):
         artist = self.__plot(self.canvas.figure, self.canvas.axes)

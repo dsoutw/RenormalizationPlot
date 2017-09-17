@@ -16,9 +16,9 @@ class Function(ArtistBase):
     _axis=None
     _xEventId=None
     _yEventId=None
-    _kwargs=()
+    plotOptions=()
     
-    def __init__(self, parent, func, axis=None, visible=True, **kwargs):
+    def __init__(self, func, **kwargs):
         '''
         Plot a function
         :param canvas: the canvas showing the plot
@@ -31,10 +31,9 @@ class Function(ArtistBase):
         :type visible:
         '''
         self.__func=func
-        self._kwargs=kwargs
 
         # set sample points
-        super().__init__(parent, visible=visible)
+        super().__init__(**kwargs)
     
     
     def _initilizePlot(self):
@@ -50,7 +49,7 @@ class Function(ArtistBase):
 
     def __plot(self, axis):
         self._sample = generateSample(axis)
-        curve, = axis.plot(self._sample, self.function(self._sample), **self._kwargs)
+        curve, = axis.plot(self._sample, self.function(self._sample), **self.plotOptions)
         return curve
     
     def draw(self, axis):

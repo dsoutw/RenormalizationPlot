@@ -48,25 +48,25 @@ class UnimodalWindow(UnimodalPlot,PlotWindow):
 
         '''Plot graphs'''
         # Plot function
-        self.gFunction = Plot.Function(None,self.function,lw=1)
+        self.gFunction = Plot.Function(self.function,plotOptions={'lw':1})
         # Plot second iterate
-        self.gFunctionSecond = Plot.Function(None,lambda x:self.function.iterates(x,2),lw=1)
+        self.gFunctionSecond = Plot.Function(lambda x:self.function.iterates(x,2),plotOptions={'lw':1})
         # Plot multiple iterate
-        self.gFunctionIterates = Plot.Function(None,lambda x:self.function.iterates(x,self.period),lw=1)
+        self.gFunctionIterates = Plot.Function(lambda x:self.function.iterates(x,self.period),plotOptions={'lw':1})
         # Draw diagonal line
-        self.gDiagonal = Plot.Function(None,lambda x:x,lw=1)
+        self.gDiagonal = Plot.Function(lambda x:x,plotOptions={'lw':1})
         
         '''Plot orbits'''
-        self.gAlpha0=Plot.Ticks(self.canvas,"top",
+        self.gAlpha0=Plot.Ticks("top",
             [-1,1,self.function.p_c],
             [r"$\alpha(0)$",r"$\overline{\alpha(0)}$",r"$c$"])
-        self.gBeta0_0=Plot.VerticalLine(None,self.function.p_b,color='gray',lw=0.5)
+        self.gBeta0_0=Plot.VerticalLine(self.function.p_b,plotOptions={'color':'gray','lw':0.5})
         # Draw B
-        self.gBeta0_Bar0=Plot.VerticalLine(None,self.function.p_B,color='gray',lw=0.5)
+        self.gBeta0_Bar0=Plot.VerticalLine(self.function.p_B,plotOptions={'color':'gray','lw':0.5})
         # Draw B2
-        self.gBeta0_Bar1=Plot.VerticalLine(None,self.function.p_B2,color='gray',lw=0.5)
+        self.gBeta0_Bar1=Plot.VerticalLine(self.function.p_B2,plotOptions={'color':'gray','lw':0.5})
         # Beta ticks
-        self.gBeta0Ticks=Plot.Ticks(None,"top",
+        self.gBeta0Ticks=Plot.Ticks("top",
                                 [self.function.p_b,self.function.p_B,self.function.p_B2],
                                 [r"$\beta^{0}$",r"$\overline{\beta^{1}}$"]
                                 )

@@ -30,7 +30,7 @@ class PlotWindow(Binding, QtWidgets.QMainWindow, PlotWindowUI.Ui_plotWindow):
         'gDiagonal':('diagonalCheckBox',),
         'gAlpha0':(),
         'gBeta0':('beta0CheckBox',),
-        
+        # renormalization
         }
 
     # Arguments
