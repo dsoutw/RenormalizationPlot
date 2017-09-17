@@ -13,7 +13,7 @@ from abc import ABCMeta,abstractmethod
 import Setting
         
 class PlotWindow(Binding, QtWidgets.QMainWindow, PlotWindowUI.Ui_plotWindow):
-    #__metaclass__=ABCMeta
+    __metaclass__=ABCMeta
     __level:int=None
     __rParent:'PlotWindow'=None
     __period:int=2
@@ -23,8 +23,14 @@ class PlotWindow(Binding, QtWidgets.QMainWindow, PlotWindowUI.Ui_plotWindow):
     graph object: (checkable component, enable other components when the graph is setted...)  
     '''
     __bindingList={
-        "gFunction":(),
-        "gFunctionSecond":("secondIterateCheckBox",)
+        # current level
+        'gFunction':(),
+        'gFunctionSecond':('secondIterateCheckBox',),
+        'gFunctionIterates':('iteratedGraphCheckBox',),
+        'gDiagonal':('diagonalCheckBox',),
+        'gAlpha0':(),
+        'gBeta0':('beta0CheckBox',),
+        
         }
 
     # Arguments
@@ -44,6 +50,10 @@ class PlotWindow(Binding, QtWidgets.QMainWindow, PlotWindowUI.Ui_plotWindow):
         self.ui.setupUi(self)
         
         # Apply settings
+        self.periodSpinBox.setValue(self.__period)
+        self.selfReturnCheckBox.setChecked(Setting.figureSelfReturn)
+        self.orderCheckBox.setChecked(Setting.figureSelfReturn)
+
         self.secondIterateCheckBox.setChecked(Setting.figureSecondIterate)
         self.iteratedGraphCheckBox.setChecked(Setting.figureMultipleIterate)
         self.diagonalCheckBox.setChecked(Setting.figureDiagonal)
@@ -77,14 +87,7 @@ class PlotWindow(Binding, QtWidgets.QMainWindow, PlotWindowUI.Ui_plotWindow):
         mpl.rcParams['axes.xmargin'] = 0
         mpl.rcParams['axes.ymargin'] = 0
 
-        self.canvas.setUpdatesEnabled(False)
-        self.__plotCurrentLevel()
-        self.canvas.setUpdatesEnabled(True)
-
         # setup renormalizable features
-        self.periodSpinBox.setValue(self.__period)
-        self.selfReturnCheckBox.setChecked(Setting.figureSelfReturn)
-        self.orderCheckBox.setChecked(Setting.figureSelfReturn)
         self.periodSpinBox.valueChanged.connect(self.setPeriod)
         self.__rChild=None
         self.renormalizeButton.clicked.connect(self.openRChild)
@@ -128,7 +131,6 @@ class PlotWindow(Binding, QtWidgets.QMainWindow, PlotWindowUI.Ui_plotWindow):
         if period != self.__period:
             self.__period=period
             self.periodSpinBox.setValue(period)
-            self.__updatePeriod()
     def getPeriod(self)->int:
         return self.__period
     period=property(
@@ -277,7 +279,6 @@ class PlotWindow(Binding, QtWidgets.QMainWindow, PlotWindowUI.Ui_plotWindow):
     '''
     def updatePlot(self):
         self.canvas.setUpdatesEnabled(False)
-        self.__updateCurrentLevel()
         self.__updateRenormalizableGraph()
         self.__updateRChildGraph()
         self.canvas.setUpdatesEnabled(True)
@@ -293,95 +294,6 @@ class PlotWindow(Binding, QtWidgets.QMainWindow, PlotWindowUI.Ui_plotWindow):
         self._updateRescalingLevels()
         self.canvas.setUpdatesEnabled(True)
 
-    '''
-    Plot current level
-    '''
-    
-    def __plotCurrentLevel(self):
-        self.__plotCurrentLevelGraphs()
-        self.__plotCurrentLevelOrbits()
-        self.__plotPeriod()
-
-    def __updateCurrentLevel(self):
-        self.__updateCurrentLevelGraphs()
-        self.__updateCurrentLevelOrbits()
-        self.__updatePeriod()
-
-    '''
-    Plot current level graphs
-    '''
-        
-    def __plotCurrentLevelGraphs(self):
-        # Plot function
-        self.gFunction=self._plotFunction()
-        
-        # Plot second iterate
-        self.gFunctionSecond=self._plotFunctionSecond(visible=self.secondIterateCheckBox.isChecked())
-        #self.secondIterateCheckBox.toggled.connect(gFunctionSecond.setVisible)
-        
-        # Draw diagonal line
-        gDiagonal = self._plotDiagonal(visible=self.diagonalCheckBox.isChecked())
-        self.diagonalCheckBox.toggled.connect(gDiagonal.setVisible)
-        
-    def __updateCurrentLevelGraphs(self):
-        self._updateFunction()
-        self._updateFunctionSecond()
-    
-    def _plotFunction(self)->Plot.GraphObject:
-        raise NotImplementedError("PlotWindow._plotFunction")
-    def _updateFunction(self):
-        raise NotImplementedError("PlotWindow._updateFunction")
-
-    def _plotFunctionSecond(self)->Plot.GraphObject:
-        raise NotImplementedError("PlotWindow._plotFunctionSecond")
-    def _updateFunctionSecond(self):
-        raise NotImplementedError("PlotWindow._updateFunctionSecond")
-
-    def _plotDiagonal(self)->Plot.GraphObject:
-        raise NotImplementedError("PlotWindow._plotDiagonal")
-
-
-    '''
-    Plot Current Level Orbits
-    '''
-   
-    def __plotCurrentLevelOrbits(self):
-        self._plotAlpha0()
-
-        # Plot the beta orbits
-        gBeta0=self._plotBeta0(visible=self.beta0CheckBox.isChecked())
-        self.beta0CheckBox.toggled.connect(gBeta0.setVisible)
-
-    def __updateCurrentLevelOrbits(self):
-        self._updateAlpha0()
-        self._updateBeta0()
-
-    def _plotAlpha0(self)->Plot.GraphObject:
-        raise NotImplementedError("PlotWindow._plotAlpha0")
-    def _updateAlpha0(self):
-        raise NotImplementedError("PlotWindow._updateAlpha0")
-
-    def _plotBeta0(self)->Plot.GraphObject:
-        raise NotImplementedError("PlotWindow._plotBeta0")
-    def _updateBeta0(self):
-        raise NotImplementedError("PlotWindow._updateBeta0")
-
-    '''
-    Plot current level period plots
-    '''
-
-    def __plotPeriod(self):
-        # Plot multiple iterate
-        gFunctionIterates = self._plotFunctionIterates(self.period,visible=self.iteratedGraphCheckBox.isChecked())
-        self.iteratedGraphCheckBox.toggled.connect(gFunctionIterates.setVisible)
-        
-    def __updatePeriod(self):
-        self._updateFunctionIterates(self.period)
-
-    def _plotFunctionIterates(self,period:int,visible:bool=True)->Plot.GraphObject:
-        raise NotImplementedError("PlotWindow._plotFunctionIterates")
-    def _updateFunctionIterates(self,period:int):
-        raise NotImplementedError("PlotWindow._updateFunctionIterates")
     
     '''
     Plot Renormalizable Objects

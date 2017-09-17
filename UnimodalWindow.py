@@ -1,11 +1,12 @@
-from PyQt5 import QtCore, QtWidgets # Import the PyQt4 module we'll need
+from PyQt5 import QtCore, QtWidgets
 import sys # We need sys so that we can pass argv to QApplication
 from scipy import optimize
 
-from PlotWindow import PlotWindow # This file holds our MainWindow and all design related things
-                    # it also keeps events etc that we defined in Qt Designer
+from PlotWindow import PlotWindow 
 from UnimodalPlot import UnimodalPlot
 import Setting
+
+import Plot
 
 # renormalization 
 from Unimodal import Unimodal
@@ -32,11 +33,63 @@ class UnimodalWindow(UnimodalPlot,PlotWindow):
         UnimodalPlot.__init__(self, func)
         PlotWindow.__init__(self, level, rParent)
 
+        self.__plotCurrentLevel()
+
         self.canvas.setAxesOptions(adjustable='box-forced',xlim=[-1,1], ylim=[-1,1],aspect='equal')
         self.setRenormalizable(self.__renormalizable(self.period))
         self.updateRenormalizablePlot()
         #self.canvas.fig.tight_layout()
 
+    '''
+    Plot current level graphs
+    '''
+    def __plotCurrentLevel(self):
+        self.canvas.setUpdatesEnabled(False)
+
+        '''Plot graphs'''
+        # Plot function
+        self.gFunction = Plot.Function(None,self.function,lw=1)
+        # Plot second iterate
+        self.gFunctionSecond = Plot.Function(None,lambda x:self.function.iterates(x,2),lw=1)
+        # Plot multiple iterate
+        self.gFunctionIterates = Plot.Function(None,lambda x:self.function.iterates(x,self.period),lw=1)
+        # Draw diagonal line
+        self.gDiagonal = Plot.Function(None,lambda x:x,lw=1)
+        
+        '''Plot orbits'''
+        self.gAlpha0=Plot.Ticks(self.canvas,"top",
+            [-1,1,self.function.p_c],
+            [r"$\alpha(0)$",r"$\overline{\alpha(0)}$",r"$c$"])
+        self.gBeta0_0=Plot.VerticalLine(None,self.function.p_b,color='gray',lw=0.5)
+        # Draw B
+        self.gBeta0_Bar0=Plot.VerticalLine(None,self.function.p_B,color='gray',lw=0.5)
+        # Draw B2
+        self.gBeta0_Bar1=Plot.VerticalLine(None,self.function.p_B2,color='gray',lw=0.5)
+        # Beta ticks
+        self.gBeta0Ticks=Plot.Ticks(None,"top",
+                                [self.function.p_b,self.function.p_B,self.function.p_B2],
+                                [r"$\beta^{0}$",r"$\overline{\beta^{1}}$"]
+                                )
+        self.gBeta0=Plot.Group([self.gBeta0_0,self.gBeta0_Bar0,self.gBeta0_Bar1,self.gBeta0Ticks])
+
+        self.canvas.setUpdatesEnabled(True)
+
+        
+    '''
+    Plot Current Level Orbits
+    '''
+    def __updateCurrentLevel(self):
+        self.gFunction.setFunction(self.function)
+        self.gFunctionSecond.setFunction(lambda x:self.function.iterates(x,2))
+        self.gFunctionIterates.update()
+        
+        self.gAlpha0.setTicks([-1,1,self.function.p_c])
+        self.gBeta0_0.setXValue(self.function.p_b)
+        self.gBeta0_Bar0.setXValue(self.function.p_B)
+        self.gBeta0_Bar1.setXValue(self.function.p_B2)
+        self.gBeta0Ticks.setTicks([self.function.p_b,self.function.p_B,self.function.p_B2])       
+
+        
     '''
     Properties
     '''
@@ -48,6 +101,7 @@ class UnimodalWindow(UnimodalPlot,PlotWindow):
         super().setPeriod(period)
         self.setRenormalizable(self.__renormalizable(period))
         self.updateRChild()
+        self.gFunctionIterates.update()
         self.updateRenormalizablePlot()
         #self._updateRenormalizable()
 
@@ -62,6 +116,7 @@ class UnimodalWindow(UnimodalPlot,PlotWindow):
         self.canvas.setUpdatesEnabled(False)
         self.setRenormalizable(self.__renormalizable(self.period))
         self.updateRChild()
+        self.__updateCurrentLevel()
         self.updatePlot()
         self.canvas.setUpdatesEnabled(True)
 

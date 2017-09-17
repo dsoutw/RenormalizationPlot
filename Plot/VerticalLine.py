@@ -21,15 +21,11 @@ class VerticalLine(ArtistBase):
         '''
         self._xValue=xValue
         self._kwargs=kwargs
-        if axis == None:
-            self._axis=parent.axes
-        else:
-            self._axis=axis
         
         super().__init__(parent, visible)
 
     def _initilizePlot(self):
-        return self.__plot(self._axis)
+        return self.__plot(self.canvas.axes)
 
     def __plot(self, axis):
         return axis.axvline(x=self.xValue,**self._kwargs)

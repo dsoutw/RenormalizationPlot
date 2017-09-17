@@ -21,19 +21,11 @@ class Ticks(ArtistBase):
         self._position=position
         self._ticks=ticks
         self._ticksLabel=ticksLabel
-        if axis == None:
-            self._axis=parent.axes
-        else:
-            self._axis=axis
-        if figure == None:
-            self._figure=parent.figure
-        else:
-            self._figure=figure
      
         super().__init__(parent, visible)
 
     def _initilizePlot(self):
-        artist = self.__plot(self._figure, self._axis)
+        artist = self.__plot(self.canvas.figure, self.canvas.axes)
         artist.__ticksCanvas=self.canvas
         self.canvas.addAxes(artist)
         return artist
