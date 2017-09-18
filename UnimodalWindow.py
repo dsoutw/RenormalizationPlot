@@ -153,13 +153,9 @@ class UnimodalWindow(UnimodalPlot,PlotWindow):
         self.updateRenormalizablePlot()
         #self._updateRenormalizable()
 
-    def getPeriod(self):
-        return super().getPeriod()
-
     # unimodal map for the plot
-    @QtCore.pyqtSlot(Unimodal)
-    def setFunction(self, func:Unimodal):
-        super().setFunction(func)
+    def functionChangedEvent(self, func:Unimodal):
+        super().functionChangedEvent(func)
 
         self.canvas.setUpdatesEnabled(False)
         self.setRenormalizable(self.__renormalizable(self.period))

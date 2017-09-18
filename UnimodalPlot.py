@@ -35,11 +35,15 @@ class UnimodalPlot:
 		return self.__func
 	@QtCore.pyqtSlot(Unimodal)
 	def setFunction(self, func:Unimodal):
-		self.__func = func
+		if self.__func != func:
+			self.__func = func
+			self.functionChangedEvent(func)
 	function=property(
 		lambda self: self.getFunction(), 
 		lambda self, func: self.setFunction(func)
 		)
+	def functionChangedEvent(self, function):
+		pass
 
 	''' Periodic intervals and Trapping intervals '''
 

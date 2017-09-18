@@ -6,38 +6,109 @@ Use string to work around on nonexistence of pointers
 
 @author: dsou
 '''
-import typing
+import typing as tp
 import warnings
+import operator
+import Plot
 
+def readAttr(ui,attr):
+    if isinstance(attr, str):
+        return operator.attrgetter(attr)(ui)
+    else:
+        return attr
+
+class graphLink:
+    setEnableUI=None
+    setVisibleUI=None
+    bindUI=[]
+    __graph:tp.Optional[Plot.GraphObject]=None
+    ui=None
+    
+    def __init__(self,ui,optionList):
+        self.bindUI=[]
+        self.ui=ui
+        
+        for optionName, option in optionList.items():
+            if optionName=='getVisible':
+                self.setVisibleUI=readAttr(ui,option)
+                self.setVisibleUI.toggled.connect(self.__setVisibleSlot)
+                self.__visibledUI=self.setVisibleUI.isChecked()
+            elif optionName=='setEnable':
+                self.bindUI=[readAttr(ui,uiName) for uiName in option]
+            elif optionName=='getEnable':
+                self.setEnableUI=readAttr(ui,option)
+                self.setEnableUI.toggled.connect(self.__setEnableSlot)
+                self.__enabledUI=self.setEnableUI.isChecked()
+        
+        self.__setEnable(self.isEnabled())
+        #self.__setVisible(self.isVisibled())
+    
+    __enabledUI:bool=True
+    def __setEnableSlot(self,value):
+        if (self.graph is not None and value) != (self.graph is not None and self.__enabledUI):
+            self.__setEnable(self.graph is not None and value)
+        self.__enabledUI=value
+        
+    def __setEnable(self,value):
+        for component in self.bindUI:
+            component.setEnabled(value)
+            
+    def isEnabled(self):
+        return (self.graph is not None) and self.__enabledUI
+
+    __visibledUI:bool=True
+    def __setVisibleSlot(self,value):
+        if value != self.__visibledUI:
+            self.__setVisible(value)
+            self.__visibledUI=value
+            
+    def __setVisible(self,value):
+        graph=self.graph
+        if graph is not None:
+            graph.setVisible(value)
+            
+    def isVisibled(self):
+        return self.__visibledUI
+            
+    def getGraph(self)->tp.Optional[Plot.GraphObject]:
+        return self.__graph
+    
+    def setGraph(self, value:tp.Optional[Plot.GraphObject]):
+        oldGraph:tp.Optional[Plot.GraphObject]=self.__graph
+        newGraph:tp.Optional[Plot.GraphObject]=value
+        
+        if oldGraph!=newGraph:
+            self.__graph=value
+            
+            if oldGraph is not None:
+                oldGraph.parent=None
+                
+            self.__setEnable(self.isEnabled())
+                
+            if newGraph is not None:
+                newGraph.parent=self.ui.canvas
+                newGraph.setVisible(self.isVisibled())
+
+    graph=property(getGraph,setGraph)
+    
 class Binding(object):
     '''
     classdocs
     '''
-    __graphList:dict={}
-    __uiBindList:dict={}
-    __uiEnableMaskList:dict={}
+    __graphList:tp.Dict[str,graphLink]={}
+    
+    def __setVisible(self,name):
+        pass
 
-    def __init__(self, ui:object, binding:typing.Dict[str,dict]):
-        '''
-        Constructor
-        '''
-        
-        self.__graphList=dict.fromkeys(binding.keys())
-        self.__uiBindList={graphName: [getattr(ui,uiName) for uiName in options.get('link',())] for graphName, options in binding.items()}
-        self.__uiEnableMaskList={graphName: getattr(ui,options.get('enable',""),None) for graphName, options in binding.items()}
-        
-        for graphName, uiEnableMaskComponent in self.__uiEnableMaskList.items():
-            if uiEnableMaskComponent is not None:
-                def setEnable():
-                    self.__setEnable(graphName)
-                uiEnableMaskComponent.toggled.connect(setEnable)
+    def __init__(self, ui:object, binding:tp.Dict[str,dict]):
+        self.__graphList:typing.Dict[graphLink]={graphName: graphLink(ui,optionList) for graphName, optionList in binding.items()}
     
     def __dir__(self, *args, **kwargs):
         return super().__dir__( *args, **kwargs).extend(self.__graphList.keys())
     
     def __getattr__(self, name):
         if name in self.__graphList:
-            return self.__graphList[name]
+            return self.__graphList[name].graph
         else:
             super().__getattr__(name)
 
@@ -53,42 +124,4 @@ class Binding(object):
         if name not in self.__graphList:
             return super().__setattr__(name, value)
         
-        oldGraph:Plot.GraphObject=self.__graphList[name]
-        newGraph:Plot.GraphObject=value
-        uiList=self.__uiBindList[name]
-        self.__graphList[name]=newGraph
-        
-        if oldGraph!=newGraph:
-            # Disconnect graph with UI
-            if oldGraph is not None:
-                # Disconnect clickable with visible
-                try:
-                    if len(uiList) >= 1:
-                        uiList[0].toggled.disconnect(oldGraph.setVisible)
-                except Exception as e:
-                    warnings.warn(str(e))
-                oldGraph.parent=None
-                
-            self.__setEnable(name)
-            #enableUI:bool=newGraph is not None
-            #for component in uiList:
-            #    component.setEnabled(enableUI)
-                
-            if newGraph is not None:
-                # Disconnect clickable with visible
-                if len(uiList) >= 1:
-                    newGraph.setVisible(uiList[0].isChecked())
-                    uiList[0].toggled.connect(newGraph.setVisible)
-                else:
-                    newGraph.setVisible(True)
-                newGraph.parent=self.ui.canvas
-
-    def isEnabled(self,name):
-        if self.__uiEnableMaskList[name] is None:
-            return self.__graphList[name] is not None
-        else:
-            return (self.__graphList[name] is not None) and self.__uiEnableMaskList[name].isChecked()
-    
-    def __setEnable(self,name):
-        for component in self.__uiBindList[name]:
-            component.setEnabled(self.isEnabled(name))
+        self.__graphList[name].graph=value

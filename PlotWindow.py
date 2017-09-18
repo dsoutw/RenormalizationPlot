@@ -19,22 +19,7 @@ class PlotWindow(Binding, QtWidgets.QMainWindow, PlotWindowUI.Ui_plotWindow):
     __period:int=2
     __renormalizable:bool=None
     
-    ''' bindingList format
-    graph object: (checkable component, enable other components when the graph is setted...)  
-    '''
-    __bindingList={
-        # current level
-        'gFunction':{},
-        'gFunctionSecond':{'link':('secondIterateCheckBox',)},
-        'gFunctionIterates':{'link':('iteratedGraphCheckBox',)},
-        'gDiagonal':{'link':('diagonalCheckBox',)},
-        'gAlpha0':{},
-        'gBeta0':{'link':('beta0CheckBox',)},
-        # renormalization
-        'gSelfReturnIntervals':{},
-        'gSelfReturnOrder':{'link':('orderCheckBox',),'enable':'selfReturnCheckBox'},
-        'gSelfReturn':{'link':('selfReturnCheckBox','selfReturnLabel')},
-        }
+
 
     # Arguments
     # func: unimodal class
@@ -51,6 +36,28 @@ class PlotWindow(Binding, QtWidgets.QMainWindow, PlotWindowUI.Ui_plotWindow):
 
         self.ui = self
         self.ui.setupUi(self)
+
+        ''' bindingList format
+        graph object: (checkable component, enable other components when the graph is setted...)  
+        '''
+        __bindingList={
+            # current level
+            'gFunction':{},
+            'gFunctionSecond':{'getVisible':'secondIterateCheckBox','setEnable':('secondIterateCheckBox',)},
+            'gFunctionIterates':{'getVisible':'iteratedGraphCheckBox','setEnable':('iteratedGraphCheckBox',)},
+            'gDiagonal':{'getVisible':'diagonalCheckBox','setEnable':('diagonalCheckBox',)},
+            'gAlpha0':{},
+            'gBeta0':{'getVisible':'beta0CheckBox','setEnable':('beta0CheckBox',)},
+            # renormalizable
+            'gSelfReturnIntervals':{},
+            'gSelfReturnOrder':{
+                'getVisible':'orderCheckBox',
+                'setEnable':('orderCheckBox',),
+                'getEnable':'selfReturnCheckBox'},
+            'gSelfReturn':{
+                'getVisible':'selfReturnCheckBox',
+                'setEnable':('selfReturnCheckBox','selfReturnLabel')},
+            }
         
         # Apply settings
         self.periodSpinBox.setValue(self.__period)
@@ -64,7 +71,7 @@ class PlotWindow(Binding, QtWidgets.QMainWindow, PlotWindowUI.Ui_plotWindow):
         self.alpha1CheckBox.setChecked(Setting.figureAlpha1)
         self.beta1CheckBox.setChecked(Setting.figureBeta1)
         
-        Binding.__init__(self, self, self.__bindingList)
+        Binding.__init__(self, self, __bindingList)
         #self.setupUi(self)  # This is defined in design.py file automatically
                             # It sets up layout and widgets that are defined
 
