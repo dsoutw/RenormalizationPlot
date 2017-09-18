@@ -171,7 +171,7 @@ class UnimodalWindow(PlotWindow):
         self.gAlpha1=None
         self.gBeta1=None
 
-    def _plotDeepLevelOrbits(self):
+    def __plotDeepLevelOrbits(self):
         def _contourRLevel(x,y):
             lList=self.levels_alpha
             rList=self.levels_Alpha
@@ -194,10 +194,10 @@ class UnimodalWindow(PlotWindow):
         self.gRescalingLevels = Plot.Contour(_contourQRLevel,
             plotOptions={'levels':list(frange(-0.5,Setting.figureMaxLevels+0.6,1)),'cmap':cm.get_cmap("gray_r"),'norm':colors.Normalize(vmin=0,vmax=10)})
 
-    def _updateDeepLevelOrbits(self):
+    def __updateDeepLevelOrbits(self):
         self.gRescalingLevels.update()
 
-    def _removeDeepLevelOrbits(self):
+    def __removeDeepLevelOrbits(self):
         self.gRescalingLevels=None
                     
     '''
@@ -371,7 +371,7 @@ class UnimodalWindow(PlotWindow):
         self._findRescalingBoundaries(rChild)
 
         self.__plotNextLevelOrbits()
-        self._plotDeepLevelOrbits()
+        self.__plotDeepLevelOrbits()
 
         return rChild
 
@@ -385,7 +385,7 @@ class UnimodalWindow(PlotWindow):
                 self._findRescalingBoundaries(rChild)
 
                 self.__updateNextLevelOrbits()
-                self._updateDeepLevelOrbits()
+                self.__updateDeepLevelOrbits()
                 return True
             else:
                 return False
@@ -394,7 +394,7 @@ class UnimodalWindow(PlotWindow):
     #isThisClosed=False
     def _closeRChildEvent(self):
         self.__removeNextLevelOrbits()
-        self._removeDeepLevelOrbits()
+        self.__removeDeepLevelOrbits()
         
         self._rFunc=None
         self._r_s=None
@@ -417,7 +417,7 @@ class UnimodalWindow(PlotWindow):
         if self._updateRescalingBoundaries(self.rChild) == True:
             #print("Level ", self._level, ": ", str(self.levels_alpha))
             #print("Level ", self._level+1, ": ", str(self._rChild.levels_alpha))
-            self._updateDeepLevelOrbits()
+            self.__updateDeepLevelOrbits()
             
         
 def main():
