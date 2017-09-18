@@ -13,32 +13,40 @@ import Plot
 
 def readAttr(ui,attr):
     if isinstance(attr, str):
-        return operator.attrgetter(attr)(ui)
+        try:
+            return operator.attrgetter(attr)(ui)
+        except Exception as e:
+            print(str(e))
+            print(attr)
+            return None
     else:
         return attr
 
 class graphLink:
-    setEnableUI=None
-    setVisibleUI=None
-    bindUI=[]
+    getEnableUI=None
+    getVisibleUI=None
+    setEnableUI=[]
     __graph:tp.Optional[Plot.GraphObject]=None
     ui=None
     
     def __init__(self,ui,optionList):
-        self.bindUI=[]
+        self.setEnableUI=[]
         self.ui=ui
         
         for optionName, option in optionList.items():
             if optionName=='getVisible':
-                self.setVisibleUI=readAttr(ui,option)
-                self.setVisibleUI.toggled.connect(self.__setVisibleSlot)
-                self.__visibledUI=self.setVisibleUI.isChecked()
+                self.getVisibleUI=readAttr(ui,option)
+                self.getVisibleUI.toggled.connect(self.__setVisibleSlot)
+                self.__visibledUI=self.getVisibleUI.isChecked()
             elif optionName=='setEnable':
-                self.bindUI=[readAttr(ui,uiName) for uiName in option]
+                if isinstance(option,str):
+                    self.setEnableUI=[readAttr(ui,option)]
+                else:
+                    self.setEnableUI=[readAttr(ui,uiName) for uiName in option]
             elif optionName=='getEnable':
-                self.setEnableUI=readAttr(ui,option)
-                self.setEnableUI.toggled.connect(self.__setEnableSlot)
-                self.__enabledUI=self.setEnableUI.isChecked()
+                self.getEnableUI=readAttr(ui,option)
+                self.getEnableUI.toggled.connect(self.__setEnableSlot)
+                self.__enabledUI=self.getEnableUI.isChecked()
         
         self.__setEnable(self.isEnabled())
         #self.__setVisible(self.isVisibled())
@@ -50,7 +58,7 @@ class graphLink:
         self.__enabledUI=value
         
     def __setEnable(self,value):
-        for component in self.bindUI:
+        for component in self.setEnableUI:
             component.setEnabled(value)
             
     def isEnabled(self):

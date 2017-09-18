@@ -19,8 +19,6 @@ class PlotWindow(Binding, QtWidgets.QMainWindow, PlotWindowUI.Ui_plotWindow):
     __period:int=2
     __renormalizable:bool=None
     
-
-
     # Arguments
     # func: unimodal class
     # level: the level of renormalization
@@ -57,6 +55,22 @@ class PlotWindow(Binding, QtWidgets.QMainWindow, PlotWindowUI.Ui_plotWindow):
             'gSelfReturn':{
                 'getVisible':'selfReturnCheckBox',
                 'setEnable':('selfReturnCheckBox','selfReturnLabel')},
+            # first level
+            'gAlpha1':{
+                'getVisible':'alpha1CheckBox',
+                'setEnable':('alpha1CheckBox',),
+                'getEnable':'partitionButton'},
+            'gBeta1':{
+                'getVisible':'beta1CheckBox',
+                'setEnable':('beta1CheckBox',),
+                'getEnable':'partitionButton'},
+            'gLevel1':{
+                'getVisible':'partitionButton',
+                'setEnable':('partitionButton',)},
+            # Deep level
+            'gRescalingLevels':{
+                'getVisible':'levelButton',
+                'setEnable':('levelButton',)},
             }
         
         # Apply settings
@@ -137,12 +151,15 @@ class PlotWindow(Binding, QtWidgets.QMainWindow, PlotWindowUI.Ui_plotWindow):
         if period != self.__period:
             self.__period=period
             self.periodSpinBox.setValue(period)
+            self.periodChangedEvent(period)
     def getPeriod(self)->int:
         return self.__period
     period=property(
         lambda self: self.getPeriod(), 
         lambda self, func: self.setPeriod(func)
         )
+    def periodChangedEvent(self,period:int):
+        pass
 
     @QtCore.pyqtSlot(int)
     def setLevel(self, level:int):
@@ -158,9 +175,9 @@ class PlotWindow(Binding, QtWidgets.QMainWindow, PlotWindowUI.Ui_plotWindow):
     @QtCore.pyqtSlot(bool)
     def setRenormalizable(self, value:bool):
         if self.__renormalizable!=value:
-            if self.renormalizableChangedEvent(value)!=False:
-                self.__renormalizable=value
-                self.renormalizableChanged.emit(value)
+            self.renormalizableChangedEvent(value)
+            self.__renormalizable=value
+            self.renormalizableChanged.emit(value)
     def getRenormalizable(self)->bool:
         return self.__renormalizable
     renormalizable=property(
@@ -223,9 +240,6 @@ class PlotWindow(Binding, QtWidgets.QMainWindow, PlotWindowUI.Ui_plotWindow):
 
             self.levelBox.setEnabled(True)
             self.openWindow(self.__rChild)
-            self.__plotRChildGraph()
-            
-            #self.__plotRChildGraph()
             
             # Notify the ancestors that the unimodal map is renormalized
             level=2
@@ -255,8 +269,6 @@ class PlotWindow(Binding, QtWidgets.QMainWindow, PlotWindowUI.Ui_plotWindow):
     def __rChildClosed(self):
         if self.__rChild != None:
             self._closeRChildEvent()
-            self.__removeNextLevelOrbits()
-            self.__removeDeepLevelOrbits()
     
             self.levelBox.setEnabled(False)
             self.__rChild=None
@@ -278,159 +290,3 @@ class PlotWindow(Binding, QtWidgets.QMainWindow, PlotWindowUI.Ui_plotWindow):
 
     def closeWindow(self, widget:'PlotWindow'):
         widget.close()
-
-
-    '''
-    Plot Utilities
-    '''
-    def updatePlot(self):
-        self.canvas.setUpdatesEnabled(False)
-        self.__updateRChildGraph()
-        self.canvas.setUpdatesEnabled(True)
-
-    def updateRenormalizablePlot(self):
-        self.canvas.setUpdatesEnabled(False)
-        self.__updateRChildGraph()
-        self.canvas.setUpdatesEnabled(True)
-
-    def updateRescalingLevelPlot(self):
-        self.canvas.setUpdatesEnabled(False)
-        self._updateRescalingLevels()
-        self.canvas.setUpdatesEnabled(True)
-
-    
-    '''
-    Plot Renormalizable Objects
-    '''
-    
-
-    
-    def _plotSelfReturnIntervals(self,period)->Plot.GraphObject:
-        raise NotImplementedError("PlotWindow._plotSelfReturnIntervals")
-    def _updateSelfReturnIntervals(self,period):
-        raise NotImplementedError("PlotWindow._updateSelfReturnIntervals")
-    def _removeSelfReturnIntervals(self):
-        raise NotImplementedError("PlotWindow._removeSelfReturnIntervals")
-
-    def _plotSelfReturnOrder(self,period)->Plot.GraphObject:
-        raise NotImplementedError("PlotWindow._plotSelfReturnOrder")
-    def _updateSelfReturnOrder(self,period):
-        raise NotImplementedError("PlotWindow._updateSelfReturnOrder")
-    def _removeSelfReturnOrder(self):
-        raise NotImplementedError("PlotWindow._removeSelfReturnOrder")
-    
-
-    '''
-    Plot RChild objects
-    '''
-    def __plotRChildGraph(self):
-        self.__plotNextLevelOrbits()
-        self.__plotDeepLevelOrbits()
-
-    def __updateRChildGraph(self):
-        if self.__rChild != None:
-            self.__updateNextLevelOrbits()
-            self.__updateDeepLevelOrbits()
-        else:
-            self.__removeRChildGraph()
-
-    def __removeRChildGraph(self):
-        self.__removeNextLevelOrbits()
-        self.__removeDeepLevelOrbits()
-        
-    ''' Next Level Orbits '''
-    # plot orbits obtained from next level
-    __isNextLevelOrbitsPlotted=False
-    __level1Slot=None
-    def __plotNextLevelOrbits(self):
-        if self.__isNextLevelOrbitsPlotted==False:
-            gAlpha1=self._plotAlpha1(visible=self.alpha1CheckBox.isChecked())
-            self.alpha1CheckBox.toggled.connect(gAlpha1.setVisible)
-
-            gBeta1=self._plotBeta1(visible=self.beta1CheckBox.isChecked())
-            self.beta1CheckBox.toggled.connect(gBeta1.setVisible)
-    
-            gLevel1=Plot.Group([self.gAlpha1,self.gBeta1],visible=self.partitionButton.isChecked(),parent=self.canvas)
-            self.__level1Slot=gLevel1.setVisible
-            self.partitionButton.toggled.connect(self.__level1Slot)
-            
-            self.__isNextLevelOrbitsPlotted=True
-        else:
-            self._updateAlpha1()
-            self._updateBeta1()
-
-    def __updateNextLevelOrbits(self):
-        if self.renormalizable:
-            self.__plotNextLevelOrbits()
-        else:
-            self.__removeNextLevelOrbits()
-
-    def __removeNextLevelOrbits(self):
-        if self.__isNextLevelOrbitsPlotted==True:
-            # clear sub-structures
-            try:
-                self.alpha1CheckBox.toggled.disconnect()
-            except:
-                pass
-            try:
-                self.beta1CheckBox.toggled.disconnect()
-            except:
-                pass
-            try:
-                self.partitionButton.toggled.disconnect(self.__level1Slot)
-            except:
-                pass
-            self.__level1Slot=None
-            self._removeAlpha1()
-            self._removeBeta1()
-            self.__isNextLevelOrbitsPlotted=False
-            
-    def _plotAlpha1(self,visible:bool=True)->Plot.GraphObject:
-        raise NotImplementedError("PlotWindow._plotAlpha1")
-    def _updateAlpha1(self):
-        raise NotImplementedError("PlotWindow._updateAlpha1")
-    def _removeAlpha1(self):
-        raise NotImplementedError("PlotWindow._removeAlpha1")
-
-    def _plotBeta1(self,visible:bool=True)->Plot.GraphObject:
-        raise NotImplementedError("PlotWindow._plotBeta1")
-    def _updateBeta1(self):
-        raise NotImplementedError("PlotWindow._updateBeta1")
-    def _removeBeta1(self):
-        raise NotImplementedError("PlotWindow._removeBeta1")
-
-    ''' Deep Level Orbits '''
-   
-    _isDeepLevelOrbitsPlotted=False
-    _rescalingLevelSlot=None
-    def __plotDeepLevelOrbits(self):
-        if self._isDeepLevelOrbitsPlotted==False:
-            gRescalingLevels=self._plotRescalingLevels(visible=self.levelButton.isChecked())
-            self._rescalingLevelSlot=gRescalingLevels.setVisible
-            self.levelButton.toggled.connect(self._rescalingLevelSlot)
-            self._isDeepLevelOrbitsPlotted=True
-        else:
-            self._updateRescalingLevels()
-
-    def __updateDeepLevelOrbits(self):
-        if self.__rChild!=None:
-            self.__plotDeepLevelOrbits()
-        else:
-            self.__removeDeepLevelOrbits()
-
-    def __removeDeepLevelOrbits(self):
-        if self._isDeepLevelOrbitsPlotted==True:
-            try:
-                self.levelButton.toggled.disconnect(self._rescalingLevelSlot)
-            except:
-                pass
-            self._rescalingLevelSlot=None
-            self._removeRescalingLevels()
-            self._isDeepLevelOrbitsPlotted=False
-            
-    def _plotRescalingLevels(self,visible:bool=True)->Plot.GraphObject:
-        raise NotImplementedError("PlotWindow._plotRescalingLevels")
-    def _updateRescalingLevels(self):
-        raise NotImplementedError("PlotWindow._updateRescalingBoundaries")
-    def _removeRescalingLevels(self):
-        raise NotImplementedError("PlotWindow._removeRescalingLevels")
