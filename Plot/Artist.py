@@ -20,16 +20,12 @@ class ArtistBase(GraphObject,QtCore.QObject):
     __artist=None
     __updateDirty=False
     
-    def __init__(self, parent:CanvasBase=None, visible:bool=True):
+    def __init__(self, **kwargs):
         '''
         An abstract container for matplotlib artist
-        :param canvas: The canvas storing the artist
-        :type canvas: MPLCanvas
-        :param visible: Set visible of the artist
-        :type visible: bool
         '''
-        GraphObject.__init__(self,visible=visible,parent=parent)
-        QtCore.QObject.__init__(self,self.canvas)
+        GraphObject.__init__(self, **kwargs)
+        QtCore.QObject.__init__(self, self.canvas)
 
     @abstractmethod
     def _initilizePlot(self)->MPLArtist:

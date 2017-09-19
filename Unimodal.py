@@ -97,6 +97,10 @@ class Unimodal:
     def __call__(self, x):
         return self._map(x)
 
+    def getFunction(self):
+        return self._map
+    function=property(lambda self: self.getFunction())
+        
     # repeat iterate the unimodal map p-times
     def iterates(self, x, p:int):
         '''

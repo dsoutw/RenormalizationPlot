@@ -9,7 +9,7 @@ from PyQt5 import QtCore
 from typing import Tuple
 
 class Text(ArtistBase):
-    def __init__(self, parent, text:str, xy:Tuple[int,int], xyOffset:Tuple[int,int]=(0,0), axis=None, visible:bool=True, **kwargs):
+    def __init__(self, text:str, xy:Tuple[int,int], xyOffset:Tuple[int,int]=(0,0), **kwargs):
         '''
         Plot a vertical line on a canvas
         :param canvas:
@@ -24,19 +24,14 @@ class Text(ArtistBase):
         (self._xValue,self._yValue)=xy
         (self._xOffset,self._yOffset)=xyOffset
         self._text=text
-        self._kwargs=kwargs
-        if axis == None:
-            self._axis=parent.axes
-        else:
-            self._axis=axis
         
-        super().__init__(parent, visible)
+        super().__init__(**kwargs)
 
     def _initilizePlot(self):
-        return self.__plot(self._axis)
+        return self.__plot(self.canvas.axes)
 
     def __plot(self, axis):
-        return axis.annotate(self._text,xy=(self._xValue,self._yValue),xytext=(self._xOffset,self._yOffset),textcoords='offset points',**self._kwargs)
+        return axis.annotate(self._text,xy=(self._xValue,self._yValue),xytext=(self._xOffset,self._yOffset),textcoords='offset points',**self.plotOptions)
     
     def draw(self, axis):
         if self.isShowed():

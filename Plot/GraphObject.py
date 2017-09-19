@@ -19,11 +19,19 @@ class GraphObject(CanvasBase):
     # variable to store the mask for visible state 
     __visibleMask=True
     
-    def __init__(self,visible=True,visibleMask=True,parent=None):
+    plotOptions={}
+    
+    def __init__(self,visible=True,visibleMask=True,parent=None,**kwargs):
         #self.__visible=visible
         self.__visibleMask=visibleMask
         self.__visible=visible
         CanvasBase.__init__(self, parent)
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+    
+    def __del__(self):
+        #self.parent=None
+        pass
     
     # visible
     def getVisible(self)->bool:
@@ -62,6 +70,7 @@ class GraphObject(CanvasBase):
         return self.__visible and self.__visibleMask
 
     # clear the graph from the screen
+    # todo: remove this method
     def clear(self):
         raise NotImplementedError("GraphObject.clear has to be implemented")
 
@@ -69,12 +78,12 @@ class GraphObject(CanvasBase):
 # sync methods: visible, clear
 class Group(GraphObject):
     __graphList:typing.List[GraphObject]=[]
-    def __init__(self,graphList:typing.Iterable[GraphObject],visible=True,parent=None):
+    def __init__(self,graphList:typing.Iterable[GraphObject],visible=True,parent=None,**kwargs):
         for member in graphList:
             member.parent=self
 
         self.__graphList=list(graphList)
-        GraphObject.__init__(self,visible=visible,parent=parent)
+        GraphObject.__init__(self,visible=visible,parent=parent,**kwargs)
         self._setVisibleInternal(visible=visible)
         
     def _setVisibleInternal(self, visible):

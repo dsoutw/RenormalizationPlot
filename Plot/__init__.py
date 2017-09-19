@@ -12,8 +12,5 @@ import matplotlib.patches as patches
 import matplotlib.ticker as ticker
 from PyQt5 import QtCore
 
-
-    
-
-
-
+def VetricalLineList(pointList,*args):
+    return [VerticalLine(point, *args) for point in pointList]
