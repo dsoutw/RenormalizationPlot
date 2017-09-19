@@ -1,6 +1,6 @@
 from PyQt5 import QtCore, QtWidgets # Import the PyQt4 module we'll need
 
-import PlotWindowUI # This file holds our MainWindow and all design related things
+import UnimodalWindowUI # This file holds our MainWindow and all design related things
                     # it also keeps events etc that we defined in Qt Designer
 from Binding import Binding
 import Plot
@@ -9,13 +9,14 @@ from matplotlib.backends.backend_qt5agg import (
     NavigationToolbar2QT as NavigationToolbar)
 import matplotlib as mpl
 from abc import ABCMeta,abstractmethod
+import typing as tp
 
 import Setting
         
-class PlotWindow(Binding, QtWidgets.QMainWindow, PlotWindowUI.Ui_plotWindow):
+class UnimodalBaseWindow(Binding, QtWidgets.QMainWindow):
     __metaclass__=ABCMeta
     __level:int=None
-    __rParent:'PlotWindow'=None
+    __rParent:'UnimodalBaseWindow'=None
     __period:int=2
     __renormalizable:bool=None
     
@@ -23,16 +24,15 @@ class PlotWindow(Binding, QtWidgets.QMainWindow, PlotWindowUI.Ui_plotWindow):
     # func: unimodal class
     # level: the level of renormalization
     # rParent: a unimodal map for the previous level
-    def __init__(self, level:int = 0, rParent:'PlotWindow' = None, renormalizable:bool=False):
+    def __init__(self, level:int = 0, rParent:'UnimodalBaseWindow' = None):
         #func: Unimodal
         #level: nonnegative integer
         self.__level=level
         self.__rParent=rParent
-        self.__period=2
 
         QtWidgets.QMainWindow.__init__(self,rParent)
 
-        self.ui = self
+        self.ui = UnimodalWindowUI.Ui_plotWindow()
         self.ui.setupUi(self)
 
         ''' bindingList format
@@ -74,64 +74,55 @@ class PlotWindow(Binding, QtWidgets.QMainWindow, PlotWindowUI.Ui_plotWindow):
             }
         
         # Apply settings
-        self.periodSpinBox.setValue(self.__period)
-        self.selfReturnCheckBox.setChecked(Setting.figureSelfReturn)
-        self.orderCheckBox.setChecked(Setting.figureSelfReturn)
+        self.__period=2
+        self.ui.periodSpinBox.setValue(self.__period)
 
-        self.secondIterateCheckBox.setChecked(Setting.figureSecondIterate)
-        self.iteratedGraphCheckBox.setChecked(Setting.figureMultipleIterate)
-        self.diagonalCheckBox.setChecked(Setting.figureDiagonal)
-        self.beta0CheckBox.setChecked(Setting.figureBeta0)
-        self.alpha1CheckBox.setChecked(Setting.figureAlpha1)
-        self.beta1CheckBox.setChecked(Setting.figureBeta1)
+        self.ui.selfReturnCheckBox.setChecked(Setting.figureSelfReturn)
+        self.ui.orderCheckBox.setChecked(Setting.figureSelfReturn)
+
+        self.ui.secondIterateCheckBox.setChecked(Setting.figureSecondIterate)
+        self.ui.iteratedGraphCheckBox.setChecked(Setting.figureMultipleIterate)
+        self.ui.diagonalCheckBox.setChecked(Setting.figureDiagonal)
+        self.ui.beta0CheckBox.setChecked(Setting.figureBeta0)
+        self.ui.alpha1CheckBox.setChecked(Setting.figureAlpha1)
+        self.ui.beta1CheckBox.setChecked(Setting.figureBeta1)
         
-        Binding.__init__(self, self, __bindingList)
+        Binding.__init__(self, self.ui, __bindingList)
         #self.setupUi(self)  # This is defined in design.py file automatically
                             # It sets up layout and widgets that are defined
 
         # Adjust the size of the options to fit with the contents
-        self.renormalizationScroll.setMinimumWidth(self.renormalizationContents.sizeHint().width() + self.renormalizationScroll.verticalScrollBar().sizeHint().width() )
+        self.ui.renormalizationScroll.setMinimumWidth(self.ui.renormalizationContents.sizeHint().width() + self.ui.renormalizationScroll.verticalScrollBar().sizeHint().width() )
         
         # setup the parent button    
         if rParent is not None:
             def showParent():
                 self.focusWindow(rParent)
-            self.parentButton.clicked.connect(showParent)
+            self.ui.parentButton.clicked.connect(showParent)
         else:
-            self.parentButton.hide()
-
-        # setup graph
-        self.canvas.setParent(self.centralwidget)
+            self.ui.parentButton.hide()
 
         # Add graph toolbar
-        self.mplToolbar = NavigationToolbar(self.canvas, self.centralwidget)
-        self.addToolBar(self.mplToolbar)
+        self.ui.mplToolbar = NavigationToolbar(self.ui.canvas, self.ui.centralwidget)
+        self.addToolBar(self.ui.mplToolbar)
 
         # Plot the initial graph
         mpl.rcParams['axes.xmargin'] = 0
         mpl.rcParams['axes.ymargin'] = 0
+        #self.canvas.setMinimumSize(0,0)
 
         # setup renormalizable features
-        self.periodSpinBox.valueChanged.connect(self.setPeriod)
+        self.ui.periodSpinBox.valueChanged.connect(self.setPeriod)
         self.__rChild=None
-        self.renormalizeButton.clicked.connect(self.openRChild)
-        self.canvas.setMinimumSize(0,0)
-
-
-        # update renormalizable
-        #self._updateRenormalizable()
-        self.__renormalizable=renormalizable
-        self.renormalizableChanged.connect(self.__setRenormalizableText)
-        self.renormalizableChanged.connect(self.renormalizeButton.setEnabled)
-        self.renormalizableChanged.emit(renormalizable)
-        
-        # setup level grapgs
-        self.levelBox.setEnabled(False)
-        
+        self.__renormalizable=False
+        self.ui.levelBox.setEnabled(False)
+        self.ui.renormalizeButton.clicked.connect(self.openRChild)
+        self.renormalizableChanged.emit(False)
+    
 
     def __setRenormalizableText(self,value:bool):
         text={True:"Yes",False:"No"} 
-        self.renormalizableResultLabel.setText(text[value])
+        self.ui.renormalizableResultLabel.setText(text[value])
 
     def closeEvent(self, evnt):
     # inherited from QtWidgets.QMainWindow
@@ -150,7 +141,7 @@ class PlotWindow(Binding, QtWidgets.QMainWindow, PlotWindowUI.Ui_plotWindow):
     def setPeriod(self, period:int):
         if period != self.__period:
             self.__period=period
-            self.periodSpinBox.setValue(period)
+            self.ui.periodSpinBox.setValue(period)
             self.periodChangedEvent(period)
     def getPeriod(self)->int:
         return self.__period
@@ -175,8 +166,10 @@ class PlotWindow(Binding, QtWidgets.QMainWindow, PlotWindowUI.Ui_plotWindow):
     @QtCore.pyqtSlot(bool)
     def setRenormalizable(self, value:bool):
         if self.__renormalizable!=value:
-            self.renormalizableChangedEvent(value)
             self.__renormalizable=value
+            self.__setRenormalizableText(value)
+            self.ui.renormalizeButton.setEnabled(value)
+            self.renormalizableChangedEvent(value)
             self.renormalizableChanged.emit(value)
     def getRenormalizable(self)->bool:
         return self.__renormalizable
@@ -192,7 +185,7 @@ class PlotWindow(Binding, QtWidgets.QMainWindow, PlotWindowUI.Ui_plotWindow):
     '''
     
     # Stores the child window 
-    __rChild:'PlotWindow'=None
+    __rChild:tp.Optional['UnimodalBaseWindow']=None
 
     @abstractmethod
     def _newRChildEvent(self, period:int)->'PlotWindow':
@@ -201,20 +194,9 @@ class PlotWindow(Binding, QtWidgets.QMainWindow, PlotWindowUI.Ui_plotWindow):
         :param period: The period of renormalization
         :type period: int
         @return: The new window. Return Null if false
-        @type return: PlotWindow
+        @type return: UnimodalBaseWindow
         '''
-        raise NotImplementedError("PlotWindow._renormalizable")
-
-    @abstractmethod
-    def _updateRChildEvent(self, rChild:'PlotWindow', period:int):
-        '''
-        Update the renormalized function window
-        Called when the renormalized function is modified
-        :param period: The period of renormalization
-        :type period: int
-        @return: True if success, False=close child
-        '''
-        raise NotImplementedError("PlotWindow._renormalizable")
+        raise NotImplementedError("UnimodalBaseWindow._renormalizable")
 
     @abstractmethod
     def _closeRChildEvent(self):
@@ -224,21 +206,21 @@ class PlotWindow(Binding, QtWidgets.QMainWindow, PlotWindowUI.Ui_plotWindow):
         :param period: The period of renormalization
         :type period: int
         '''
-        raise NotImplementedError("PlotWindow._renormalizable")
+        raise NotImplementedError("UnimodalBaseWindow._renormalizable")
     
     @abstractmethod
     def _descendantRenormalizedEvent(self):
-        raise NotImplementedError("PlotWindow._renormalizable")
+        raise NotImplementedError("UnimodalBaseWindow._renormalizable")
     
     def openRChild(self):
-    # open child renormalization window
+        # open child renormalization window
         # create window if not exist then renormalize
         if self.__rChild == None:
             self.__rChild =self._newRChildEvent(self.__period)
             if self.__rChild == None:
                 return
 
-            self.levelBox.setEnabled(True)
+            self.ui.levelBox.setEnabled(True)
             self.openWindow(self.__rChild)
             
             # Notify the ancestors that the unimodal map is renormalized
@@ -251,13 +233,6 @@ class PlotWindow(Binding, QtWidgets.QMainWindow, PlotWindowUI.Ui_plotWindow):
         else:
             self.focusWindow(self.__rChild)
 
-    def updateRChild(self):
-        if self.__rChild != None:
-            if self.renormalizable:
-                if self._updateRChildEvent(self.__rChild,self.period):
-                    return
-            self.closeRChild()
-        
     def closeRChild(self):
     # close child renormalization window
         if self.__rChild != None:
@@ -270,7 +245,7 @@ class PlotWindow(Binding, QtWidgets.QMainWindow, PlotWindowUI.Ui_plotWindow):
         if self.__rChild != None:
             self._closeRChildEvent()
     
-            self.levelBox.setEnabled(False)
+            self.ui.levelBox.setEnabled(False)
             self.__rChild=None
 
 
@@ -280,13 +255,13 @@ class PlotWindow(Binding, QtWidgets.QMainWindow, PlotWindowUI.Ui_plotWindow):
     
     # window utilities
     # modify this method if created by mdi window
-    def openWindow(self, widget:'PlotWindow'):
+    def openWindow(self, widget:'UnimodalBaseWindow'):
         widget.show()
 
-    def focusWindow(self, widget:'PlotWindow'):
+    def focusWindow(self, widget:'UnimodalBaseWindow'):
         widget.show()
         widget.activateWindow()
         widget.raise_()
 
-    def closeWindow(self, widget:'PlotWindow'):
+    def closeWindow(self, widget:'UnimodalBaseWindow'):
         widget.close()
