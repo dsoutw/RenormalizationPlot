@@ -3,7 +3,7 @@ Created on 2017/9/3
 
 @author: dsou
 '''
-from Plot.Artist import ArtistBase
+from plot.artist import ArtistBase
 from PyQt5 import QtCore
 
 class VerticalLine(ArtistBase):

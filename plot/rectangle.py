@@ -4,7 +4,7 @@ Created on 2017/9/3
 @author: dsou
 '''
 
-from Plot.Artist import ArtistBase
+from plot.artist import ArtistBase
 import matplotlib.patches as patches
 
 class Rectangle(ArtistBase):

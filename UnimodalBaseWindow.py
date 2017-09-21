@@ -3,7 +3,6 @@ from PyQt5 import QtCore, QtWidgets # Import the PyQt4 module we'll need
 import UnimodalWindowUI # This file holds our MainWindow and all design related things
                     # it also keeps events etc that we defined in Qt Designer
 from Binding import Binding
-import Plot
 # Matplotlib library
 from matplotlib.backends.backend_qt5agg import (
     NavigationToolbar2QT as NavigationToolbar)

@@ -4,7 +4,7 @@ Created on 2017/9/14
 @author: dsou
 '''
 
-from Plot.Artist import ArtistBase
+from plot.artist import ArtistBase
 from PyQt5 import QtCore
 from typing import Tuple
 

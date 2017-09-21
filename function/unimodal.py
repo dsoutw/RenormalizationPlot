@@ -1,13 +1,16 @@
 import numpy as np
-import copy
+#import copy
 from scipy import optimize
 #from scipy.misc import derivative
 from scipy.interpolate import interp1d
 import time
 #import timeit
 import Setting
-import traceback
+#import traceback
 from enum import Enum
+
+from function.affine import Affine
+from function.functionbase import FunctionBase
 
 class Renormalizable(Enum):
     under=False
@@ -15,24 +18,11 @@ class Renormalizable(Enum):
     above=False
     pass
 
-class Affine:
-    def __init__(self, x1, y1, x2, y2):
-        self.x1=x1
-        self.y1=y1
-        self.x2=x2
-        self.y2=y2
-
-    def __call__(self, x):
-        return (x-self.x2)*(self.y1-self.y2)/(self.x1-self.x2)+self.y2
-
-def fixedPoint(func):
-    pass
-# 
-class Unimodal:
+class Unimodal(FunctionBase):
     """A unimodal class"""
     __TOL_EQUAL = np.float64(1e-02)
     
-    _map = None
+    function = None
     __renormalizable={}
     p_a1={}
     p_A1={}
@@ -42,16 +32,17 @@ class Unimodal:
     p_v=None
     
     def __map_solve(self, x, y):
-        return self._map(x)-y
+        return self.function(x)-y
 
     def __init__(self,func,p_c):
         global __TOL_EQUAL
 
-        self._map = copy.deepcopy(func)
-        #self._map=func
+        #self.function = copy.deepcopy(func)
+        self.function=func
         self.p_c = p_c
         
         self._setupVariable()
+        super().__init__()
         
         
     def _setupVariable(self):
@@ -60,29 +51,29 @@ class Unimodal:
         self.p_A1={}
         
         # Set critical value
-        self.p_v=self(self.p_c)
+        self.p_v=self.function(self.p_c)
 
-        # Check if it is a unimodal map with the standard convention
+        # Check if it is a unimodal function with the standard convention
         # i.e. -1=f(-1)=f(1)
         self.p_a=np.float64(-1.0)
-        #val=self._map(self.p_a)
-        #if not np.isclose(self._map(self.p_a),self.p_a,rtol=self.__TOL_EQUAL):
+        #val=self.function(self.p_a)
+        #if not np.isclose(self.function(self.p_a),self.p_a,rtol=self.__TOL_EQUAL):
         #    raise ValueError('Not a unimodal map: f(-1)=',val)
             
         self.p_A=np.float64(1.0)
-        #if not np.isclose(self._map(self.p_A),self.p_a,rtol=self.__TOL_EQUAL):
+        #if not np.isclose(self.function(self.p_A),self.p_a,rtol=self.__TOL_EQUAL):
         #    raise ValueError('Not a unimodal map')
         
         # Check if the unimodal map has a fixed point with negative multiplier
         # i.e f(c)>c (not guarentee that the fixed point is expanding)
         # One could use finite difference to check the point's derivative
-        if self._map(self.p_c) < self.p_c:
+        if self.function(self.p_c) < self.p_c:
             raise ValueError('Not a unimodal map: c>v')
         
         # Find beta fixed point
-        #self.p_b=optimize.fixed_point(self._map, (self.p_c+self.p_A)/np.float64(2))
+        #self.p_b=optimize.fixed_point(self.function, (self.p_c+self.p_A)/np.float64(2))
         try:
-            self.p_b=optimize.brentq(lambda x: self._map(x)-x, self.p_c, self.p_A, xtol=Setting.precisionPeriodicA, rtol=Setting.precisionPeriodicR)
+            self.p_b=optimize.brentq(lambda x: self.function(x)-x, self.p_c, self.p_A, xtol=Setting.precisionPeriodicA, rtol=Setting.precisionPeriodicR)
         except BaseException as e:
             raise RuntimeError("Unimodal.__init__: Unable to find beta fixed point\n"+str(e))
         try:
@@ -94,35 +85,16 @@ class Unimodal:
         except BaseException as e:
             raise RuntimeError("Unimodal.__init__: Unable to find beta_2bar point"+str(e))
         
-    def __call__(self, x):
-        return self._map(x)
 
-    def getFunction(self):
-        return self._map
-    function=property(lambda self: self.getFunction())
-        
-    # repeat iterate the unimodal map p-times
-    def iterates(self, x, p:int):
-        '''
-        Evaluate the iterates of the unimodal map
-        :param x: point to be evaluated
-        :type x: float
-        :param p: number of iterates
-        :type p: nonnegative integer
-        '''
-        for t in range(p):
-            x=self._map(x)
-        return x
-    
     def renormalizable(self, period:int=2):
         '''
-        Check if the unimodal map is renormalizable
+        Check if the unimodal function is renormalizable
         :param period: the period of renormalization
         :type period: positive integer
         '''
         if period not in self.__renormalizable:
             if period == 2:
-                self.__renormalizable[period]=self.renomalizable2()
+                self.__renormalizable[period]=self.renormalizable2()
             #elif period % 2 == 1:
             else:
                 self.__renormalizable[period]=self.renomalizableOther(period)
@@ -136,18 +108,13 @@ class Unimodal:
         if self.renormalizable(period):
             s=Affine(self.p_a1[period][period-1],np.float64(-1),self.p_A1[period][period-1],np.float64(1))
             s_i=Affine(np.float64(-1),self.p_a1[period][period-1],np.float64(1),self.p_A1[period][period-1])
-            #return Unimodal(lambda x: s(self._map(self._map(s_i(x)))),s(self.p_c))
+            #return Unimodal(lambda x: s(self.function(self.function(s_i(x)))),s(self.p_c))
 
-            return UnimodalRescaleIterate(s, self._map, period, s_i, s(self.p_c)), s, s_i
+            return UnimodalRescaleIterate(s, self.function, period, s_i, s(self.p_c)), s, s_i
         else:
             return None
 
-#         if period == 2:
-#             return self.renomalize2()
-#         else:
-#             return self.renomalizeOther(period)
-    
-    def renomalizable2(self):
+    def renormalizable2(self):
         '''
         Check if the unimodal map is period-doubling renormalizable
         :return: enum Renormalizable
@@ -156,7 +123,7 @@ class Unimodal:
         if not self.p_b < self.p_v:
             #return Renormalizable.under
             return False
-        if not self._map(self.p_v) < self.p_c:
+        if not self.function(self.p_v) < self.p_c:
             #return Renormalizable.under
             return False
         if not self.p_v < self.p_B2:
@@ -171,12 +138,12 @@ class Unimodal:
 
     def renomalize2(self):
         # check if the function is renormalizable
-        if self.renomalizable2():
+        if self.renormalizable2():
             s=Affine(self.p_b,np.float64(-1),self.p_B,np.float64(1))
             s_i=Affine(np.float64(-1),self.p_b,np.float64(1),self.p_B)
-            #return Unimodal(lambda x: s(self._map(self._map(s_i(x)))),s(self.p_c))
+            #return Unimodal(lambda x: s(self.function(self.function(s_i(x)))),s(self.p_c))
 
-            return UnimodalRescaleIterate(s, self._map, 2, s_i, s(self.p_c)), s, s_i
+            return UnimodalRescaleIterate(s, self.function, 2, s_i, s(self.p_c)), s, s_i
         else:
             return None
     
@@ -273,7 +240,7 @@ class Unimodal:
         p_orbit=[None]*length
         p_orbit[0]=point
         for t in range(1,length):
-            point=self._map(point)
+            point=self.function(point)
             p_orbit[t]=point
         return p_orbit
     
@@ -290,17 +257,17 @@ class Unimodal:
         point=p_inOrbit[0]        
         # Build p-1
         if p_inOrbit[period-1] < self.p_c:
-            point=optimize.brentq(lambda x: self._map(x)-point,self.p_c,self.p_A, xtol=absError, rtol=Setting.precisionPeriodicR)
+            point=optimize.brentq(lambda x: self.function(x)-point,self.p_c,self.p_A, xtol=absError, rtol=Setting.precisionPeriodicR)
         else:
-            point=optimize.brentq(lambda x: self._map(x)-point,self.p_a,self.p_c, xtol=absError, rtol=Setting.precisionPeriodicR)
+            point=optimize.brentq(lambda x: self.function(x)-point,self.p_a,self.p_c, xtol=absError, rtol=Setting.precisionPeriodicR)
         p_outOrbit[period-1]=point
         
         t=period-2
         while t >= 0:
             if p_inOrbit[t] < self.p_c:
-                point=optimize.brentq(lambda x: self._map(x)-point,self.p_a,self.p_c, xtol=absError, rtol=Setting.precisionPeriodicR)
+                point=optimize.brentq(lambda x: self.function(x)-point,self.p_a,self.p_c, xtol=absError, rtol=Setting.precisionPeriodicR)
             else:
-                point=optimize.brentq(lambda x: self._map(x)-point,self.p_c,self.p_A, xtol=absError, rtol=Setting.precisionPeriodicR)
+                point=optimize.brentq(lambda x: self.function(x)-point,self.p_c,self.p_A, xtol=absError, rtol=Setting.precisionPeriodicR)
             p_outOrbit[t]=point
             t=t-1
         return p_outOrbit
@@ -317,8 +284,8 @@ class Unimodal:
             
         for pt in points:
             if pt < self.p_v:
-                result.append(optimize.brentq(lambda x: self._map(x)-pt,self.p_a,self.p_c, xtol=Setting.precisionPeriodicA, rtol=Setting.precisionPeriodicR))
-                result.append(optimize.brentq(lambda x: self._map(x)-pt,self.p_c,self.p_A, xtol=Setting.precisionPeriodicA, rtol=Setting.precisionPeriodicR))
+                result.append(optimize.brentq(lambda x: self.function(x)-pt,self.p_a,self.p_c, xtol=Setting.precisionPeriodicA, rtol=Setting.precisionPeriodicR))
+                result.append(optimize.brentq(lambda x: self.function(x)-pt,self.p_c,self.p_A, xtol=Setting.precisionPeriodicA, rtol=Setting.precisionPeriodicR))
 
         return result
     
@@ -358,18 +325,18 @@ class UnimodalRescaleIterate(Unimodal):
             if machineError>Setting.interpolationPrecision:
                 self._interpolated=True
                 sampleSize=machineError*10
-                print("Warning: machine precision exceeded. the unimodal map is approximated by intepolation")
+                print("Warning: machine precision exceeded. the unimodal function is approximated by intepolation")
             # Test speed
             elif end-start>Setting.interpolationThreshold:
                 self._interpolated=True
                 sampleSize=Setting.interpolationPrecision
-                print("Warning: the unimodal map is approximated by intepolation to speed up the performance")
+                print("Warning: the unimodal function is approximated by intepolation to speed up the performance")
 
                 
             if self._interpolated == True:
                 sample=np.arange(np.float64(-1),np.float64(1),np.float64(sampleSize))
                 data=evaluate(sample)
-                self._map=interp1d(sample, data, kind='cubic', fill_value='extrapolate')
+                self.function=interp1d(sample, data, kind='cubic', fill_value='extrapolate')
                 
         #if self._interpolated == True:
         #    self.renormalize=super().renomalize
@@ -392,38 +359,39 @@ class UnimodalRescaleIterate(Unimodal):
 
     def renomalize2(self):
         # check if the function is renormalizable
-        if self.renomalizable2():
+        if self.renormalizable2():
             s=Affine(self._rescale2(self.p_b),np.float64(-1),self._rescale2(self.p_B),np.float64(1))
             s_i=Affine(np.float64(-1),self._rescale2(self.p_b),np.float64(1),self._rescale2(self.p_B))
-            #return Unimodal(lambda x: s(self._map(self._map(s_i(x)))),s(self.p_c))
+            #return Unimodal(lambda x: s(self.function(self.function(s_i(x)))),s(self.p_c))
             rfunc=UnimodalRescaleIterate(s, self._rawfunc, self._iterate*2, s_i, s(self._rescale2(self.p_c)))
             
             # test the evaluation time for the function
             # if the time exceed the threshold, then cache the data by interpolation
-            if Setting.interpolationEnabled == True:
-                x=s(self._rescale2(self.p_c))
-                start = time.time()
-                for i in range(100):
-                    x=rfunc(x)
-                end = time.time()
-                
-                if end-start > Setting.interpolationThreshold:
-                    sample=np.arange(np.float64(-1),np.float64(1),np.float64(Setting.interpolationPrecision))
-                    data=self._map(sample)
-                    rfunc=Unimodal(interp1d(sample, data, kind='cubic', fill_value='extrapolate'),s(self._rescale2(self.p_c)))
-                    print("Warning: the unimodal map is approximated by intepolation to speed up the performance")
+            #if Setting.interpolationEnabled == True:
+            #    x=s(self._rescale2(self.p_c))
+            #    start = time.time()
+            #    for i in range(100):
+            #        x=rfunc(x)
+            #    end = time.time()
+            #    
+            #    if end-start > Setting.interpolationThreshold:
+            #        sample=np.arange(np.float64(-1),np.float64(1),np.float64(Setting.interpolationPrecision))
+            #        data=self.function(sample)
+            #        rfunc=Unimodal(interp1d(sample, data, kind='cubic', fill_value='extrapolate'),s(self._rescale2(self.p_c)))
+            #        print("Warning: the unimodal function is approximated by intepolation to speed up the performance")
                 
             return rfunc, Affine(self.p_b,np.float64(-1),self.p_B,np.float64(1)), Affine(np.float64(-1),self.p_b,np.float64(1),self.p_B)
 
         else:
             return None
                        
-    # repeat iterate the unimodal map p-times
-    def iterates(self, x, p:int):
+    # repeat iterate the unimodal function p-times
+    def iterates(self, x, iteration:int):
         if self._interpolated == False:
+            _rawfunc=self._rawfunc
             x=self._rescale2(x)
-            for i in range(self._iterate*p):
-                x=self._rawfunc(x)
+            for i in range(self._iterate*iteration):
+                x=_rawfunc(x)
             return self._rescale1(x)
         else:
-            return super().iterates(x, p)
+            return super().iterates(x, iteration)

@@ -5,7 +5,7 @@ Created on 2017/9/3
 '''
 
 from PyQt5 import QtCore
-from Plot.CanvasBase import CanvasBase
+from plot.canvasbase import CanvasBase
 import typing
 
 class GraphObject(CanvasBase):

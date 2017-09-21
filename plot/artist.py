@@ -5,10 +5,10 @@ Created on 2017/9/4
 '''
 from matplotlib.artist import Artist as MPLArtist
 import numpy as np
-from Plot.GraphObject import GraphObject
-from Plot.CanvasBase import CanvasBase
+from plot.graphobject import GraphObject
+from plot.canvasbase import CanvasBase
 from PyQt5 import QtCore
-import typing
+import typing as tp
 from abc import ABCMeta,abstractmethod
 
 class ArtistBase(GraphObject,QtCore.QObject):
@@ -16,7 +16,7 @@ class ArtistBase(GraphObject,QtCore.QObject):
     An abstract container for matplotlib artist
     '''
     __metaclass__=ABCMeta
-    __canvas=None
+    __canvas:tp.Optional[CanvasBase]=None
     __artist=None
     __updateDirty=False
     
@@ -101,9 +101,9 @@ class ArtistBase(GraphObject,QtCore.QObject):
         
     # artist
     # useless?
-    def getArtist(self)->typing.Union[MPLArtist,typing.List[MPLArtist]]:
+    def getArtist(self)->tp.Union[MPLArtist,tp.List[MPLArtist]]:
         return self.__artist
-    def setArtist(self, artist:typing.Union[MPLArtist,typing.List[MPLArtist]]):
+    def setArtist(self, artist:tp.Union[MPLArtist,tp.List[MPLArtist]]):
         self.__artist=artist
     artist=property(
         lambda self: self.getArtist(), 

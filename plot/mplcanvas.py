@@ -3,7 +3,7 @@ from PyQt5 import QtCore
 # Matplotlib library
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
-from Plot.CanvasBase import CanvasBase
+from plot.canvasbase import CanvasBase
 
 class MPLCanvas(FigureCanvas,CanvasBase):
     """Ultimately, this is a QWidget (as well as a FigureCanvasAgg, etc.)."""

@@ -450,7 +450,7 @@
   <customwidget>
    <class>MPLCanvas</class>
    <extends>QWidget</extends>
-   <header>Plot/MPLCanvas.h</header>
+   <header>plot/mplcanvas.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

@@ -5,7 +5,7 @@ import Setting
 import MainWindowUI # This file holds our MainWindow and all design related things
                     # it also keeps events etc that we defined in Qt Designer
 from UnimodalWindow import UnimodalWindow
-from Unimodal import Unimodal
+from function import Unimodal
 
 def parameterToPercentage(value):
     return (float(value)-float(Setting.parameterMin))/(float(Setting.parameterMax)-float(Setting.parameterMin))
