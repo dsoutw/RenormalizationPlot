@@ -1,8 +1,8 @@
 from PyQt5 import QtCore, QtWidgets, QtGui # Import the PyQt4 module we'll need
 from PyQt5.QtWidgets import QFileDialog
 import sys # We need sys so that we can pass argv to QApplication
-import functools
-import inspect
+#import functools
+#import inspect
 import importlib.util
 import os.path
 import numpy as np
@@ -38,16 +38,24 @@ class MainWindow(QtWidgets.QMainWindow, MainWindowUI.Ui_mainWindow):
         self.parameterZInButton.clicked.connect(self.__parameterZoomIn)
         self.parameterZOutButton.clicked.connect(self.__parameterZoomOut)
         
+        # overwrite the window utilities to support mdi window
+        def openMdiWindow(sender,window):
+            window.mdiSubWindow=self.mdiArea.addSubWindow(window,
+                    QtCore.Qt.SubWindow | QtCore.Qt.CustomizeWindowHint | QtCore.Qt.WindowSystemMenuHint |
+                    QtCore.Qt.WindowMinMaxButtonsHint | QtCore.Qt.WindowCloseButtonHint)
+            window.mdiSubWindow.show()
+        def closeMdiWindow(sender,window):
+            window.mdiSubWindow.close()
+            window.mdiSubWindow=None
+        def focusMdiWindow(sender,window):
+            window.mdiSubWindow.show()
+            self.mdiArea.setActiveSubWindow(window.mdiSubWindow)
+        UnimodalWindow.openWindow=openMdiWindow
+        UnimodalWindow.closeWindow=closeMdiWindow
+        UnimodalWindow.focusWindow=focusMdiWindow
+        
         self.parameterWidget.setEnabled(False)
         self.setWindowTitle(self.title)
-    
-    # load function
-    # todo: support for cython file
-    def loadFile(self, path):
-        spec = importlib.util.spec_from_file_location('functionConf', path)
-        module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)
-        return module
     
     functionConf=None
     __originalPlot=None
@@ -65,69 +73,74 @@ class MainWindow(QtWidgets.QMainWindow, MainWindowUI.Ui_mainWindow):
             return
         
         try:
-            conf=self.loadFile(file[0])
+            config=self.loadFile(file[0])
         except Exception as e:
             print(str(e))
             return
 
-        self.setWindowTitle("%s - [%s]" % (self.title,os.path.basename(file[0])))
-        if self.__originalPlot is not None:
-            print("close from open")
-            self.__originalPlot.destroyed.disconnect()
-            self.__originalPlot.mdiSubWindow.close()
-            self.__originalPlot=None
-        self.functionConf=conf
-        
-        # overwrite the window utilities to support mdi window
-        def openMdiWindow(sender,window):
-            window.mdiSubWindow=self.mdiArea.addSubWindow(window,
-                    QtCore.Qt.SubWindow | QtCore.Qt.CustomizeWindowHint | QtCore.Qt.WindowSystemMenuHint |
-                    QtCore.Qt.WindowMinMaxButtonsHint | QtCore.Qt.WindowCloseButtonHint)
-            window.mdiSubWindow.show()
-        def closeMdiWindow(sender,window):
-            window.mdiSubWindow.close()
-            window.mdiSubWindow=None
-        def focusMdiWindow(sender,window):
-            window.mdiSubWindow.show()
-            self.mdiArea.setActiveSubWindow(window.mdiSubWindow)
-        UnimodalWindow.openWindow=openMdiWindow
-        UnimodalWindow.closeWindow=closeMdiWindow
-        UnimodalWindow.focusWindow=focusMdiWindow
+        window=self.openWindow(config)
+        if window is not None:
+            # Success
+            if self.__originalPlot is not None:
+                self.__originalPlot.destroyed.disconnect()
+                self.__originalPlot.mdiSubWindow.close()
+            window.showMaximized()
+            self.setWindowTitle("%s - [%s]" % (self.title,config.__name__))
 
-        # Create the window for the original plot
-        #kwargs={inspect.getargspec(self.functionConf.func).args[1]:self.functionConf.parameterValue}
-        #function=functools.partial(self.functionConf.func,**kwargs)
-        #print(self.functionConf.parameterValue)
-        self.functionConf.parameterValue=np.float64(self.functionConf.parameterValue)
-        functionWithParameter=self.functionConf.func
-        function=lambda x: functionWithParameter(x,self.functionConf.parameterValue)
-        self.__originalPlot=UnimodalWindow(Unimodal(
-                function,
-                self.functionConf.func_c(self.functionConf.parameterValue)
-                ),0)
-        self.__originalPlot.setWindowTitle("Original Function")
-        self.__originalPlot.setAttribute(QtCore.Qt.WA_DeleteOnClose)
-        
-        self.__originalPlot.mdiSubWindow=self.mdiArea.addSubWindow(self.__originalPlot,
-            QtCore.Qt.SubWindow | QtCore.Qt.CustomizeWindowHint | QtCore.Qt.WindowSystemMenuHint |
-            QtCore.Qt.WindowMinMaxButtonsHint | QtCore.Qt.WindowCloseButtonHint)
-        self.__originalPlot.showMaximized()
-        
+            self.functionConf=config
+            self.__originalPlot=window
+
+            self.loadConfig(config)
+            self.parameterWidget.setEnabled(True)
+
+    # load function
+    # todo: support for cython file
+    def loadFile(self, path):
+        name="unimodal:"+os.path.basename(path)
+        spec = importlib.util.spec_from_file_location(name, path)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        return module
+    
+    def openWindow(self,config):
+        window=None
+        try:
+            # Create the window for the original plot
+            #kwargs={inspect.getargspec(self.functionConf.func).args[1]:self.functionConf.parameterValue}
+            #function=functools.partial(self.functionConf.func,**kwargs)
+            #print(self.functionConf.parameterValue)
+            functionParameter=np.float64(config.parameterValue)
+            functionWithParameter=config.func
+            function=lambda x: functionWithParameter(x,functionParameter)
+            window=UnimodalWindow(Unimodal(
+                    function,
+                    config.func_c(functionParameter)
+                    ),0)
+            window.setWindowTitle("Original Function")
+            window.setAttribute(QtCore.Qt.WA_DeleteOnClose)
+            
+            window.mdiSubWindow=self.mdiArea.addSubWindow(window,
+                QtCore.Qt.SubWindow | QtCore.Qt.CustomizeWindowHint | QtCore.Qt.WindowSystemMenuHint |
+                QtCore.Qt.WindowMinMaxButtonsHint | QtCore.Qt.WindowCloseButtonHint)
+            return window
+        except Exception as e:
+            print("Unable to open window",str(e))
+            return None
+    
+    def loadConfig(self,config):
         # Set the initial values of the parameter selector
-        self.parameterMinEdit.setText(str(self.functionConf.parameterMin))
+        self.parameterMinEdit.setText(str(config.parameterMin))
         self.parameterMinEdit.setValidator(QtGui.QDoubleValidator())
-        self.parameterMaxEdit.setText(str(self.functionConf.parameterMax))
+        self.parameterMaxEdit.setText(str(config.parameterMax))
         self.parameterMaxEdit.setValidator(QtGui.QDoubleValidator())
         
         self.parameterEdit.setValidator(QtGui.QDoubleValidator())
 
-        self.setParameter(self.functionConf.parameterValue)
+        self.setParameter(config.parameterValue)
         
         self.__originalPlot.destroyed.connect(self.fileClosedSlot)
-        self.parameterWidget.setEnabled(True)
     
     def fileClosedSlot(self):
-        print("file closed slot")
         self.setWindowTitle(self.title)
         self.parameterWidget.setEnabled(False)
         self.functionConf=None
