@@ -169,9 +169,12 @@ class MainWindow(QtWidgets.QMainWindow, MainWindowUI.Ui_mainWindow):
             self.setParameter(self.percentageToParameter(float(self.parameterSlider.value())/(self.parameterSlider.maximum()-self.parameterSlider.minimum())))
 
     def __updatePlot(self):
-        kwargs={inspect.getargspec(self.functionConf.func).args[1]:self.functionConf.parameterValue}
+        #kwargs={inspect.getargspec(self.functionConf.func).args[1]:self.functionConf.parameterValue}
+        #function=functools.partial(self.functionConf.func,**kwargs
+        functionWithParameter=self.functionConf.func
+        function=lambda x: functionWithParameter(x,self.functionConf.parameterValue)
         self.__originalPlot.function=Unimodal(
-            functools.partial(self.functionConf.func,**kwargs),
+            function,
             self.functionConf.func_c(self.functionConf.parameterValue)
             )
         
