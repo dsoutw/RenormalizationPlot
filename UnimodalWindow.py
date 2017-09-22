@@ -5,12 +5,11 @@ import numpy as np
 from matplotlib import (cm,colors)
 
 from UnimodalBaseWindow import UnimodalBaseWindow 
-import Setting
 
-import Plot
+import plot
 
 # renormalization 
-from Unimodal import Unimodal
+from function import Unimodal
 
 def frange(x, y, jump):
     while x < y:
@@ -18,7 +17,7 @@ def frange(x, y, jump):
         x += jump
 
 class UnimodalWindow(UnimodalBaseWindow):
-    def __init__(self, func:Unimodal, level:int = 0, rParent:UnimodalBaseWindow=None):
+    def __init__(self, func:Unimodal, level:int = 0, rParent:UnimodalBaseWindow=None, config=None):
         '''
         Create a window for a unimodal map
         :param func: the unimodal map to plot
@@ -35,7 +34,7 @@ class UnimodalWindow(UnimodalBaseWindow):
         self.levels_Beta=[func.p_B]
 
         self.__func:Unimodal = func
-        UnimodalBaseWindow.__init__(self, level, rParent)
+        UnimodalBaseWindow.__init__(self, level, rParent=rParent, config=config)
 
         self.ui.canvas.setUpdatesEnabled(False)
         self.ui.canvas.setAxesOptions(adjustable='box-forced',xlim=[-1,1], ylim=[-1,1],aspect='equal')
@@ -63,38 +62,38 @@ class UnimodalWindow(UnimodalBaseWindow):
         )
 
     '''
-    Plot current level
+    plot current level
     '''
     def __plotCurrentLevel(self):
-        '''Plot graphs'''
-        # Plot function
-        self.gFunction = Plot.Function(self.function,plotOptions={'lw':1})
-        # Plot second iterate
-        self.gFunctionSecond = Plot.Function(lambda x:self.function.iterates(x,2),plotOptions={'lw':1})
-        # Plot multiple iterate
-        self.gFunctionIterates = Plot.Function(lambda x:self.function.iterates(x,self.period),plotOptions={'lw':1})
+        '''plot graphs'''
+        # plot function
+        self.gFunction = plot.Function(self.function,plotOptions={'lw':1})
+        # plot second iterate
+        self.gFunctionSecond = plot.Function(lambda x:self.function.iterates(x,iteration=2),plotOptions={'lw':1})
+        # plot multiple iterate
+        self.gFunctionIterates = plot.Function(lambda x:self.function.iterates(x,iteration=self.period),plotOptions={'lw':1})
         # Draw diagonal line
-        self.gDiagonal = Plot.Function(lambda x:x,plotOptions={'lw':1})
+        self.gDiagonal = plot.Function(lambda x:x,plotOptions={'lw':1})
         
-        '''Plot orbits'''
-        self.gAlpha0=Plot.Ticks("top",
+        '''plot orbits'''
+        self.gAlpha0=plot.Ticks("top",
             [-1,1,self.function.p_c],
             [r"$\alpha(0)$",r"$\overline{\alpha(0)}$",r"$c$"])
-        self.gBeta0_0=Plot.VerticalLine(self.function.p_b,plotOptions={'color':'gray','lw':0.5})
+        self.gBeta0_0=plot.VerticalLine(self.function.p_b,plotOptions={'color':'gray','lw':0.5})
         # Draw B
-        self.gBeta0_Bar0=Plot.VerticalLine(self.function.p_B,plotOptions={'color':'gray','lw':0.5})
+        self.gBeta0_Bar0=plot.VerticalLine(self.function.p_B,plotOptions={'color':'gray','lw':0.5})
         # Draw B2
-        self.gBeta0_Bar1=Plot.VerticalLine(self.function.p_B2,plotOptions={'color':'gray','lw':0.5})
+        self.gBeta0_Bar1=plot.VerticalLine(self.function.p_B2,plotOptions={'color':'gray','lw':0.5})
         # Beta ticks
-        self.gBeta0Ticks=Plot.Ticks("top",
+        self.gBeta0Ticks=plot.Ticks("top",
                                 [self.function.p_b,self.function.p_B,self.function.p_B2],
                                 [r"$\beta^{0}$",r"$\overline{\beta^{1}}$"]
                                 )
-        self.gBeta0=Plot.Group([self.gBeta0_0,self.gBeta0_Bar0,self.gBeta0_Bar1,self.gBeta0Ticks])
+        self.gBeta0=plot.Group([self.gBeta0_0,self.gBeta0_Bar0,self.gBeta0_Bar1,self.gBeta0Ticks])
 
     def __updateCurrentLevel(self):
         self.gFunction.setFunction(self.function)
-        self.gFunctionSecond.setFunction(lambda x:self.function.iterates(x,2))
+        self.gFunctionSecond.setFunction(lambda x:self.function.iterates(x,iteration=2))
         self.gFunctionIterates.update()
         
         self.gAlpha0.setTicks([-1,1,self.function.p_c])
@@ -104,23 +103,23 @@ class UnimodalWindow(UnimodalBaseWindow):
         self.gBeta0Ticks.setTicks([self.function.p_b,self.function.p_B,self.function.p_B2])
         
     '''
-    Plot renormalizable objects
+    plot renormalizable objects
     '''
     __isSelfReturnIntervalsPlotted=False
     def __plotRenormalizableGraph(self):
         period=self.period
-        self.gSelfReturnIntervals=Plot.Group([Plot.Rectangle(
+        self.gSelfReturnIntervals=plot.Group([plot.Rectangle(
             self.function.p_a1[period][t], self.function.p_a1[period][t], #x,y
             self.function.p_A1[period][t]-self.function.p_a1[period][t], self.function.p_A1[period][t]-self.function.p_a1[period][t], #width, height
             plotOptions={'color':'gray', 'lw':1, 'fill':None}
             ) for t in range(period)])
-        self.gSelfReturnOrder=Plot.Group([Plot.Text(
+        self.gSelfReturnOrder=plot.Group([plot.Text(
             str(t),
             ((self.function.p_a1[period][t]+self.function.p_A1[period][t])/2,max(self.function.p_a1[period][t],self.function.p_A1[period][t])),
             (0,1),
             plotOptions={'horizontalalignment':'center'}
             ) for t in range(period)])
-        self.gSelfReturn=Plot.Group([self.gSelfReturnIntervals,self.gSelfReturnOrder])
+        self.gSelfReturn=plot.Group([self.gSelfReturnIntervals,self.gSelfReturnOrder])
             
 
     def __updateRenormalizableGraph(self):
@@ -143,22 +142,22 @@ class UnimodalWindow(UnimodalBaseWindow):
         self.__isSelfReturnIntervalsPlotted = False
         
     '''
-    Plot RChild objects
+    plot RChild objects
     '''
     
     ''' Next Level Orbits '''
     # plot orbits obtained from next level
     def __plotNextLevelOrbits(self):
-        self.gAlpha1=Plot.Group(Plot.VetricalLineList(self.orbit_alpha1+self.orbit_Alpha1))
-        self.gBeta1=Plot.Group(Plot.VetricalLineList(self.orbit_beta1+self.orbit_Beta1))
-        self.gLevel1=Plot.Group([self.gAlpha1,self.gBeta1])
+        self.gAlpha1=plot.Group(plot.VetricalLineList(self.orbit_alpha1+self.orbit_Alpha1))
+        self.gBeta1=plot.Group(plot.VetricalLineList(self.orbit_beta1+self.orbit_Beta1))
+        self.gLevel1=plot.Group([self.gAlpha1,self.gBeta1])
 
     def __updateNextLevelOrbits(self):
         self.gAlpha1.clear()
-        self.gAlpha1.extend(Plot.VetricalLineList(self.orbit_alpha1+self.orbit_Alpha1))
+        self.gAlpha1.extend(plot.VetricalLineList(self.orbit_alpha1+self.orbit_Alpha1))
 
         self.gBeta1.clear()
-        self.gBeta1.extend(Plot.VetricalLineList(self.orbit_beta1+self.orbit_Beta1))
+        self.gBeta1.extend(plot.VetricalLineList(self.orbit_beta1+self.orbit_Beta1))
 
     def __removeNextLevelOrbits(self):
         self.gLevel1=None
@@ -186,8 +185,8 @@ class UnimodalWindow(UnimodalBaseWindow):
         
         _contourQRLevel=np.vectorize(_contourQRLevel,signature='(),()->()')
         
-        self.gRescalingLevels = Plot.Contour(_contourQRLevel,
-            plotOptions={'levels':list(frange(-0.5,Setting.figureMaxLevels+0.6,1)),'cmap':cm.get_cmap("gray_r"),'norm':colors.Normalize(vmin=0,vmax=10)})
+        self.gRescalingLevels = plot.Contour(_contourQRLevel,
+            plotOptions={'levels':list(frange(-0.5,self.config.figureMaxLevels+0.6,1)),'cmap':cm.get_cmap("gray_r"),'norm':colors.Normalize(vmin=0,vmax=10)})
 
     def __updateDeepLevelOrbits(self,rChild):
         self.gRescalingLevels.update()
@@ -203,7 +202,7 @@ class UnimodalWindow(UnimodalBaseWindow):
         y1=self._r_si(y)
             
         def solve(x):
-            return self.function.iterates(x,self.period-1)-y1
+            return self.function.iterates(x,iteration=self.period-1)-y1
         return optimize.brenth(solve, self.orbit_alpha1[0],self.orbit_Alpha1[0])
 
     def _updateRescalingLevels(self,rChild):
@@ -219,7 +218,7 @@ class UnimodalWindow(UnimodalBaseWindow):
         i=len(self.levels_alpha)
         
         # update the list of the periodic points if new renormalization level is available
-        while i-1 < len(rChild.levels_alpha) and i <= Setting.figureMaxLevels:
+        while i-1 < len(rChild.levels_alpha) and i <= self.config.figureMaxLevels:
             self.levels_alpha.append(self._iRescaling(rChild.levels_alpha[i-1]))
             self.levels_Alpha.append(self._iRescaling(rChild.levels_Alpha[i-1]))
             self.levels_beta.append(self._iRescaling(rChild.levels_beta[i-1]))
@@ -327,8 +326,11 @@ class UnimodalWindow(UnimodalBaseWindow):
         #except RuntimeError as e:
         except BaseException as e:
             print("Unable to renormalize at level ",str(self.level))
-            print("Parameter ",str(Setting.parameterValue))
+            print("Parameter ",str(self.config.parameterValue))
             print(str(e))
+            self._rFunc=None
+            self._r_s=None
+            self._r_si=None
             return False
 
         if func_renormalize != None:
@@ -356,7 +358,7 @@ class UnimodalWindow(UnimodalBaseWindow):
         if self.__renormalize(period) == False:
             return None
 
-        rChild=UnimodalWindow(self._rFunc, self.level+1, self)
+        rChild=UnimodalWindow(self._rFunc, self.level+1, rParent=self, config=self.config)
         rChild.setWindowTitle("Level "+str(self.level+1))
         rChild.setAttribute(QtCore.Qt.WA_DeleteOnClose)
         rChild.setParent(None)
@@ -412,6 +414,7 @@ class UnimodalWindow(UnimodalBaseWindow):
 
         
 def main():
+    import Setting
     app = QtWidgets.QApplication(sys.argv)  # A new instance of QApplication
     form = UnimodalWindow(Unimodal(lambda x:Setting.func(x,Setting.parameterValue),Setting.func_c(Setting.parameterValue)))                 # We set the form to be our ExampleApp (design)
     form.show()                         # Show the form

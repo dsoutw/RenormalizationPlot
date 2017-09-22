@@ -4,7 +4,7 @@ Created on 2017/9/3
 @author: dsou
 '''
 
-from Plot.Artist import ArtistBase,generateSample
+from plot.artist import ArtistBase,generateSample
 
 class Function(ArtistBase):
     '''
@@ -49,7 +49,8 @@ class Function(ArtistBase):
 
     def __plot(self, axis):
         self._sample = generateSample(axis)
-        curve, = axis.plot(self._sample, self.function(self._sample), **self.plotOptions)
+        data=list(map(self.function,self._sample))
+        curve, = axis.plot(self._sample, data, **self.plotOptions)
         return curve
     
     def draw(self, axis):

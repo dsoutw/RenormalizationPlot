@@ -9,7 +9,7 @@ Use string to work around on nonexistence of pointers
 import typing as tp
 import warnings
 import operator
-import Plot
+import plot
 
 def readAttr(ui,attr):
     if isinstance(attr, str):
@@ -26,7 +26,7 @@ class graphLink:
     getEnableUI=None
     getVisibleUI=None
     setEnableUI=[]
-    __graph:tp.Optional[Plot.GraphObject]=None
+    __graph:tp.Optional[plot.GraphObject]=None
     ui=None
     
     def __init__(self,ui,optionList):
@@ -78,12 +78,12 @@ class graphLink:
     def isVisibled(self):
         return self.__visibledUI
             
-    def getGraph(self)->tp.Optional[Plot.GraphObject]:
+    def getGraph(self)->tp.Optional[plot.GraphObject]:
         return self.__graph
     
-    def setGraph(self, value:tp.Optional[Plot.GraphObject]):
-        oldGraph:tp.Optional[Plot.GraphObject]=self.__graph
-        newGraph:tp.Optional[Plot.GraphObject]=value
+    def setGraph(self, value:tp.Optional[plot.GraphObject]):
+        oldGraph:tp.Optional[plot.GraphObject]=self.__graph
+        newGraph:tp.Optional[plot.GraphObject]=value
         
         if oldGraph!=newGraph:
             self.__graph=value
