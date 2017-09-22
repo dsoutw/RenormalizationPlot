@@ -10,83 +10,69 @@ import matplotlib as mpl
 from abc import ABCMeta,abstractmethod
 import typing as tp
 
-import Setting
-        
 class UnimodalBaseWindow(Binding, QtWidgets.QMainWindow):
     __metaclass__=ABCMeta
-    __level:int=None
-    __rParent:'UnimodalBaseWindow'=None
+    __level:int=0
+    __rParent:tp.Optional['UnimodalBaseWindow']=None
     __period:int=2
     __renormalizable:bool=None
+    
+    ''' bindingList format
+    graph object: (checkable component, enable other components when the graph is setted...)  
+    '''
+    __bindingList={
+        # current level
+        'gFunction':{},
+        'gFunctionSecond':{'getVisible':'secondIterateCheckBox','setEnable':('secondIterateCheckBox',)},
+        'gFunctionIterates':{'getVisible':'iteratedGraphCheckBox','setEnable':('iteratedGraphCheckBox',)},
+        'gDiagonal':{'getVisible':'diagonalCheckBox','setEnable':('diagonalCheckBox',)},
+        'gAlpha0':{},
+        'gBeta0':{'getVisible':'beta0CheckBox','setEnable':('beta0CheckBox',)},
+        # renormalizable
+        'gSelfReturnIntervals':{},
+        'gSelfReturnOrder':{
+            'getVisible':'orderCheckBox',
+            'setEnable':('orderCheckBox',),
+            'getEnable':'selfReturnCheckBox'},
+        'gSelfReturn':{
+            'getVisible':'selfReturnCheckBox',
+            'setEnable':('selfReturnCheckBox','selfReturnLabel')},
+        # first level
+        'gAlpha1':{
+            'getVisible':'alpha1CheckBox',
+            'setEnable':('alpha1CheckBox',),
+            'getEnable':'partitionButton'},
+        'gBeta1':{
+            'getVisible':'beta1CheckBox',
+            'setEnable':('beta1CheckBox',),
+            'getEnable':'partitionButton'},
+        'gLevel1':{
+            'getVisible':'partitionButton',
+            'setEnable':('partitionButton',)},
+        # Deep level
+        'gRescalingLevels':{
+            'getVisible':'levelButton',
+            'setEnable':('levelButton',)},
+        }
     
     # Arguments
     # func: unimodal class
     # level: the level of renormalization
     # rParent: a unimodal map for the previous level
-    def __init__(self, level:int = 0, rParent:'UnimodalBaseWindow' = None):
+    def __init__(self, level:int = 0, rParent:tp.Optional['UnimodalBaseWindow'] = None, config=None):
         #func: Unimodal
         #level: nonnegative integer
-        self.__level=level
-        self.__rParent=rParent
+        self.__level:int=level
+        self.__rParent:tp.Optional['UnimodalBaseWindow']=rParent
 
         QtWidgets.QMainWindow.__init__(self,rParent)
 
         self.ui = UnimodalWindowUI.Ui_plotWindow()
         self.ui.setupUi(self)
-
-        ''' bindingList format
-        graph object: (checkable component, enable other components when the graph is setted...)  
-        '''
-        __bindingList={
-            # current level
-            'gFunction':{},
-            'gFunctionSecond':{'getVisible':'secondIterateCheckBox','setEnable':('secondIterateCheckBox',)},
-            'gFunctionIterates':{'getVisible':'iteratedGraphCheckBox','setEnable':('iteratedGraphCheckBox',)},
-            'gDiagonal':{'getVisible':'diagonalCheckBox','setEnable':('diagonalCheckBox',)},
-            'gAlpha0':{},
-            'gBeta0':{'getVisible':'beta0CheckBox','setEnable':('beta0CheckBox',)},
-            # renormalizable
-            'gSelfReturnIntervals':{},
-            'gSelfReturnOrder':{
-                'getVisible':'orderCheckBox',
-                'setEnable':('orderCheckBox',),
-                'getEnable':'selfReturnCheckBox'},
-            'gSelfReturn':{
-                'getVisible':'selfReturnCheckBox',
-                'setEnable':('selfReturnCheckBox','selfReturnLabel')},
-            # first level
-            'gAlpha1':{
-                'getVisible':'alpha1CheckBox',
-                'setEnable':('alpha1CheckBox',),
-                'getEnable':'partitionButton'},
-            'gBeta1':{
-                'getVisible':'beta1CheckBox',
-                'setEnable':('beta1CheckBox',),
-                'getEnable':'partitionButton'},
-            'gLevel1':{
-                'getVisible':'partitionButton',
-                'setEnable':('partitionButton',)},
-            # Deep level
-            'gRescalingLevels':{
-                'getVisible':'levelButton',
-                'setEnable':('levelButton',)},
-            }
         
-        # Apply settings
-        self.__period=2
-        self.ui.periodSpinBox.setValue(self.__period)
-
-        self.ui.selfReturnCheckBox.setChecked(Setting.figureSelfReturn)
-        self.ui.orderCheckBox.setChecked(Setting.figureSelfReturn)
-
-        self.ui.secondIterateCheckBox.setChecked(Setting.figureSecondIterate)
-        self.ui.iteratedGraphCheckBox.setChecked(Setting.figureMultipleIterate)
-        self.ui.diagonalCheckBox.setChecked(Setting.figureDiagonal)
-        self.ui.beta0CheckBox.setChecked(Setting.figureBeta0)
-        self.ui.alpha1CheckBox.setChecked(Setting.figureAlpha1)
-        self.ui.beta1CheckBox.setChecked(Setting.figureBeta1)
+        self.__loadConfig(config)
         
-        Binding.__init__(self, self.ui, __bindingList)
+        Binding.__init__(self, self.ui, self.__bindingList)
         #self.setupUi(self)  # This is defined in design.py file automatically
                             # It sets up layout and widgets that are defined
 
@@ -118,7 +104,22 @@ class UnimodalBaseWindow(Binding, QtWidgets.QMainWindow):
         self.ui.renormalizeButton.clicked.connect(self.openRChild)
         self.renormalizableChanged.emit(False)
     
+    # Todo: load to attr
+    def __loadConfig(self,config):
+        self.__period=2
+        self.ui.periodSpinBox.setValue(self.__period)
 
+        self.ui.selfReturnCheckBox.setChecked(config.figureSelfReturn)
+        self.ui.orderCheckBox.setChecked(config.figureSelfReturn)
+
+        self.ui.secondIterateCheckBox.setChecked(config.figureSecondIterate)
+        self.ui.iteratedGraphCheckBox.setChecked(config.figureMultipleIterate)
+        self.ui.diagonalCheckBox.setChecked(config.figureDiagonal)
+        self.ui.beta0CheckBox.setChecked(config.figureBeta0)
+        self.ui.alpha1CheckBox.setChecked(config.figureAlpha1)
+        self.ui.beta1CheckBox.setChecked(config.figureBeta1)
+        self.config=config
+    
     def __setRenormalizableText(self,value:bool):
         text={True:"Yes",False:"No"} 
         self.ui.renormalizableResultLabel.setText(text[value])

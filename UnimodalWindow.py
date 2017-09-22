@@ -5,7 +5,6 @@ import numpy as np
 from matplotlib import (cm,colors)
 
 from UnimodalBaseWindow import UnimodalBaseWindow 
-import Setting
 
 import plot
 
@@ -18,7 +17,7 @@ def frange(x, y, jump):
         x += jump
 
 class UnimodalWindow(UnimodalBaseWindow):
-    def __init__(self, func:Unimodal, level:int = 0, rParent:UnimodalBaseWindow=None):
+    def __init__(self, func:Unimodal, level:int = 0, rParent:UnimodalBaseWindow=None, config=None):
         '''
         Create a window for a unimodal map
         :param func: the unimodal map to plot
@@ -35,7 +34,7 @@ class UnimodalWindow(UnimodalBaseWindow):
         self.levels_Beta=[func.p_B]
 
         self.__func:Unimodal = func
-        UnimodalBaseWindow.__init__(self, level, rParent)
+        UnimodalBaseWindow.__init__(self, level, rParent=rParent, config=config)
 
         self.ui.canvas.setUpdatesEnabled(False)
         self.ui.canvas.setAxesOptions(adjustable='box-forced',xlim=[-1,1], ylim=[-1,1],aspect='equal')
@@ -187,7 +186,7 @@ class UnimodalWindow(UnimodalBaseWindow):
         _contourQRLevel=np.vectorize(_contourQRLevel,signature='(),()->()')
         
         self.gRescalingLevels = plot.Contour(_contourQRLevel,
-            plotOptions={'levels':list(frange(-0.5,Setting.figureMaxLevels+0.6,1)),'cmap':cm.get_cmap("gray_r"),'norm':colors.Normalize(vmin=0,vmax=10)})
+            plotOptions={'levels':list(frange(-0.5,self.config.figureMaxLevels+0.6,1)),'cmap':cm.get_cmap("gray_r"),'norm':colors.Normalize(vmin=0,vmax=10)})
 
     def __updateDeepLevelOrbits(self,rChild):
         self.gRescalingLevels.update()
@@ -219,7 +218,7 @@ class UnimodalWindow(UnimodalBaseWindow):
         i=len(self.levels_alpha)
         
         # update the list of the periodic points if new renormalization level is available
-        while i-1 < len(rChild.levels_alpha) and i <= Setting.figureMaxLevels:
+        while i-1 < len(rChild.levels_alpha) and i <= self.config.figureMaxLevels:
             self.levels_alpha.append(self._iRescaling(rChild.levels_alpha[i-1]))
             self.levels_Alpha.append(self._iRescaling(rChild.levels_Alpha[i-1]))
             self.levels_beta.append(self._iRescaling(rChild.levels_beta[i-1]))
@@ -327,8 +326,11 @@ class UnimodalWindow(UnimodalBaseWindow):
         #except RuntimeError as e:
         except BaseException as e:
             print("Unable to renormalize at level ",str(self.level))
-            print("Parameter ",str(Setting.parameterValue))
+            print("Parameter ",str(self.config.parameterValue))
             print(str(e))
+            self._rFunc=None
+            self._r_s=None
+            self._r_si=None
             return False
 
         if func_renormalize != None:
@@ -356,7 +358,7 @@ class UnimodalWindow(UnimodalBaseWindow):
         if self.__renormalize(period) == False:
             return None
 
-        rChild=UnimodalWindow(self._rFunc, self.level+1, self)
+        rChild=UnimodalWindow(self._rFunc, self.level+1, rParent=self, config=self.config)
         rChild.setWindowTitle("Level "+str(self.level+1))
         rChild.setAttribute(QtCore.Qt.WA_DeleteOnClose)
         rChild.setParent(None)
@@ -412,6 +414,7 @@ class UnimodalWindow(UnimodalBaseWindow):
 
         
 def main():
+    import Setting
     app = QtWidgets.QApplication(sys.argv)  # A new instance of QApplication
     form = UnimodalWindow(Unimodal(lambda x:Setting.func(x,Setting.parameterValue),Setting.func_c(Setting.parameterValue)))                 # We set the form to be our ExampleApp (design)
     form.show()                         # Show the form

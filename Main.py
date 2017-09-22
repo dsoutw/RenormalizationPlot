@@ -5,6 +5,7 @@ import sys # We need sys so that we can pass argv to QApplication
 #import inspect
 import importlib.util
 import os.path
+import traceback
 import numpy as np
 
 import MainWindowUI # This file holds our MainWindow and all design related things
@@ -73,12 +74,13 @@ class MainWindow(QtWidgets.QMainWindow, MainWindowUI.Ui_mainWindow):
             return
         
         try:
-            config=self.loadFile(file[0])
+            config=self.__loadFile(file[0])
         except Exception as e:
             print(str(e))
+            traceback.print_exc()
             return
 
-        window=self.openWindow(config)
+        window=self.__openWindow(config)
         if window is not None:
             # Success
             if self.__originalPlot is not None:
@@ -90,19 +92,19 @@ class MainWindow(QtWidgets.QMainWindow, MainWindowUI.Ui_mainWindow):
             self.functionConf=config
             self.__originalPlot=window
 
-            self.loadConfig(config)
+            self.__loadConfig(config)
             self.parameterWidget.setEnabled(True)
 
     # load function
     # todo: support for cython file
-    def loadFile(self, path):
+    def __loadFile(self, path):
         name="unimodal:"+os.path.basename(path)
         spec = importlib.util.spec_from_file_location(name, path)
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
         return module
     
-    def openWindow(self,config):
+    def __openWindow(self,config):
         window=None
         try:
             # Create the window for the original plot
@@ -114,8 +116,9 @@ class MainWindow(QtWidgets.QMainWindow, MainWindowUI.Ui_mainWindow):
             function=lambda x: functionWithParameter(x,functionParameter)
             window=UnimodalWindow(Unimodal(
                     function,
-                    config.func_c(functionParameter)
-                    ),0)
+                    config.func_c(functionParameter),
+                    config=config
+                    ),0,config=config)
             window.setWindowTitle("Original Function")
             window.setAttribute(QtCore.Qt.WA_DeleteOnClose)
             
@@ -125,9 +128,10 @@ class MainWindow(QtWidgets.QMainWindow, MainWindowUI.Ui_mainWindow):
             return window
         except Exception as e:
             print("Unable to open window",str(e))
+            traceback.print_exc()
             return None
     
-    def loadConfig(self,config):
+    def __loadConfig(self,config):
         # Set the initial values of the parameter selector
         self.parameterMinEdit.setText(str(config.parameterMin))
         self.parameterMinEdit.setValidator(QtGui.QDoubleValidator())
@@ -138,9 +142,9 @@ class MainWindow(QtWidgets.QMainWindow, MainWindowUI.Ui_mainWindow):
 
         self.setParameter(config.parameterValue)
         
-        self.__originalPlot.destroyed.connect(self.fileClosedSlot)
+        self.__originalPlot.destroyed.connect(self.__fileClosedSlot)
     
-    def fileClosedSlot(self):
+    def __fileClosedSlot(self):
         self.setWindowTitle(self.title)
         self.parameterWidget.setEnabled(False)
         self.functionConf=None

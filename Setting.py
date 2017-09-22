@@ -31,10 +31,10 @@ interpolationThreshold=0.05
 interpolationPrecision=1e-04
 
 # one-parameter unimodal map
-one=np.float64(1)
+__one=np.float64(1)
 def func(x, parameter):
     #x=np.float64(x)
-    return parameter*(one+x)*(one-x)-one
+    return parameter*(__one+x)*(__one-x)-__one
 # critical point for the one-paraameter family
 def func_c(parameter):
     return 0

@@ -5,9 +5,9 @@ from scipy import optimize
 from scipy.interpolate import interp1d
 import time
 #import timeit
-import Setting
 #import traceback
 from enum import Enum
+import importlib
 
 from function.affine import Affine
 from function.functionbase import FunctionBase
@@ -34,8 +34,9 @@ class Unimodal(FunctionBase):
     def __map_solve(self, x, y):
         return self.function(x)-y
 
-    def __init__(self,func,p_c):
+    def __init__(self,func,p_c,config=None):
         global __TOL_EQUAL
+        self.__loadConfig(config)
 
         #self.function = copy.deepcopy(func)
         self.function=func
@@ -43,7 +44,13 @@ class Unimodal(FunctionBase):
         
         self._setupVariable()
         super().__init__()
-        
+
+    # Todo: load to attr
+    def __loadConfig(self,config):
+        if config is None:
+            self.config=importlib.import_module("Setting")
+        else:
+            self.config=config
         
     def _setupVariable(self):
         self.__renormalizable={}
@@ -73,15 +80,15 @@ class Unimodal(FunctionBase):
         # Find beta fixed point
         #self.p_b=optimize.fixed_point(self.function, (self.p_c+self.p_A)/np.float64(2))
         try:
-            self.p_b=optimize.brentq(lambda x: self.function(x)-x, self.p_c, self.p_A, xtol=Setting.precisionPeriodicA, rtol=Setting.precisionPeriodicR)
+            self.p_b=optimize.brentq(lambda x: self.function(x)-x, self.p_c, self.p_A, xtol=self.config.precisionPeriodicA, rtol=self.config.precisionPeriodicR)
         except BaseException as e:
             raise RuntimeError("Unimodal.__init__: Unable to find beta fixed point\n"+str(e))
         try:
-            self.p_B=optimize.brentq(self.__map_solve, self.p_a, self.p_c, args=(self.p_b,), xtol=Setting.precisionPeriodicA, rtol=Setting.precisionPeriodicR)
+            self.p_B=optimize.brentq(self.__map_solve, self.p_a, self.p_c, args=(self.p_b,), xtol=self.config.precisionPeriodicA, rtol=self.config.precisionPeriodicR)
         except BaseException as e:
             raise RuntimeError("Unimodal.__init__: Unable to find beta_bar point"+str(e))
         try:
-            self.p_B2=optimize.brentq(self.__map_solve, self.p_b, self.p_A, args=(self.p_B,), xtol=Setting.precisionPeriodicA, rtol=Setting.precisionPeriodicR)
+            self.p_B2=optimize.brentq(self.__map_solve, self.p_b, self.p_A, args=(self.p_B,), xtol=self.config.precisionPeriodicA, rtol=self.config.precisionPeriodicR)
         except BaseException as e:
             raise RuntimeError("Unimodal.__init__: Unable to find beta_2bar point"+str(e))
         
@@ -110,7 +117,7 @@ class Unimodal(FunctionBase):
             s_i=Affine(np.float64(-1),self.p_a1[period][period-1],np.float64(1),self.p_A1[period][period-1])
             #return Unimodal(lambda x: s(self.function(self.function(s_i(x)))),s(self.p_c))
 
-            return UnimodalRescaleIterate(s, self.function, period, s_i, s(self.p_c)), s, s_i
+            return UnimodalRescaleIterate(s, self.function, period, s_i, s(self.p_c),config=self.config), s, s_i
         else:
             return None
 
@@ -174,7 +181,7 @@ class Unimodal(FunctionBase):
         if len(otherLocalExtremals) < 1:
             return False
         minPoint=max(otherLocalExtremals)
-        #if (maxPoint-minPoint)/minPoint<Setting.precisionPeriodicA:
+        #if (maxPoint-minPoint)/minPoint<self.config.precisionPeriodicA:
         #    print("Insufficient precisioncy")
 
         # Test min point
@@ -195,8 +202,8 @@ class Unimodal(FunctionBase):
         if not __iteration(minPoint) < 0:
             return False
         
-        tol=np.square(np.abs(maxPoint-minPoint))*Setting.precisionPeriodicA/2
-        periodicPoint=optimize.brentq(__iteration, minPoint, maxPoint, xtol=tol, rtol=Setting.precisionPeriodicR)
+        tol=np.square(np.abs(maxPoint-minPoint))*self.config.precisionPeriodicA/2
+        periodicPoint=optimize.brentq(__iteration, minPoint, maxPoint, xtol=tol, rtol=self.config.precisionPeriodicR)
         #print("periodic point: ",periodicPoint, "    critical value:",self.p_v)
         periodicOrbit=self.orbit(periodicPoint, period)
         #print(periodicOrbit)
@@ -250,24 +257,27 @@ class Unimodal(FunctionBase):
     #    The two points p_inOrbit[j] and p_outOrbit[j] have same orientation for j<len-1
     #    The two points p_inOrbit[len-1] and p_outOrbit[len-1] have opposite orientation
     #    p_inOrbit[0]=f(p_inOrbit[len-1])=f(p_outOrbit[len-1])
-    def reflexOrbit(self, p_inOrbit, absError=Setting.precisionPeriodicA):
+    def reflexOrbit(self, p_inOrbit, absError=None):
+        if absError is None:
+            absError=self.config.precisionPeriodicA
+            
         period=len(p_inOrbit)
         p_outOrbit=[None]*period
 
         point=p_inOrbit[0]        
         # Build p-1
         if p_inOrbit[period-1] < self.p_c:
-            point=optimize.brentq(lambda x: self.function(x)-point,self.p_c,self.p_A, xtol=absError, rtol=Setting.precisionPeriodicR)
+            point=optimize.brentq(lambda x: self.function(x)-point,self.p_c,self.p_A, xtol=absError, rtol=self.config.precisionPeriodicR)
         else:
-            point=optimize.brentq(lambda x: self.function(x)-point,self.p_a,self.p_c, xtol=absError, rtol=Setting.precisionPeriodicR)
+            point=optimize.brentq(lambda x: self.function(x)-point,self.p_a,self.p_c, xtol=absError, rtol=self.config.precisionPeriodicR)
         p_outOrbit[period-1]=point
         
         t=period-2
         while t >= 0:
             if p_inOrbit[t] < self.p_c:
-                point=optimize.brentq(lambda x: self.function(x)-point,self.p_a,self.p_c, xtol=absError, rtol=Setting.precisionPeriodicR)
+                point=optimize.brentq(lambda x: self.function(x)-point,self.p_a,self.p_c, xtol=absError, rtol=self.config.precisionPeriodicR)
             else:
-                point=optimize.brentq(lambda x: self.function(x)-point,self.p_c,self.p_A, xtol=absError, rtol=Setting.precisionPeriodicR)
+                point=optimize.brentq(lambda x: self.function(x)-point,self.p_c,self.p_A, xtol=absError, rtol=self.config.precisionPeriodicR)
             p_outOrbit[t]=point
             t=t-1
         return p_outOrbit
@@ -284,8 +294,8 @@ class Unimodal(FunctionBase):
             
         for pt in points:
             if pt < self.p_v:
-                result.append(optimize.brentq(lambda x: self.function(x)-pt,self.p_a,self.p_c, xtol=Setting.precisionPeriodicA, rtol=Setting.precisionPeriodicR))
-                result.append(optimize.brentq(lambda x: self.function(x)-pt,self.p_c,self.p_A, xtol=Setting.precisionPeriodicA, rtol=Setting.precisionPeriodicR))
+                result.append(optimize.brentq(lambda x: self.function(x)-pt,self.p_a,self.p_c, xtol=self.config.precisionPeriodicA, rtol=self.config.precisionPeriodicR))
+                result.append(optimize.brentq(lambda x: self.function(x)-pt,self.p_c,self.p_A, xtol=self.config.precisionPeriodicA, rtol=self.config.precisionPeriodicR))
 
         return result
     
@@ -296,7 +306,7 @@ class UnimodalRescaleIterate(Unimodal):
     _iterate=None
     _interpolated=False
     
-    def __init__(self, rescale1, func, iterate:int, rescale2, p_c):
+    def __init__(self, rescale1, func, iterate:int, rescale2, p_c, *args, **kwargs):
         self._rescale1=rescale1
         self._rescale2=rescale2
         self._rawfunc=func
@@ -310,10 +320,10 @@ class UnimodalRescaleIterate(Unimodal):
             return rescale1(x)
         
         start = time.time()
-        super().__init__(evaluate, p_c)
+        super().__init__(evaluate, p_c, *args, **kwargs)
         end = time.time()
 
-        if Setting.interpolationEnabled == True:
+        if self.config.interpolationEnabled == True:
             # Test machine error
             #print(np.finfo(np.float64).eps)
             #print(np.absolute(self._rescale1.x1-self._rescale1.x2))
@@ -322,14 +332,14 @@ class UnimodalRescaleIterate(Unimodal):
             machineError=(np.power(np.finfo(np.float64).eps*10/np.absolute(self._rescale1.x1-self._rescale1.x2)+1,iterate)-1)*1000
             #print("guess",machineError)
             #print(isinstance(self._rescale1.x1, np.float64))
-            if machineError>Setting.interpolationPrecision:
+            if machineError>self.config.interpolationPrecision:
                 self._interpolated=True
                 sampleSize=machineError*10
                 print("Warning: machine precision exceeded. the unimodal function is approximated by intepolation")
             # Test speed
-            elif end-start>Setting.interpolationThreshold:
+            elif end-start>self.config.interpolationThreshold:
                 self._interpolated=True
-                sampleSize=Setting.interpolationPrecision
+                sampleSize=self.config.interpolationPrecision
                 print("Warning: the unimodal function is approximated by intepolation to speed up the performance")
 
                 
@@ -367,15 +377,15 @@ class UnimodalRescaleIterate(Unimodal):
             
             # test the evaluation time for the function
             # if the time exceed the threshold, then cache the data by interpolation
-            #if Setting.interpolationEnabled == True:
+            #if self.config.interpolationEnabled == True:
             #    x=s(self._rescale2(self.p_c))
             #    start = time.time()
             #    for i in range(100):
             #        x=rfunc(x)
             #    end = time.time()
             #    
-            #    if end-start > Setting.interpolationThreshold:
-            #        sample=np.arange(np.float64(-1),np.float64(1),np.float64(Setting.interpolationPrecision))
+            #    if end-start > self.config.interpolationThreshold:
+            #        sample=np.arange(np.float64(-1),np.float64(1),np.float64(self.config.interpolationPrecision))
             #        data=self.function(sample)
             #        rfunc=Unimodal(interp1d(sample, data, kind='cubic', fill_value='extrapolate'),s(self._rescale2(self.p_c)))
             #        print("Warning: the unimodal function is approximated by intepolation to speed up the performance")
