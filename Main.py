@@ -5,6 +5,7 @@ import functools
 import inspect
 import importlib.util
 import os.path
+import numpy as np
 
 import MainWindowUI # This file holds our MainWindow and all design related things
                     # it also keeps events etc that we defined in Qt Designer
@@ -94,9 +95,14 @@ class MainWindow(QtWidgets.QMainWindow, MainWindowUI.Ui_mainWindow):
         UnimodalWindow.focusWindow=focusMdiWindow
 
         # Create the window for the original plot
-        kwargs={inspect.getargspec(self.functionConf.func).args[1]:self.functionConf.parameterValue}
+        #kwargs={inspect.getargspec(self.functionConf.func).args[1]:self.functionConf.parameterValue}
+        #function=functools.partial(self.functionConf.func,**kwargs)
+        #print(self.functionConf.parameterValue)
+        self.functionConf.parameterValue=np.float64(self.functionConf.parameterValue)
+        functionWithParameter=self.functionConf.func
+        function=lambda x: functionWithParameter(x,self.functionConf.parameterValue)
         self.__originalPlot=UnimodalWindow(Unimodal(
-                functools.partial(self.functionConf.func,**kwargs),
+                function,
                 self.functionConf.func_c(self.functionConf.parameterValue)
                 ),0)
         self.__originalPlot.setWindowTitle("Original Function")
@@ -106,7 +112,6 @@ class MainWindow(QtWidgets.QMainWindow, MainWindowUI.Ui_mainWindow):
             QtCore.Qt.SubWindow | QtCore.Qt.CustomizeWindowHint | QtCore.Qt.WindowSystemMenuHint |
             QtCore.Qt.WindowMinMaxButtonsHint | QtCore.Qt.WindowCloseButtonHint)
         self.__originalPlot.showMaximized()
-
         
         # Set the initial values of the parameter selector
         self.parameterMinEdit.setText(str(self.functionConf.parameterMin))
@@ -114,10 +119,9 @@ class MainWindow(QtWidgets.QMainWindow, MainWindowUI.Ui_mainWindow):
         self.parameterMaxEdit.setText(str(self.functionConf.parameterMax))
         self.parameterMaxEdit.setValidator(QtGui.QDoubleValidator())
         
-        self.parameterEdit.setText(str(self.functionConf.parameterValue))
         self.parameterEdit.setValidator(QtGui.QDoubleValidator())
 
-        self.parameterSlider.setValue(int(self.parameterToPercentage(self.functionConf.parameterValue)*(self.parameterSlider.maximum()-self.parameterSlider.minimum())))
+        self.setParameter(self.functionConf.parameterValue)
         
         self.__originalPlot.destroyed.connect(self.fileClosedSlot)
         self.parameterWidget.setEnabled(True)
@@ -140,25 +144,29 @@ class MainWindow(QtWidgets.QMainWindow, MainWindowUI.Ui_mainWindow):
     def percentageToParameter(self,percentage):
         return float(self.functionConf.parameterMin)+(percentage*(float(self.functionConf.parameterMax)-float(self.functionConf.parameterMin)))
 
+    __parameterEditing=False
+    def setParameter(self,value):
+        self.__parameterEditing=True
+
+        self.functionConf.parameterValue=value
+        self.parameterSlider.setValue(int(self.parameterToPercentage(value)*(self.parameterSlider.maximum()-self.parameterSlider.minimum())))
+        self.parameterEdit.setText(str(value))
+        self.__updatePlot()
+
+        self.__parameterEditing=False
+
     def __parameterEditUpdate(self):
-        if self.__parameterUpdate != True:
-            self.__parameterUpdate=True
-            if (self.functionConf.parameterMin <= float(self.parameterEdit.text())) and (float(self.parameterEdit.text()) <= self.functionConf.parameterMax):
-                self.functionConf.parameterValue=float(self.parameterEdit.text())
-                self.parameterSlider.setValue(int(self.parameterToPercentage(self.functionConf.parameterValue)*(self.parameterSlider.maximum()-self.parameterSlider.minimum())))
-                self.__updatePlot()
+        if not self.__parameterEditing:
+            value=np.float64(self.parameterEdit.text())
+            if (self.functionConf.parameterMin <= value and value <= self.functionConf.parameterMax):
+                self.setParameter(value)
             else:
                 #revert change if out of bound
                 self.parameterEdit.setText(str(self.functionConf.parameterValue))
-            self.__parameterUpdate=False
         
     def __parameterSliderUpdate(self):
-        if self.__parameterUpdate != True:
-            self.__parameterUpdate=True
-            self.functionConf.parameterValue=self.percentageToParameter(float(self.parameterSlider.value())/(self.parameterSlider.maximum()-self.parameterSlider.minimum()))
-            self.parameterEdit.setText(str(self.functionConf.parameterValue))
-            self.__updatePlot()
-            self.__parameterUpdate=False
+        if not self.__parameterEditing:
+            self.setParameter(self.percentageToParameter(float(self.parameterSlider.value())/(self.parameterSlider.maximum()-self.parameterSlider.minimum())))
 
     def __updatePlot(self):
         kwargs={inspect.getargspec(self.functionConf.func).args[1]:self.functionConf.parameterValue}
@@ -215,9 +223,9 @@ class MainWindow(QtWidgets.QMainWindow, MainWindowUI.Ui_mainWindow):
             self.parameterEdit.setText(float(self.functionConf.parameterValue))
 
         # Update the percentage of the slider
-        self.__parameterUpdate=True
+        self.__parameterEditing=True
         self.parameterSlider.setValue(int(self.parameterToPercentage(self.functionConf.parameterValue)*(self.parameterSlider.maximum()-self.parameterSlider.minimum())))
-        self.__parameterUpdate=False
+        self.__parameterEditing=False
         
         
         
