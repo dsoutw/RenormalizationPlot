@@ -31,9 +31,9 @@ interpolationThreshold=0.05
 interpolationPrecision=1e-04
 
 # one-parameter unimodal map
-def func(x, mu):
+def func(x, parameter):
     x=np.float64(x)
-    return np.float64(mu)*(np.float64(1.0)+x)*(np.float64(1.0)-x)-np.float64(1.0)
+    return np.float64(parameter)*(np.float64(1.0)+x)*(np.float64(1.0)-x)-np.float64(1.0)
 # critical point for the one-paraameter family
-def func_c(mu):
+def func_c(parameter):
     return 0
