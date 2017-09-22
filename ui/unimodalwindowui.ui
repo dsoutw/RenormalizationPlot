@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>plotWindow</class>
- <widget class="QMainWindow" name="plotWindow">
+ <class>unimodalWindow</class>
+ <widget class="QMainWindow" name="unimodalWindow">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -353,8 +353,8 @@
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>204</width>
-             <height>438</height>
+             <width>105</width>
+             <height>114</height>
             </rect>
            </property>
            <layout class="QFormLayout" name="formLayout_2">

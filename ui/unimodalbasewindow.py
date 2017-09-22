@@ -1,8 +1,8 @@
 from PyQt5 import QtCore, QtWidgets # Import the PyQt4 module we'll need
 
-import UnimodalWindowUI # This file holds our MainWindow and all design related things
+from ui.unimodalwindowui import Ui_unimodalWindow # This file holds our MainWindow and all design related things
                     # it also keeps events etc that we defined in Qt Designer
-from Binding import Binding
+from ui.binding import Binding
 # Matplotlib library
 from matplotlib.backends.backend_qt5agg import (
     NavigationToolbar2QT as NavigationToolbar)
@@ -67,7 +67,7 @@ class UnimodalBaseWindow(Binding, QtWidgets.QMainWindow):
 
         QtWidgets.QMainWindow.__init__(self,rParent)
 
-        self.ui = UnimodalWindowUI.Ui_plotWindow()
+        self.ui = Ui_unimodalWindow()
         self.ui.setupUi(self)
         
         self.__loadConfig(config)

@@ -4,7 +4,7 @@ from scipy import optimize
 import numpy as np
 from matplotlib import (cm,colors)
 
-from UnimodalBaseWindow import UnimodalBaseWindow 
+from ui.unimodalbasewindow import UnimodalBaseWindow 
 
 import plot
 

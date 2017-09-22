@@ -7,18 +7,18 @@ import importlib.util
 import os.path
 import numpy as np
 
-import MainWindowUI # This file holds our MainWindow and all design related things
+from ui.mainwindowui import Ui_mainWindow # This file holds our MainWindow and all design related things
                     # it also keeps events etc that we defined in Qt Designer
-from UnimodalWindow import UnimodalWindow
+from ui.unimodalwindow import UnimodalWindow
 from function import Unimodal
 
 import logging
 import logging.config
-from loghandling import appendFunctionInfoAdapter
+from ui.loghandling import appendFunctionInfoAdapter
 import typing as tp
 import config
 
-class MainWindow(QtWidgets.QMainWindow, MainWindowUI.Ui_mainWindow):
+class MainWindow(QtWidgets.QMainWindow, Ui_mainWindow):
     title="Renormalization Plot"
     logger:tp.Optional[logging.Logger]=None
     
@@ -143,12 +143,36 @@ class MainWindow(QtWidgets.QMainWindow, MainWindowUI.Ui_mainWindow):
             QtCore.Qt.SubWindow | QtCore.Qt.CustomizeWindowHint | QtCore.Qt.WindowSystemMenuHint |
             QtCore.Qt.WindowMinMaxButtonsHint | QtCore.Qt.WindowCloseButtonHint)
         return window
+
+    def __updateWindow(self):
+        if self.__originalPlot is not None:
+            try:
+                #kwargs={inspect.getargspec(self.functionConf.func).args[1]:self.functionConf.parameterValue}
+                #function=functools.partial(self.functionConf.func,**kwargs
+                functionWithParameter=self.functionConf.func
+                function=lambda x: functionWithParameter(x,self.functionConf.parameterValue)
+                self.__originalPlot.function=Unimodal(
+                    function,
+                    self.functionConf.func_c(self.functionConf.parameterValue),
+                    config=self.functionConf
+                    )
+                return
+            except Exception:
+                self.logger.exception('Unable to update plot: %s [%s]',self.functionConf.func)
+            self.__closeWindow()
     
     def __closeWindow(self):
         if self.__originalPlot is not None:
             self.__originalPlot.destroyed.disconnect()
             self.__originalPlot.mdiSubWindow.close()
             self.__originalPlot=None
+    
+    def __windowClosedSlot(self):
+        self.logger.info('File closed by user: %s', self.functionConf.__name__)
+        self.setWindowTitle(self.title)
+        self.parameterWidget.setEnabled(False)
+        self.functionConf=None
+        self.__originalPlot=None
     
     def __loadConfig(self,config):
         # Set the initial values of the parameter selector
@@ -161,14 +185,7 @@ class MainWindow(QtWidgets.QMainWindow, MainWindowUI.Ui_mainWindow):
 
         self.setParameter(config.parameterValue)
         
-        self.__originalPlot.destroyed.connect(self.__fileClosedSlot)
-    
-    def __fileClosedSlot(self):
-        self.logger.info('File closed by user: %s', self.functionConf.__name__)
-        self.setWindowTitle(self.title)
-        self.parameterWidget.setEnabled(False)
-        self.functionConf=None
-        self.__originalPlot=None
+        self.__originalPlot.destroyed.connect(self.__windowClosedSlot)
     
     '''
     Parameter Slider
@@ -188,7 +205,7 @@ class MainWindow(QtWidgets.QMainWindow, MainWindowUI.Ui_mainWindow):
         self.functionConf.parameterValue=value
         self.parameterSlider.setValue(int(self.parameterToPercentage(value)*(self.parameterSlider.maximum()-self.parameterSlider.minimum())))
         self.parameterEdit.setText(str(value))
-        self.__updatePlot()
+        self.__updateWindow()
 
         self.__parameterEditing=False
 
@@ -205,16 +222,6 @@ class MainWindow(QtWidgets.QMainWindow, MainWindowUI.Ui_mainWindow):
         if not self.__parameterEditing:
             self.setParameter(self.percentageToParameter(float(self.parameterSlider.value())/(self.parameterSlider.maximum()-self.parameterSlider.minimum())))
 
-    def __updatePlot(self):
-        #kwargs={inspect.getargspec(self.functionConf.func).args[1]:self.functionConf.parameterValue}
-        #function=functools.partial(self.functionConf.func,**kwargs
-        functionWithParameter=self.functionConf.func
-        function=lambda x: functionWithParameter(x,self.functionConf.parameterValue)
-        self.__originalPlot.function=Unimodal(
-            function,
-            self.functionConf.func_c(self.functionConf.parameterValue)
-            )
-        
     # Update Bound
     def __parameterMinBoundUpdate(self):
         if float(self.parameterMinEdit.text()) < self.functionConf.parameterMax:
