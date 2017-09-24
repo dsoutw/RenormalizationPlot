@@ -3,7 +3,6 @@ from PyQt5.QtWidgets import QFileDialog
 import sys # We need sys so that we can pass argv to QApplication
 #import functools
 #import inspect
-import importlib.util
 import os.path
 import numpy as np
 
@@ -11,6 +10,7 @@ from ui.mainwindowui import Ui_mainWindow # This file holds our MainWindow and a
                     # it also keeps events etc that we defined in Qt Designer
 from ui.unimodalwindow import UnimodalWindow
 from function import Unimodal
+from lib.module import loadFile
 
 import logging
 import logging.config
@@ -62,9 +62,12 @@ class MainWindow(QtWidgets.QMainWindow, Ui_mainWindow):
         self.parameterWidget.setEnabled(False)
         self.setWindowTitle(self.title)
         self.__logger.info("UI initilized")
-    
+        
     functionConf=None
     __originalPlot=None
+    
+    def showEvent(self, *args, **kwargs):
+        QtWidgets.QMainWindow.showEvent(self, *args, **kwargs)
     
     def openFileDialog(self):
         options = QFileDialog.Options()
@@ -75,12 +78,16 @@ class MainWindow(QtWidgets.QMainWindow, Ui_mainWindow):
             "Python Files (*.py);;All Files (*)", 
             options=options)
         
+        if file[0] == '' or file[0] is None:
+            '''User cancel'''
+            return
+        
         if not os.path.isfile(file[0]):
             self.__logger.error('File does not exist: %s',file[0])
             return
         
         try:
-            config=self.__loadFile(file[0])
+            config=loadFile(file[0])
         except Exception:
             self.__logger.exception('Unable to load file: %s',file[0])
             return
@@ -103,25 +110,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_mainWindow):
 
         self.__logger.info('File opened: %s', os.path.basename(file[0]))
 
-    def __loadFile(self, path):
-        '''
-        Load function from a python file
-        
-        Supported file format:
-            .py:    python file
-        
-        Supported function:
-            unimodal maps (one parameter family)
-        
-        @param path: Path of the file
-        @type path: str
-        '''
-        
-        name="unimodal:"+os.path.basename(path)
-        spec = importlib.util.spec_from_file_location(name, path)
-        module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)
-        return module
     
     def __openWindow(self,config):
         # Create the window for the original plot
@@ -284,6 +272,7 @@ def main():
     app = QtWidgets.QApplication(sys.argv)  # A new instance of QApplication
     form = MainWindow()                 # We set the form to be our ExampleApp (design)
     form.show()                         # Show the form
+    form.openFileDialog()
     app.exec_()                         # and execute the app
 
 
