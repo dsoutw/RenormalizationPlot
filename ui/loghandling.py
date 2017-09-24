@@ -5,16 +5,29 @@ Created on 2017/9/22
 '''
 import logging
 
-old_factory = logging.getLogRecordFactory()
-def record_factory(*args, **kwargs):
-    record = old_factory(*args, **kwargs)
-    functionInfo = getattr(record,"funcionInfo",None)
-    if functionInfo is not None:
-        record.functionInfo=' [%s]' % (functionInfo,)
-    else:
-        record.functionInfo=''
-    return record
-logging.setLogRecordFactory(record_factory)
+# class recordFactoryFunctionInfo(logging.LogRecord):
+#     def getMessage(self):
+#         print(self.args)
+#         super().getMessage()
+# 
+# old_factory = logging.getLogRecordFactory()
+# def record_factory(*args, **kwargs):
+#     print(args)
+#     record:logging.LogRecord = old_factory(*args, **kwargs)
+#     #print(kwargs)
+#     #print('before:',record.__dict__)
+#     functionInfo = getattr(record,'funcionInfo',None)
+#     if functionInfo is not None:
+#         #record.functionInfo=' [%s]' % (functionInfo,)
+#         #print(functionInfo)
+#         pass
+#     else:
+#         record.functionInfo=''
+#         pass
+#     #print('after:',record.__dict__)
+#     print(str(record))
+#     return record
+# logging.setLogRecordFactory(record_factory)
 
 class appendFunctionInfoAdapter(logging.LoggerAdapter):
     """
@@ -27,7 +40,10 @@ class appendFunctionInfoAdapter(logging.LoggerAdapter):
         super().__init__(logger, {})
         
     def process(self, msg, kwargs:dict):
-        oldFunctionInfo=kwargs.get('functionInfo',None)
-        if oldFunctionInfo is not None:
-            kwargs['functionInfo']='%s,%s' % (self.functionInfo,oldFunctionInfo)
-        return msg, kwargs
+        msg='%s %s' % (msg,str(self.functionInfo))
+#         oldFunctionInfo=self.extra.get('functionInfo',None)
+#         if oldFunctionInfo is not None:
+#             self.extra['functionInfo']='%s,%s' % (self.functionInfo,oldFunctionInfo)
+#         else:
+#             self.extra['functionInfo']='%s' % (self.functionInfo)
+        return super().process(msg, kwargs)

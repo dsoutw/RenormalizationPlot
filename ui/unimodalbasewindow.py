@@ -7,8 +7,11 @@ from ui.binding import Binding
 from matplotlib.backends.backend_qt5agg import (
     NavigationToolbar2QT as NavigationToolbar)
 import matplotlib as mpl
+
 from abc import ABCMeta,abstractmethod
 import typing as tp
+import logging
+from ui.loghandling import appendFunctionInfoAdapter
 
 class UnimodalBaseWindow(Binding, QtWidgets.QMainWindow):
     __metaclass__=ABCMeta
@@ -55,15 +58,29 @@ class UnimodalBaseWindow(Binding, QtWidgets.QMainWindow):
             'setEnable':('levelButton',)},
         }
     
-    # Arguments
-    # func: unimodal class
-    # level: the level of renormalization
-    # rParent: a unimodal map for the previous level
-    def __init__(self, level:int = 0, rParent:tp.Optional['UnimodalBaseWindow'] = None, config=None):
+    __logger:tp.Optional[logging.Logger]=None
+    
+    def __init__(self, level:int = 0, rParent:tp.Optional['UnimodalBaseWindow'] = None, config=None, logger:tp.Optional[logging.Logger]=None):
+        '''
+        UnimodalBaseWindow
+        @param level: Level of renormalization
+        @type level: int
+        @param rParent: renormalization parent
+        @type rParent: UnimodalBaseWindow
+        @param config: configuration
+        @type config: imported configuration
+        @param __logger: __logger
+        @type __logger: logging.Logger
+        '''
         #func: Unimodal
         #level: nonnegative integer
         self.__level:int=level
         self.__rParent:tp.Optional['UnimodalBaseWindow']=rParent
+        
+        if logger is None:
+            self.__logger=appendFunctionInfoAdapter(logging.getLogger(__name__),level)
+        else:
+            self.__logger=logger
 
         QtWidgets.QMainWindow.__init__(self,rParent)
 
@@ -72,7 +89,7 @@ class UnimodalBaseWindow(Binding, QtWidgets.QMainWindow):
         
         self.__loadConfig(config)
         
-        Binding.__init__(self, self.ui, self.__bindingList)
+        Binding.__init__(self, self.ui, self.__bindingList,logger=self.__logger)
         #self.setupUi(self)  # This is defined in design.py file automatically
                             # It sets up layout and widgets that are defined
 

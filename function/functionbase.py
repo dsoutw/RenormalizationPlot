@@ -20,10 +20,14 @@ class FunctionBase(metaclass=FunctionBaseMeta):
     classdocs
     '''
 
-    def __init__(self):
+    def __init__(self,variables=1):
         '''
         Constructor
         '''
+        if variables==1:
+            self.iterates=self.__iteratesOneVariable
+        else:
+            self.iterates=self.__iteratesMultipleVariable
         #self.__call__=self.function
         pass
         

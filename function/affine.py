@@ -13,7 +13,7 @@ class Affine(FunctionBase):
         self.y2=y2
         self.slope=(self.y1-self.y2)/(self.x1-self.x2)
 
-        super().__init__()
+        super().__init__(1)
 
     def function(self, x):
         return (x-self.x2)*self.slope+self.y2

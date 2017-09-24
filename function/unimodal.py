@@ -43,7 +43,7 @@ class Unimodal(FunctionBase):
         self.p_c = p_c
         
         self._setupVariable()
-        super().__init__()
+        super().__init__(1)
 
     # Todo: load to attr
     def __loadConfig(self,config):
@@ -110,14 +110,14 @@ class Unimodal(FunctionBase):
             #    self.__renormalizable[period]=False
         return self.__renormalizable[period]
 
-    def renomalize(self, period:int=2):
+    def renomalize(self, period:int=2, logger=None):
         # check if the function is renormalizable
         if self.renormalizable(period):
             s=Affine(self.p_a1[period][period-1],np.float64(-1),self.p_A1[period][period-1],np.float64(1))
             s_i=Affine(np.float64(-1),self.p_a1[period][period-1],np.float64(1),self.p_A1[period][period-1])
             #return Unimodal(lambda x: s(self.function(self.function(s_i(x)))),s(self.p_c))
 
-            return UnimodalRescaleIterate(s, self.function, period, s_i, s(self.p_c),config=self.config), s, s_i
+            return UnimodalRescaleIterate(s, self.function, period, s_i, s(self.p_c), config=self.config), s, s_i
         else:
             return None
 
@@ -358,7 +358,7 @@ class UnimodalRescaleIterate(Unimodal):
             if self.renormalizable(period):
                 s=Affine(self._rescale2(self.p_a1[period][period-1]),np.float64(-1),self._rescale2(self.p_A1[period][period-1]),np.float64(1))
                 s_i=Affine(np.float64(-1),self._rescale2(self.p_a1[period][period-1]),np.float64(1),self._rescale2(self.p_A1[period][period-1]))
-                return (UnimodalRescaleIterate(s, self._rawfunc, self._iterate*period, s_i, s(self._rescale2(self.p_c))), 
+                return (UnimodalRescaleIterate(s, self._rawfunc, self._iterate*period, s_i, s(self._rescale2(self.p_c)), config=self.config), 
                     Affine(self.p_a1[period][period-1],np.float64(-1),self.p_A1[period][period-1],np.float64(1)), 
                     Affine(np.float64(-1),self.p_a1[period][period-1],np.float64(1),self.p_A1[period][period-1])
                     )

@@ -20,10 +20,10 @@ import config
 
 class MainWindow(QtWidgets.QMainWindow, Ui_mainWindow):
     title="Renormalization Plot"
-    logger:tp.Optional[logging.Logger]=None
+    __logger:tp.Optional[logging.Logger]=None
     
     def __init__(self):
-        self.logger:logging.Logger=logging.getLogger("UI")
+        self.__logger:logging.Logger=logging.getLogger(__name__)
         
         super().__init__()
         self.setupUi(self)  # This is defined in design.py file automatically
@@ -61,7 +61,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_mainWindow):
         
         self.parameterWidget.setEnabled(False)
         self.setWindowTitle(self.title)
-        self.logger.info("UI initilized")
+        self.__logger.info("UI initilized")
     
     functionConf=None
     __originalPlot=None
@@ -76,19 +76,19 @@ class MainWindow(QtWidgets.QMainWindow, Ui_mainWindow):
             options=options)
         
         if not os.path.isfile(file[0]):
-            self.logger.error('File does not exist: %s',file[0])
+            self.__logger.error('File does not exist: %s',file[0])
             return
         
         try:
             config=self.__loadFile(file[0])
         except Exception:
-            self.logger.exception('Unable to load file: %s',file[0])
+            self.__logger.exception('Unable to load file: %s',file[0])
             return
 
         try:
             window=self.__openWindow(config)
         except Exception:
-            self.logger.exception('Unable to open window: %s',config.__name__)
+            self.__logger.exception('Unable to open window: %s',config.__name__)
             return
 
         self.__closeWindow()
@@ -101,7 +101,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_mainWindow):
         self.__loadConfig(config)
         self.parameterWidget.setEnabled(True)
 
-        self.logger.info('File opened: %s', os.path.basename(file[0]))
+        self.__logger.info('File opened: %s', os.path.basename(file[0]))
 
     def __loadFile(self, path):
         '''
@@ -125,12 +125,15 @@ class MainWindow(QtWidgets.QMainWindow, Ui_mainWindow):
     
     def __openWindow(self,config):
         # Create the window for the original plot
+        
+        # Setup function
         #kwargs={inspect.getargspec(self.functionConf.func).args[1]:self.functionConf.parameterValue}
         #function=functools.partial(self.functionConf.func,**kwargs)
         #print(self.functionConf.parameterValue)
         functionParameter=np.float64(config.parameterValue)
         functionWithParameter=config.func
         function=lambda x: functionWithParameter(x,functionParameter)
+        
         window=UnimodalWindow(Unimodal(
                 function,
                 config.func_c(functionParameter),
@@ -158,7 +161,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_mainWindow):
                     )
                 return
             except Exception:
-                self.logger.exception('Unable to update plot: %s [%s]',self.functionConf.func)
+                self.__logger.exception('Unable to update plot: %s [%s]', self.functionConf.__name__, self.functionConf.parameterValue)
             self.__closeWindow()
     
     def __closeWindow(self):
@@ -168,7 +171,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_mainWindow):
             self.__originalPlot=None
     
     def __windowClosedSlot(self):
-        self.logger.info('File closed by user: %s', self.functionConf.__name__)
+        self.__logger.info('File closed by user: %s', self.functionConf.__name__)
         self.setWindowTitle(self.title)
         self.parameterWidget.setEnabled(False)
         self.functionConf=None
@@ -202,6 +205,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_mainWindow):
     def setParameter(self,value):
         self.__parameterEditing=True
 
+        self.__logger.info('Parameter change to %s',value)
         self.functionConf.parameterValue=value
         self.parameterSlider.setValue(int(self.parameterToPercentage(value)*(self.parameterSlider.maximum()-self.parameterSlider.minimum())))
         self.parameterEdit.setText(str(value))
