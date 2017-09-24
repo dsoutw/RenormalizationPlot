@@ -1,11 +1,13 @@
 from PyQt5 import QtCore, QtWidgets
-import sys # We need sys so that we can pass argv to QApplication
 import logging
 import typing as tp
 
 from scipy import optimize
-import numpy as np
 from matplotlib import (cm,colors)
+
+import sys
+sys.path.insert(0, '../')
+sys.path.insert(0, '.')
 
 from ui.unimodalbasewindow import UnimodalBaseWindow 
 from ui.loghandling import appendFunctionInfoAdapter
@@ -530,14 +532,18 @@ class UnimodalWindow(UnimodalBaseWindow):
         self.levels_beta=[self.function.p_b]
         self.levels_Beta=[self.function.p_B]
 
-        
-def main():
-    import Setting
-    app = QtWidgets.QApplication(sys.argv)  # A new instance of QApplication
-    form = UnimodalWindow(Unimodal(lambda x:Setting.func(x,Setting.parameterValue),Setting.func_c(Setting.parameterValue)))                 # We set the form to be our ExampleApp (design)
+from lib.module import loadFile
+
+def main(argv):
+    if len(argv)<1:
+        print('unimodalwindow <unimodalfile>')
+        sys.exit(2)
+    
+    Setting=loadFile(argv[0])              
+    app = QtWidgets.QApplication(sys.argv[1:])  # A new instance of QApplication
+    form = UnimodalWindow(Unimodal(lambda x:Setting.func(x,Setting.parameterValue),Setting.func_c(Setting.parameterValue),config=Setting),config=Setting)                 # We set the form to be our ExampleApp (design)
     form.show()                         # Show the form
     app.exec_()                         # and execute the app
 
-
 if __name__ == '__main__':              # if we're running file directly and not importing it
-    main()  
+    main(sys.argv[1:])  
