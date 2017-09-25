@@ -15,7 +15,7 @@ from ui.loghandling import appendFunctionInfoAdapter
 
 class UnimodalBaseWindow(Binding, QtWidgets.QMainWindow):
     __metaclass__=ABCMeta
-    __level:int=0
+    _level:int=0
     __rParent:tp.Optional['UnimodalBaseWindow']=None
     __period:int=2
     __renormalizable:bool=None
@@ -74,7 +74,7 @@ class UnimodalBaseWindow(Binding, QtWidgets.QMainWindow):
         '''
         #func: Unimodal
         #level: nonnegative integer
-        self.__level:int=level
+        self._level:int=level
         self.__rParent:tp.Optional['UnimodalBaseWindow']=rParent
         
         if logger is None:
@@ -171,9 +171,9 @@ class UnimodalBaseWindow(Binding, QtWidgets.QMainWindow):
 
     @QtCore.pyqtSlot(int)
     def setLevel(self, level:int):
-        self.__level=level
+        self._level=level
     def getLevel(self)->int:
-        return self.__level
+        return self._level
     level=property(
         lambda self: self.getLevel(), 
         lambda self, level: self.setLevel(level)

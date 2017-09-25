@@ -14,6 +14,7 @@ from lib.module import loadFile
 
 import logging
 import logging.config
+logging.captureWarnings(True)
 import typing as tp
 import config
 

@@ -1,3 +1,3 @@
-from function.affine import Affine
-from function.functionbase import FunctionBase
-from function.unimodal import Unimodal
+from .affine import Affine
+from .functionbase import FunctionBase
+from .unimodal import Unimodal

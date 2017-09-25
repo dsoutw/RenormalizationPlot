@@ -3,7 +3,7 @@ Created on 2017/9/20
 
 @author: dsou
 '''
-from function.functionbase import FunctionBase 
+from .functionbase import FunctionBase 
 
 class Affine(FunctionBase):
     def __init__(self, x1, y1, x2, y2):

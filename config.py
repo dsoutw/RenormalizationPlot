@@ -8,16 +8,29 @@ import logging
 log = dict(
     version = 1,
     formatters = {
-        'f': {'format':
-              '%(asctime)s %(name)-25s %(levelname)-8s %(message)s'}
+        'default': {'format':
+              '%(asctime)s %(name)-20s %(levelname)-8s %(message)s'},
+        'defaultfunction': {'format':
+              '%(asctime)s %(name)-20s %(levelname)-8s [%(function)s] %(message)s'}
+
         },
     handlers = {
-        'h': {'class': 'logging.StreamHandler',
-              'formatter': 'f',
+        'console': {'class': 'logging.StreamHandler',
+              'formatter': 'default',
+              'level': logging.DEBUG},
+        'consolefunction': {'class': 'logging.StreamHandler',
+              'formatter': 'defaultfunction',
               'level': logging.DEBUG}
         },
+    loggers = {
+        'function': {
+            'handlers': ['consolefunction'],
+            'level': logging.DEBUG,
+            'propagate': False
+            }
+        },
     root = {
-        'handlers': ['h'],
+        'handlers': ['console'],
         'level': logging.DEBUG,
         },
 )
