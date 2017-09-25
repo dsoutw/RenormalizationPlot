@@ -14,7 +14,6 @@ from lib.module import loadFile
 
 import logging
 import logging.config
-from ui.loghandling import appendFunctionInfoAdapter
 import typing as tp
 import config
 

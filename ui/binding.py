@@ -11,6 +11,7 @@ import warnings
 import logging
 import operator
 import plot
+import weakref
 
 def readAttr(ui,attr):
     if isinstance(attr, str):
@@ -49,7 +50,7 @@ class graphLink:
                 if isinstance(option,str):
                     self.setEnableUI=[readAttr(ui,option)]
                 else:
-                    self.setEnableUI=[readAttr(ui,uiName) for uiName in option]
+                    self.setEnableUI=weakref.WeakSet([readAttr(ui,uiName) for uiName in option])
             elif optionName=='getEnable':
                 self.getEnableUI=readAttr(ui,option)
                 self.getEnableUI.toggled.connect(self.__setEnableSlot)
@@ -86,7 +87,7 @@ class graphLink:
             try:
                 graph.setVisible(value)
             except:
-                self.__logger.exception('Unable to set visible: %s' % value)
+                self.__logger.exception('Unable to set graph (%s) visible: %s' % (graph,value))
             
     def isVisibled(self):
         return self.__visibledUI
@@ -107,8 +108,6 @@ class graphLink:
                 except:
                     self.__logger.exception('Unable to clear graph')
                 
-            self.__setEnable(self.isEnabled())
-                
             if newGraph is not None:
                 try:
                     newGraph.setVisible(self.isVisibled())
@@ -120,6 +119,8 @@ class graphLink:
                     except:
                         pass
                     raise RuntimeError('Unable to set new graph') from e
+                finally:
+                    self.__setEnable(self.isEnabled())
 
     graph=property(getGraph,setGraph)
     
