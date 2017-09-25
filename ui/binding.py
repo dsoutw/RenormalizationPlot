@@ -7,7 +7,6 @@ Use string to work around on nonexistence of pointers
 @author: dsou
 '''
 import typing as tp
-import warnings
 import logging
 import operator
 import plot

@@ -27,6 +27,11 @@ log = dict(
             'handlers': ['consolefunction'],
             'level': logging.DEBUG,
             'propagate': False
+            },
+        'ui': {
+            'handlers': ['consolefunction'],
+            'level': logging.DEBUG,
+            'propagate': False
             }
         },
     root = {

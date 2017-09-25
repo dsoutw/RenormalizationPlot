@@ -45,7 +45,7 @@ class UnimodalWindow(UnimodalBaseWindow):
 
         self.__func:Unimodal = func
         if logger is None:
-            self.__logger:logging.Logger=appendFunctionInfoAdapter(logging.getLogger(__name__),level)
+            self.__logger:logging.Logger=logging.LoggerAdapter(logging.getLogger(__name__),{'function':self})
         else:
             self.__logger:logging.Logger=logger
                 
@@ -72,6 +72,9 @@ class UnimodalWindow(UnimodalBaseWindow):
         super().closeEvent(evnt)
         self.__logger.info("Window Closed")
 
+    def __str__(self):
+        return str(self.function)
+    
     '''
     Properties
     '''
@@ -301,6 +304,7 @@ class UnimodalWindow(UnimodalBaseWindow):
     # User input
     # bug: does not update(remove) contour plot when deep level period is changed
     def periodChangedEvent(self, period:int):
+        self.__logger.info('Period changed: %s' % period)
         try:
             self.ui.canvas.setUpdatesEnabled(False)
             self.gFunctionIterates.update()
@@ -331,6 +335,7 @@ class UnimodalWindow(UnimodalBaseWindow):
             self.rFunctionChangedEvent()
         
     def renormalizableChangedEvent(self,value):
+        self.__logger.info('Renormalizable changed: %s' % value)
         if value is True:
             try:
                 self.ui.canvas.setUpdatesEnabled(False)

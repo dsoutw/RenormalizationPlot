@@ -125,7 +125,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_mainWindow):
         window=UnimodalWindow(Unimodal(
                 function,
                 config.func_c(functionParameter),
-                config=config
+                config=config,
+                signiture=functionParameter
                 ),0,config=config)
         window.setWindowTitle("Original Function")
         window.setAttribute(QtCore.Qt.WA_DeleteOnClose)
@@ -140,12 +141,14 @@ class MainWindow(QtWidgets.QMainWindow, Ui_mainWindow):
             try:
                 #kwargs={inspect.getargspec(self.functionConf.func).args[1]:self.functionConf.parameterValue}
                 #function=functools.partial(self.functionConf.func,**kwargs
+                functionParameter=np.float64(self.functionConf.parameterValue)
                 functionWithParameter=self.functionConf.func
-                function=lambda x: functionWithParameter(x,self.functionConf.parameterValue)
+                function=lambda x: functionWithParameter(x,functionParameter)
                 self.__originalPlot.function=Unimodal(
                     function,
-                    self.functionConf.func_c(self.functionConf.parameterValue),
-                    config=self.functionConf
+                    self.functionConf.func_c(functionParameter),
+                    config=self.functionConf,
+                    signiture=functionParameter
                     )
                 return
             except Exception:

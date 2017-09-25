@@ -78,7 +78,7 @@ class UnimodalBaseWindow(Binding, QtWidgets.QMainWindow):
         self.__rParent:tp.Optional['UnimodalBaseWindow']=rParent
         
         if logger is None:
-            self.__logger=appendFunctionInfoAdapter(logging.getLogger(__name__),level)
+            self.__logger=logging.getLogger(__name__)
         else:
             self.__logger=logger
 
