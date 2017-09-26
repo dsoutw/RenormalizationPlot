@@ -7,6 +7,17 @@ from .functionbase import FunctionBase
 
 class Affine(FunctionBase):
     def __init__(self, x1, y1, x2, y2):
+        '''
+        Affine map that intersects (x1,y1) and (x2,y2)
+        @param x1:
+        @type x1: float
+        @param y1:
+        @type y1: float
+        @param x2:
+        @type x2: float
+        @param y2:
+        @type y2: float
+        '''
         self.x1=x1
         self.y1=y1
         self.x2=x2

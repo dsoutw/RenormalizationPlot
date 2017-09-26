@@ -75,9 +75,9 @@ class Unimodal(FunctionBase):
         # Check if it is a unimodal function with the standard convention
         # i.e. -1=f(-1)=f(1)
         self.p_a=np.float64(-1.0)
-        #val=self.function(self.p_a)
-        #if not np.isclose(self.function(self.p_a),self.p_a,rtol=self.__TOL_EQUAL):
-        #    raise ValueError('Not a unimodal map: f(-1)=',val)
+        value=self.function(self.p_a)
+        if not np.isclose(self.function(self.p_a),self.p_a,rtol=self.__TOL_EQUAL):
+            self._logger.warning('f(-1) is far from -1: f(-1)=%s' % (value))
         
         # Check if f(-1)=1
         self.p_A=np.float64(1.0)
@@ -92,7 +92,6 @@ class Unimodal(FunctionBase):
             raise ValueError('Not a unimodal map: c>v')
         
         # Find beta fixed point
-        #self.p_b=optimize.fixed_point(self.function, (self.p_c+self.p_A)/np.float64(2))
         try:
             self.p_b=optimize.brentq(lambda x: self.function(x)-x, self.p_c, self.p_A, xtol=self.config.precisionPeriodicA, rtol=self.config.precisionPeriodicR)
         except BaseException as e:

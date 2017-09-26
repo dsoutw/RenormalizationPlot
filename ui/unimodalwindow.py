@@ -10,7 +10,6 @@ sys.path.insert(0, '../')
 sys.path.insert(0, '.')
 
 from ui.unimodalbasewindow import UnimodalBaseWindow 
-from ui.loghandling import appendFunctionInfoAdapter
 
 import plot
 
@@ -308,7 +307,7 @@ class UnimodalWindow(UnimodalBaseWindow):
         try:
             self.ui.canvas.setUpdatesEnabled(False)
             self.gFunctionIterates.update()
-        except Exception as e:
+        except:
             self.__logger.exception('Unable to update graph when the perios is changed. period: %s',period)
         finally:
             self.ui.canvas.setUpdatesEnabled(True)
@@ -320,7 +319,7 @@ class UnimodalWindow(UnimodalBaseWindow):
         try:
             self.ui.canvas.setUpdatesEnabled(False)
             self.__updateCurrentLevel()
-        except Exception as e:
+        except:
             self.__logger.exception('Unable to update function. %s', func)
         finally:
             self.ui.canvas.setUpdatesEnabled(True)
@@ -340,7 +339,7 @@ class UnimodalWindow(UnimodalBaseWindow):
             try:
                 self.ui.canvas.setUpdatesEnabled(False)
                 self.__plotRenormalizableGraph()
-            except Exception as e:
+            except:
                 self.__logger.exception('Unable to draw renormalizable graph.')
             finally:
                 self.ui.canvas.setUpdatesEnabled(True)
@@ -348,7 +347,7 @@ class UnimodalWindow(UnimodalBaseWindow):
             self.closeRChild()
             try:
                 self.__removeRenormalizableGraph()
-            except Exception as e:
+            except:
                 self.__logger.exception('Unable to remove renormalizable graph.')
             finally:
                 self.ui.canvas.setUpdatesEnabled(True)
@@ -357,7 +356,7 @@ class UnimodalWindow(UnimodalBaseWindow):
         try:
             self.ui.canvas.setUpdatesEnabled(False)
             self.__updateRenormalizableGraph()
-        except Exception as e:
+        except:
             self.__logger.exception('Unable to update renormalizable graph.')
         finally:
             self.ui.canvas.setUpdatesEnabled(True)
@@ -419,7 +418,7 @@ class UnimodalWindow(UnimodalBaseWindow):
         try:
             func_renormalize=self.function.renomalize(period)
         #except RuntimeError as e:
-        except BaseException as e:
+        except:
             self.__logger.exception("Unable to renormalize. period:%s",str(period))
             self._rFunc=None
             self._r_s=None
@@ -435,7 +434,7 @@ class UnimodalWindow(UnimodalBaseWindow):
     def __renormalizable(self, period):
         try:
             return self.function.renormalizable(period)
-        except Exception as e:
+        except:
             self.__logger.exception('Unable to check renormalizable')
             return False
 
@@ -463,7 +462,7 @@ class UnimodalWindow(UnimodalBaseWindow):
             
             self._findPeriodicInterval(self.period)
             self._updateRescalingLevels(rChild)
-        except Exception:
+        except:
             self.__logger.exception('Unable to open child window. period: %s', period)
             return None
     
@@ -471,7 +470,7 @@ class UnimodalWindow(UnimodalBaseWindow):
             self.ui.canvas.setUpdatesEnabled(False)
             self.__plotNextLevelOrbits()
             self.__plotDeepLevelOrbits(rChild)
-        except Exception:
+        except:
             self.__logger.exception('Unable to draw child graph. period: %s', period)
         finally:
             self.ui.canvas.setUpdatesEnabled(True)
@@ -483,7 +482,7 @@ class UnimodalWindow(UnimodalBaseWindow):
             # Update child
             try:
                 rChild.setFunction(self._rFunc)
-            except Exception:
+            except:
                 self.__logger.exception('Unable to update child window. period: %s', period)
                 self.closeRChild()
                 return
@@ -494,7 +493,7 @@ class UnimodalWindow(UnimodalBaseWindow):
                 self.__updateNextLevelOrbits()
                 if self._updateRescalingLevels(rChild):
                     self.__updateDeepLevelOrbits(rChild)
-            except Exception:
+            except:
                 self.__logger.exception('Unable to update child graph. period: %s', period)
         else:
             self.closeRChild()
@@ -506,7 +505,7 @@ class UnimodalWindow(UnimodalBaseWindow):
             self.ui.canvas.setUpdatesEnabled(False)
             if self._updateRescalingLevels(self.rChild, level):
                 self.__updateDeepLevelOrbits(self.rChild)
-        except Exception:
+        except:
             self.__logger.exception('Unable to update deep renormalization graph. period: %s', self.period)
         finally:
             self.ui.canvas.setUpdatesEnabled(True)
@@ -518,7 +517,7 @@ class UnimodalWindow(UnimodalBaseWindow):
             self.ui.canvas.setUpdatesEnabled(False)
             self.__removeNextLevelOrbits()
             self.__removeDeepLevelOrbits()
-        except Exception:
+        except:
             self.__logger.exception('Unable to update remove child graph. period: %s', self.period)
         finally:
             self.ui.canvas.setUpdatesEnabled(True)
