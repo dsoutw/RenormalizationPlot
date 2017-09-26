@@ -11,7 +11,6 @@ import matplotlib as mpl
 from abc import ABCMeta,abstractmethod
 import typing as tp
 import logging
-from ui.loghandling import appendFunctionInfoAdapter
 
 class UnimodalBaseWindow(Binding, QtWidgets.QMainWindow):
     __metaclass__=ABCMeta

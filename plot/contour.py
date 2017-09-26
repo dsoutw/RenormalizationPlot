@@ -4,9 +4,10 @@ Created on 2017/9/3
 @author: dsou
 '''
 
-from plot.artist import ArtistBase,generateSample
+from .artist import ArtistBase,generateSample
 import numpy as np
 import matplotlib.ticker as ticker
+import logging
 
 # QuadContourSet is not inherted from artist
 # have to rewrite the base
@@ -17,11 +18,14 @@ class Contour(ArtistBase):
 
     __updateDirty=False
     
-    def __init__(self, func, **kwargs):
+    def __init__(self, func, logger=None, **kwargs):
+        if logger is None:
+            logger=logging.getLogger(__name__)
+
         self.__func=np.vectorize(func,signature='(),()->()')
 
         # set sample points
-        super().__init__(**kwargs)
+        super().__init__(logger=logger, **kwargs)
         
     def _initilizePlot(self):
         x = generateSample(self.canvas.axes)
@@ -46,11 +50,11 @@ class Contour(ArtistBase):
         artistList.extend(self._contour.collections)
         return artistList
     
-    def _clearPlot(self, artist):
+    def _clearPlot(self):
         self._contour=None
         self._cbaxes=None
         self._cbar=None
-        super()._clearPlot(artist)
+        super()._clearPlot()
             
     # function
     def getFunction(self):

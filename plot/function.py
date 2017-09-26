@@ -4,7 +4,8 @@ Created on 2017/9/3
 @author: dsou
 '''
 
-from plot.artist import ArtistBase,generateSample
+from .artist import ArtistBase,generateSample
+import logging
 
 class Function(ArtistBase):
     '''
@@ -18,7 +19,7 @@ class Function(ArtistBase):
     _yEventId=None
     plotOptions=()
     
-    def __init__(self, func, **kwargs):
+    def __init__(self, func, logger=None, **kwargs):
         '''
         Plot a function
         :param canvas: the canvas showing the plot
@@ -30,10 +31,13 @@ class Function(ArtistBase):
         :param visible: set visible 
         :type visible:
         '''
+        if logger is None:
+            logger=logging.getLogger(__name__)
+
         self.__func=func
 
         # set sample points
-        super().__init__(**kwargs)
+        super().__init__(logger=logger, **kwargs)
     
     
     def _initilizePlot(self):
@@ -61,14 +65,18 @@ class Function(ArtistBase):
 
     def _updatePlot(self,artist):
         artist.set_xdata(self._sample)
-        artist.set_ydata(self.function(self._sample))
+        data=list(map(self.function,self._sample))
+        artist.set_ydata(data)
         return artist
 
-    def _clearPlot(self, artist):
+    def _clearPlot(self):
         if self._xEventId != None:
-            self.canvas.axes.callbacks.disconnect(self._xEventId)
+            try:
+                self.canvas.axes.callbacks.disconnect(self._xEventId)
+            except:
+                self._logger.exception('Unable to disconnect axes callback')
             self._xEventId=None
-        super().__clearPlot(artist)
+        super().__clearPlot()
 
     # function
     def getFunction(self):

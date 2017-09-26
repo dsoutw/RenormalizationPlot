@@ -9,6 +9,7 @@ from plot.graphobject import GraphObject
 from plot.canvasbase import CanvasBase
 from PyQt5 import QtCore
 import typing as tp
+import logging
 from abc import ABCMeta,abstractmethod
 
 class ArtistBase(GraphObject,QtCore.QObject):
@@ -20,11 +21,14 @@ class ArtistBase(GraphObject,QtCore.QObject):
     __artist=None
     __updateDirty=False
     
-    def __init__(self, **kwargs):
+    def __init__(self, logger=None, **kwargs):
         '''
         An abstract container for matplotlib artist
         '''
-        GraphObject.__init__(self, **kwargs)
+        if logger is None:
+            logger=logging.getLogger(__name__)
+
+        GraphObject.__init__(self, logger=logger, **kwargs)
         QtCore.QObject.__init__(self, self.canvas)
 
     @abstractmethod
@@ -52,7 +56,7 @@ class ArtistBase(GraphObject,QtCore.QObject):
         raise NotImplementedError("GraphObject._updatePlot has to be implemented")
         pass
 
-    def _clearPlot(self, artist:MPLArtist):
+    def _clearPlot(self):
         '''
         Clear the plot.
         The default behavior is to call artist.remove
@@ -60,24 +64,44 @@ class ArtistBase(GraphObject,QtCore.QObject):
         :param artist: The artist to be clear
         :type artist: matplotlib.artist
         '''
-        if not isinstance(artist, list):
-            artist.remove()
-        else:
-            for element in artist:
-                element.remove()
+        if self.__artist is not None:
+            if not isinstance(self.__artist, list):
+                artistList=[self.__artist]
+            else:
+                artistList=self.__artist
+    
+            for element in artistList:
+                try:
+                    element.remove()
+                except:
+                    self._logger.exception('Unable to remove artist: %s' % element)
+            
+            self.__artist=None
 
     @QtCore.pyqtSlot()
     def update(self):
         if self.canvas is not None:
             if self.isShowed() is True:
                 if self.__artist is not None:
-                    self.__artist=self._updatePlot(self.__artist)
-                    self.canvas.update()
-                    self.__updateDirty=False
+                    try:
+                        self.__artist=self._updatePlot(self.__artist)
+                        self.__updateDirty=False
+                    except:
+                        try:
+                            self._clearPlot()
+                        except Exception as e:
+                            pass
+                        raise RuntimeError('Unable to update plot: %s' % self.__artist) from e
+                    finally:
+                        self.canvas.update()
                 else:
-                    self.__artist=self._initilizePlot()
-                    self.__updateDirty=False
+                    try:
+                        self.__artist=self._initilizePlot()
+                        self.__updateDirty=False
+                    except Exception as e:
+                        raise RuntimeError('Unable to initialize the plot') from e
             else:
+                # Only update the contents when the plot is visible
                 self.__updateDirty=True
 
     # visible
@@ -85,19 +109,28 @@ class ArtistBase(GraphObject,QtCore.QObject):
         if self.canvas is not None:
             if self.__artist is not None:
                 if visible and self.__updateDirty:
-                    # Only update the contents when the plot is visible
+                    # Update the plot before showing the contents
                     self.__artist=self._updatePlot(self.__artist)
                     self.__updateDirty=False
+                
                 if not isinstance(self.__artist, list):
-                    self.__artist.set_visible(visible)
+                    artistList=[self.__artist]
                 else:
-                    for element in self.__artist:
+                    artistList=self.__artist
+                    
+                for element in artistList:
+                    try:
                         element.set_visible(visible)
+                    except:
+                        self._logger.exception('Unable to set visible: %s' % visible)
+                
                 self.canvas.update()
             elif visible is True:
-                self.__artist=self._initilizePlot()
-                self.__updateDirty=False
-                self.canvas.update()
+                try:
+                    self.__artist=self._initilizePlot()
+                    self.__updateDirty=False
+                except:
+                    self._logger.exception('Unable to initialize the plot')
         
     # artist
     # useless?
@@ -110,22 +143,21 @@ class ArtistBase(GraphObject,QtCore.QObject):
         lambda self, val: self.setArtist(val)
         )
 
-    # clear the artist from the canvas    
-    def clear(self):
-        if self.__artist != None:
-            self._clearPlot(self.__artist)
-            self.__artist=None
-            self.canvas.update()
             
     def canvasChangedEvent(self, oldCanvas, newCanvas):
         if (oldCanvas is not None) and (self.__artist is not None):
-            self._clearPlot(self.__artist)
-            self.__artist=None
-            oldCanvas.update()
+            try:
+                self._clearPlot()
+                oldCanvas.update()
+            except:
+                self._logger.exception('Unable to remove the plot from the old canvas')
 
         if (newCanvas is not None) and self.isShowed():
-            self.__artist=self._initilizePlot()
-            self.__updateDirty=False
+            try:
+                self.__artist=self._initilizePlot()
+                self.__updateDirty=False
+            except:
+                self._logger.exception('Unable to initialize the plot')
         else:
             self.__artist=None            
                         

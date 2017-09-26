@@ -196,7 +196,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_mainWindow):
     def setParameter(self,value):
         self.__parameterEditing=True
 
-        self.__logger.info('Parameter change to %s',value)
+        self.__logger.info('Parameter changed to %s',value)
         self.functionConf.parameterValue=value
         self.parameterSlider.setValue(int(self.parameterToPercentage(value)*(self.parameterSlider.maximum()-self.parameterSlider.minimum())))
         self.parameterEdit.setText(str(value))
