@@ -31,8 +31,11 @@ class Contour(ArtistBase):
         x = generateSample(self.canvas.axes)
         y = np.arange(-1.0, 1.1, 2)
         self.sampleX,self.sampleY = np.meshgrid(x,y)
-        #data=list(map(self.function,self.sampleX,self.sampleY))
-        data=self.function(self.sampleX,self.sampleY)
+        try:
+            #data=list(map(self.function,self.sampleX,self.sampleY))
+            data=self.function(self.sampleX,self.sampleY)
+        except Exception as e:
+            raise RuntimeError('Unable to generate sample points') from e
 
         self._contour = self.canvas.axes.contourf(self.sampleX, self.sampleY, data, **self.plotOptions)
         self._cbaxes = self.canvas.fig.add_axes([0.9, 0.1, 0.03, 0.8]) 
@@ -44,7 +47,10 @@ class Contour(ArtistBase):
     def _updatePlot(self,artist):
         for item in self._contour.collections:
             item.remove()
-        data=list(map(self.function,self.sampleX,self.sampleY))
+        try:
+            data=list(map(self.function,self.sampleX,self.sampleY))
+        except Exception as e:
+            raise RuntimeError('Unable to generate sample points') from e
         self._contour = self.canvas.axes.contourf(self.sampleX, self.sampleY, data,**self.plotOptions)
         artistList=[self._cbaxes]
         artistList.extend(self._contour.collections)

@@ -53,7 +53,10 @@ class Function(ArtistBase):
 
     def __plot(self, axis):
         self._sample = generateSample(axis)
-        data=list(map(self.function,self._sample))
+        try:
+            data=list(map(self.function,self._sample))
+        except Exception as e:
+            raise RuntimeError('Unable to generate sample points') from e
         curve, = axis.plot(self._sample, data, **self.plotOptions)
         return curve
     
@@ -65,7 +68,10 @@ class Function(ArtistBase):
 
     def _updatePlot(self,artist):
         artist.set_xdata(self._sample)
-        data=list(map(self.function,self._sample))
+        try:
+            data=list(map(self.function,self._sample))
+        except Exception as e:
+            raise RuntimeError('Unable to generate sample points') from e
         artist.set_ydata(data)
         return artist
 
