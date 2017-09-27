@@ -4,17 +4,21 @@ Created on 2017/9/3
 @author: dsou
 '''
 
-from plot.artist import ArtistBase
+from .artist import ArtistBase
 import matplotlib.patches as patches
+import logging
 
 class Rectangle(ArtistBase):
-    def __init__(self, xValue, yValue, width, height, **kwargs):
+    def __init__(self, xValue, yValue, width, height, logger=None, **kwargs):
+        if logger is None:
+            logger=logging.getLogger(__name__)
+
         self._xValue=xValue
         self._yValue=yValue
         self._width=width
         self._height=height
         
-        super().__init__(**kwargs)
+        super().__init__(logger=logger, **kwargs)
 
     def _initilizePlot(self):
         return self.__plot(self.canvas.axes)

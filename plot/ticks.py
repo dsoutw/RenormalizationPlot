@@ -4,8 +4,9 @@ Created on 2017/9/3
 @author: dsou
 '''
 
-from plot.artist import ArtistBase
+from .artist import ArtistBase
 import random
+import logging
 
 # todo: sync axes
 # https://stackoverflow.com/questions/4999014/matplotlib-pyplot-how-to-zoom-subplots-together-and-x-scroll-separately
@@ -14,7 +15,10 @@ class Ticks(ArtistBase):
     xPosition = ["top", "bottom"]
     yPosition = ["left", "right"]
     
-    def __init__(self, position, ticks=[], ticksLabel=[], **kwargs):
+    def __init__(self, position, ticks=[], ticksLabel=[], logger=None, **kwargs):
+        if logger is None:
+            logger=logging.getLogger(__name__)
+
         if position not in Ticks.positionValues:
             raise ValueError("position [%s] must be one of %s" %
                              (position, Ticks.positionValues))
@@ -22,7 +26,7 @@ class Ticks(ArtistBase):
         self._ticks=ticks
         self._ticksLabel=ticksLabel
      
-        super().__init__(**kwargs)
+        super().__init__(logger=logger, **kwargs)
 
     def _initilizePlot(self):
         artist = self.__plot(self.canvas.figure, self.canvas.axes)
@@ -98,9 +102,12 @@ class Ticks(ArtistBase):
             artist.set_ylim(*yLimit)
         return artist
     
-    def _clearPlot(self, artist):
-        artist.__ticksCanvas.removeAxes(artist)
-        super()._clearPlot(artist)
+    def _clearPlot(self):
+        try:
+            self.artist.__ticksCanvas.removeAxes(self.artist)
+        except:
+            self._logger.exception('Unable to remove axes from canvas')
+        super()._clearPlot()
 
     def getTicks(self):
         return self._ticks

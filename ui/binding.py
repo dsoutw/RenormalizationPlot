@@ -7,9 +7,10 @@ Use string to work around on nonexistence of pointers
 @author: dsou
 '''
 import typing as tp
-import warnings
+import logging
 import operator
 import plot
+import weakref
 
 def readAttr(ui,attr):
     if isinstance(attr, str):
@@ -23,13 +24,19 @@ def readAttr(ui,attr):
         return attr
 
 class graphLink:
+    __logger:tp.Optional[logging.Logger]=None
     getEnableUI=None
     getVisibleUI=None
     setEnableUI=[]
     __graph:tp.Optional[plot.GraphObject]=None
     ui=None
     
-    def __init__(self,ui,optionList):
+    def __init__(self,ui,optionList,logger:tp.Optional[logging.Logger]=None):
+        if logger is None:
+            self.__logger:logging.Logger=logging.getLogger(__name__)
+        else:
+            self.__logger:logging.Logger=logger
+            
         self.setEnableUI=[]
         self.ui=ui
         
@@ -42,7 +49,7 @@ class graphLink:
                 if isinstance(option,str):
                     self.setEnableUI=[readAttr(ui,option)]
                 else:
-                    self.setEnableUI=[readAttr(ui,uiName) for uiName in option]
+                    self.setEnableUI=weakref.WeakSet([readAttr(ui,uiName) for uiName in option])
             elif optionName=='getEnable':
                 self.getEnableUI=readAttr(ui,option)
                 self.getEnableUI.toggled.connect(self.__setEnableSlot)
@@ -59,7 +66,10 @@ class graphLink:
         
     def __setEnable(self,value):
         for component in self.setEnableUI:
-            component.setEnabled(value)
+            try:
+                component.setEnabled(value)
+            except:
+                self.__logger.exception('Unable to set component (%s) enable: %s' % (component,value))
             
     def isEnabled(self):
         return (self.graph is not None) and self.__enabledUI
@@ -73,7 +83,10 @@ class graphLink:
     def __setVisible(self,value):
         graph=self.graph
         if graph is not None:
-            graph.setVisible(value)
+            try:
+                graph.setVisible(value)
+            except:
+                self.__logger.exception('Unable to set graph (%s) visible: %s' % (graph,value))
             
     def isVisibled(self):
         return self.__visibledUI
@@ -89,13 +102,24 @@ class graphLink:
             self.__graph=value
             
             if oldGraph is not None:
-                oldGraph.parent=None
-                
-            self.__setEnable(self.isEnabled())
+                try:
+                    oldGraph.parent=None
+                except:
+                    self.__logger.exception('Unable to clear graph')
                 
             if newGraph is not None:
-                newGraph.parent=self.ui.canvas
-                newGraph.setVisible(self.isVisibled())
+                try:
+                    newGraph.setVisible(self.isVisibled())
+                    newGraph.parent=self.ui.canvas
+                except Exception as e:
+                    self.__graph=None
+                    try:
+                        newGraph.parent=None
+                    except:
+                        pass
+                    raise RuntimeError('Unable to set new graph') from e
+                finally:
+                    self.__setEnable(self.isEnabled())
 
     graph=property(getGraph,setGraph)
     
@@ -104,12 +128,18 @@ class Binding(object):
     classdocs
     '''
     __graphList:tp.Dict[str,graphLink]={}
+    __logger:tp.Optional[logging.Logger]=None
     
     def __setVisible(self,name):
         pass
 
-    def __init__(self, ui:object, binding:tp.Dict[str,dict]):
-        self.__graphList:typing.Dict[graphLink]={graphName: graphLink(ui,optionList) for graphName, optionList in binding.items()}
+    def __init__(self, ui:object, binding:tp.Dict[str,dict], logger:tp.Optional[logging.Logger]=None):
+        if logger is None:
+            self.__logger:logging.Logger=logging.getLogger(__name__)
+        else:
+            self.__logger:logging.Logger=logger
+        
+        self.__graphList:typing.Dict[graphLink]={graphName: graphLink(ui,optionList,logger=self.__logger) for graphName, optionList in binding.items()}
     
     def __dir__(self, *args, **kwargs):
         return super().__dir__( *args, **kwargs).extend(self.__graphList.keys())

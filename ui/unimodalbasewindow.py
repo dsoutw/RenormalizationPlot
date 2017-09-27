@@ -1,18 +1,20 @@
 from PyQt5 import QtCore, QtWidgets # Import the PyQt4 module we'll need
 
-import UnimodalWindowUI # This file holds our MainWindow and all design related things
+from ui.unimodalwindowui import Ui_unimodalWindow # This file holds our MainWindow and all design related things
                     # it also keeps events etc that we defined in Qt Designer
-from Binding import Binding
+from ui.binding import Binding
 # Matplotlib library
 from matplotlib.backends.backend_qt5agg import (
     NavigationToolbar2QT as NavigationToolbar)
 import matplotlib as mpl
+
 from abc import ABCMeta,abstractmethod
 import typing as tp
+import logging
 
 class UnimodalBaseWindow(Binding, QtWidgets.QMainWindow):
     __metaclass__=ABCMeta
-    __level:int=0
+    _level:int=0
     __rParent:tp.Optional['UnimodalBaseWindow']=None
     __period:int=2
     __renormalizable:bool=None
@@ -55,24 +57,38 @@ class UnimodalBaseWindow(Binding, QtWidgets.QMainWindow):
             'setEnable':('levelButton',)},
         }
     
-    # Arguments
-    # func: unimodal class
-    # level: the level of renormalization
-    # rParent: a unimodal map for the previous level
-    def __init__(self, level:int = 0, rParent:tp.Optional['UnimodalBaseWindow'] = None, config=None):
+    __logger:tp.Optional[logging.Logger]=None
+    
+    def __init__(self, level:int = 0, rParent:tp.Optional['UnimodalBaseWindow'] = None, config=None, logger:tp.Optional[logging.Logger]=None):
+        '''
+        UnimodalBaseWindow
+        @param level: Level of renormalization
+        @type level: int
+        @param rParent: renormalization parent
+        @type rParent: UnimodalBaseWindow
+        @param config: configuration
+        @type config: imported configuration
+        @param __logger: __logger
+        @type __logger: logging.Logger
+        '''
         #func: Unimodal
         #level: nonnegative integer
-        self.__level:int=level
+        self._level:int=level
         self.__rParent:tp.Optional['UnimodalBaseWindow']=rParent
+        
+        if logger is None:
+            self.__logger=logging.getLogger(__name__)
+        else:
+            self.__logger=logger
 
         QtWidgets.QMainWindow.__init__(self,rParent)
 
-        self.ui = UnimodalWindowUI.Ui_plotWindow()
+        self.ui = Ui_unimodalWindow()
         self.ui.setupUi(self)
         
         self.__loadConfig(config)
         
-        Binding.__init__(self, self.ui, self.__bindingList)
+        Binding.__init__(self, self.ui, self.__bindingList,logger=self.__logger)
         #self.setupUi(self)  # This is defined in design.py file automatically
                             # It sets up layout and widgets that are defined
 
@@ -154,9 +170,9 @@ class UnimodalBaseWindow(Binding, QtWidgets.QMainWindow):
 
     @QtCore.pyqtSlot(int)
     def setLevel(self, level:int):
-        self.__level=level
+        self._level=level
     def getLevel(self)->int:
-        return self.__level
+        return self._level
     level=property(
         lambda self: self.getLevel(), 
         lambda self, level: self.setLevel(level)

@@ -1,10 +1,15 @@
 from PyQt5 import QtCore, QtWidgets
-import sys # We need sys so that we can pass argv to QApplication
+import logging
+import typing as tp
+
 from scipy import optimize
-import numpy as np
 from matplotlib import (cm,colors)
 
-from UnimodalBaseWindow import UnimodalBaseWindow 
+import sys
+sys.path.insert(0, '../')
+sys.path.insert(0, '.')
+
+from ui.unimodalbasewindow import UnimodalBaseWindow 
 
 import plot
 
@@ -17,7 +22,9 @@ def frange(x, y, jump):
         x += jump
 
 class UnimodalWindow(UnimodalBaseWindow):
-    def __init__(self, func:Unimodal, level:int = 0, rParent:UnimodalBaseWindow=None, config=None):
+    __logger:tp.Optional[logging.Logger]=None
+    
+    def __init__(self, func:Unimodal, level:int = 0, rParent:UnimodalBaseWindow=None, config=None, logger:tp.Optional[logging.Logger]=None):
         '''
         Create a window for a unimodal map
         :param func: the unimodal map to plot
@@ -26,6 +33,8 @@ class UnimodalWindow(UnimodalBaseWindow):
         :type level: int
         :param rParent: Previous level of renormalization
         :type rParent: UnimodalWindow
+        :param logger: Logger
+        :type logger: logging.Logger
         '''
 
         self.levels_alpha=[func.p_a]
@@ -34,16 +43,37 @@ class UnimodalWindow(UnimodalBaseWindow):
         self.levels_Beta=[func.p_B]
 
         self.__func:Unimodal = func
-        UnimodalBaseWindow.__init__(self, level, rParent=rParent, config=config)
+        if logger is None:
+            self.__logger:logging.Logger=logging.LoggerAdapter(logging.getLogger(__name__),{'function':self})
+        else:
+            self.__logger:logging.Logger=logger
+                
+        UnimodalBaseWindow.__init__(self, level, rParent=rParent, config=config, logger=self.__logger)
 
-        self.ui.canvas.setUpdatesEnabled(False)
-        self.ui.canvas.setAxesOptions(adjustable='box-forced',xlim=[-1,1], ylim=[-1,1],aspect='equal')
-        #self.canvas.fig.tight_layout()
-        self.__plotCurrentLevel()
+        try:
+            self.ui.canvas.setUpdatesEnabled(False)
+            self.ui.canvas.setAxesOptions(adjustable='box-forced',xlim=[-1,1], ylim=[-1,1],aspect='equal')
+            #self.canvas.fig.tight_layout()
+            self.__plotCurrentLevel()
+            #self.setRenormalizable(self.__renormalizable(self.period))
+        except Exception as e:
+            self.__logger.exception('Unable to draw function.')
+            self.closeWindow(self)
+            raise RuntimeError('Unable to draw function.') from e
+        finally:
+            self.ui.canvas.setUpdatesEnabled(True)
+
         self.__checkRenormalizable()
-        #self.setRenormalizable(self.__renormalizable(self.period))
-        self.ui.canvas.setUpdatesEnabled(True)
+        
+        self.__logger.info("Window Opened")
 
+    def closeEvent(self, evnt):
+        super().closeEvent(evnt)
+        self.__logger.info("Window Closed")
+
+    def __str__(self):
+        return str(self.function)
+    
     '''
     Properties
     '''
@@ -64,6 +94,7 @@ class UnimodalWindow(UnimodalBaseWindow):
     '''
     plot current level
     '''
+    __currentLevelPlotted=False
     def __plotCurrentLevel(self):
         '''plot graphs'''
         # plot function
@@ -90,22 +121,31 @@ class UnimodalWindow(UnimodalBaseWindow):
                                 [r"$\beta^{0}$",r"$\overline{\beta^{1}}$"]
                                 )
         self.gBeta0=plot.Group([self.gBeta0_0,self.gBeta0_Bar0,self.gBeta0_Bar1,self.gBeta0Ticks])
+            
+        self.__currentLevelPlotted=True
 
     def __updateCurrentLevel(self):
-        self.gFunction.setFunction(self.function)
-        self.gFunctionSecond.setFunction(lambda x:self.function.iterates(x,iteration=2))
-        self.gFunctionIterates.update()
-        
-        self.gAlpha0.setTicks([-1,1,self.function.p_c])
-        self.gBeta0_0.setXValue(self.function.p_b)
-        self.gBeta0_Bar0.setXValue(self.function.p_B)
-        self.gBeta0_Bar1.setXValue(self.function.p_B2)
-        self.gBeta0Ticks.setTicks([self.function.p_b,self.function.p_B,self.function.p_B2])
+        if self.__currentLevelPlotted:
+            try:
+                self.gFunction.setFunction(self.function)
+                self.gFunctionSecond.setFunction(lambda x:self.function.iterates(x,iteration=2))
+                self.gFunctionIterates.update()
+                
+                self.gAlpha0.setTicks([-1,1,self.function.p_c])
+                self.gBeta0_0.setXValue(self.function.p_b)
+                self.gBeta0_Bar0.setXValue(self.function.p_B)
+                self.gBeta0_Bar1.setXValue(self.function.p_B2)
+                self.gBeta0Ticks.setTicks([self.function.p_b,self.function.p_B,self.function.p_B2])
+            except:
+                self.__currentLevelPlotted=False
+                raise
+        else:
+            self.__plotCurrentLevel()
         
     '''
     plot renormalizable objects
     '''
-    __isSelfReturnIntervalsPlotted=False
+    __renormalizableGraphPlotted=False
     def __plotRenormalizableGraph(self):
         period=self.period
         self.gSelfReturnIntervals=plot.Group([plot.Rectangle(
@@ -120,26 +160,35 @@ class UnimodalWindow(UnimodalBaseWindow):
             plotOptions={'horizontalalignment':'center'}
             ) for t in range(period)])
         self.gSelfReturn=plot.Group([self.gSelfReturnIntervals,self.gSelfReturnOrder])
+        
+        self.__renormalizableGraphPlotted=True
             
 
     def __updateRenormalizableGraph(self):
-        period=self.period
-        for t in range(period):
-            # Set the self return intervals
-            self.gSelfReturnIntervals[t].setBounds(
-                self.function.p_a1[period][t], self.function.p_a1[period][t],
-                self.function.p_A1[period][t]-self.function.p_a1[period][t], self.function.p_A1[period][t]-self.function.p_a1[period][t]
-                )
-            # Set the self return intervals
-            self.gSelfReturnOrder[t].setPosition(
-                ((self.function.p_a1[period][t]+self.function.p_A1[period][t])/2,max(self.function.p_a1[period][t],self.function.p_A1[period][t])),
-                )
+        if self.__renormalizableGraphPlotted:
+            try:
+                period=self.period
+                for t in range(period):
+                    # Set the self return intervals
+                    self.gSelfReturnIntervals[t].setBounds(
+                        self.function.p_a1[period][t], self.function.p_a1[period][t],
+                        self.function.p_A1[period][t]-self.function.p_a1[period][t], self.function.p_A1[period][t]-self.function.p_a1[period][t]
+                        )
+                    # Set the self return intervals
+                    self.gSelfReturnOrder[t].setPosition(
+                        ((self.function.p_a1[period][t]+self.function.p_A1[period][t])/2,max(self.function.p_a1[period][t],self.function.p_A1[period][t])),
+                        )
+            except:
+                self.__renormalizableGraphPlotted=False
+                raise
+        else:
+            self.__plotRenormalizableGraph()
 
     def __removeRenormalizableGraph(self):
         self.gSelfReturn=None
         self.gSelfReturnOrder=None
         self.gSelfReturnIntervals=None
-        self.__isSelfReturnIntervalsPlotted = False
+        self.__renormalizableGraphPlotted=False
         
     '''
     plot RChild objects
@@ -147,24 +196,35 @@ class UnimodalWindow(UnimodalBaseWindow):
     
     ''' Next Level Orbits '''
     # plot orbits obtained from next level
+    __nextLevelOrbitPlotted=False
     def __plotNextLevelOrbits(self):
         self.gAlpha1=plot.Group(plot.VetricalLineList(self.orbit_alpha1+self.orbit_Alpha1))
         self.gBeta1=plot.Group(plot.VetricalLineList(self.orbit_beta1+self.orbit_Beta1))
         self.gLevel1=plot.Group([self.gAlpha1,self.gBeta1])
+        self.__nextLevelOrbitPlotted=True
 
     def __updateNextLevelOrbits(self):
-        self.gAlpha1.clear()
-        self.gAlpha1.extend(plot.VetricalLineList(self.orbit_alpha1+self.orbit_Alpha1))
-
-        self.gBeta1.clear()
-        self.gBeta1.extend(plot.VetricalLineList(self.orbit_beta1+self.orbit_Beta1))
+        if self.__nextLevelOrbitPlotted:
+            try:
+                self.gAlpha1.clear()
+                self.gAlpha1.extend(plot.VetricalLineList(self.orbit_alpha1+self.orbit_Alpha1))
+        
+                self.gBeta1.clear()
+                self.gBeta1.extend(plot.VetricalLineList(self.orbit_beta1+self.orbit_Beta1))
+            except:
+                self.__nextLevelOrbitPlotted=False
+                raise
+        else:
+            self.__plotNextLevelOrbits()
 
     def __removeNextLevelOrbits(self):
         self.gLevel1=None
         self.gAlpha1=None
         self.gBeta1=None
+        self.__nextLevelOrbitPlotted=False
 
     ''' Deep Level Orbits '''
+    __deepLevelOrbitPlotted=False
     def __plotDeepLevelOrbits(self,rChild):
         def _contourRLevel(x,y):
             lList=self.levels_alpha
@@ -183,16 +243,24 @@ class UnimodalWindow(UnimodalBaseWindow):
         def _contourQRLevel(x,y):
             return _contourQLevel(x,y) if x < self.function.p_b else _contourRLevel(x,y)
         
-        _contourQRLevel=np.vectorize(_contourQRLevel,signature='(),()->()')
-        
         self.gRescalingLevels = plot.Contour(_contourQRLevel,
             plotOptions={'levels':list(frange(-0.5,self.config.figureMaxLevels+0.6,1)),'cmap':cm.get_cmap("gray_r"),'norm':colors.Normalize(vmin=0,vmax=10)})
 
+        self.__deepLevelOrbitPlotted=True
+
     def __updateDeepLevelOrbits(self,rChild):
-        self.gRescalingLevels.update()
+        if self.__deepLevelOrbitPlotted:
+            try:
+                self.gRescalingLevels.update()
+            except:
+                self.__deepLevelOrbitPlotted=False
+                raise
+        else:
+            self.__plotDeepLevelOrbits()
 
     def __removeDeepLevelOrbits(self):
         self.gRescalingLevels=None
+        self.__deepLevelOrbitPlotted=False
     
     def _iRescaling(self,y):
     # The inverse function of nonlinear rescaling
@@ -205,7 +273,7 @@ class UnimodalWindow(UnimodalBaseWindow):
             return self.function.iterates(x,iteration=self.period-1)-y1
         return optimize.brenth(solve, self.orbit_alpha1[0],self.orbit_Alpha1[0])
 
-    def _updateRescalingLevels(self,rChild):
+    def _updateRescalingLevels(self,rChild, level=None):
         updated=False
         
         if self.levels_alpha is None:
@@ -228,7 +296,6 @@ class UnimodalWindow(UnimodalBaseWindow):
             
         return updated
     
-    
     '''
     Events
     '''
@@ -236,18 +303,28 @@ class UnimodalWindow(UnimodalBaseWindow):
     # User input
     # bug: does not update(remove) contour plot when deep level period is changed
     def periodChangedEvent(self, period:int):
-        self.ui.canvas.setUpdatesEnabled(False)
+        self.__logger.info('Period changed: %s' % period)
+        try:
+            self.ui.canvas.setUpdatesEnabled(False)
+            self.gFunctionIterates.update()
+        except:
+            self.__logger.exception('Unable to update graph when the perios is changed. period: %s',period)
+        finally:
+            self.ui.canvas.setUpdatesEnabled(True)
+            
         self.__checkRenormalizable()
-        self.gFunctionIterates.update()
-        self.ui.canvas.setUpdatesEnabled(True)
-        #super().periodChangedEvent(period)
 
     # unimodal map for the plot
     def functionChangedEvent(self, func:Unimodal):
-        self.ui.canvas.setUpdatesEnabled(False)
-        self.__updateCurrentLevel()
+        try:
+            self.ui.canvas.setUpdatesEnabled(False)
+            self.__updateCurrentLevel()
+        except:
+            self.__logger.exception('Unable to update function. %s', func)
+        finally:
+            self.ui.canvas.setUpdatesEnabled(True)
+
         self.__checkRenormalizable()
-        self.ui.canvas.setUpdatesEnabled(True)
     
     def __checkRenormalizable(self):
         renormalizable=self.__renormalizable(self.period)
@@ -256,19 +333,36 @@ class UnimodalWindow(UnimodalBaseWindow):
         elif renormalizable:
             self.rFunctionChangedEvent()
         
-    def rFunctionChangedEvent(self):
-        self.__updateRenormalizableGraph()
-        if self.rChild is not None:
-            self._updateRChildEvent(self.rChild,self.period)
-
     def renormalizableChangedEvent(self,value):
+        self.__logger.info('Renormalizable changed: %s' % value)
         if value is True:
-            self.__plotRenormalizableGraph()
+            try:
+                self.ui.canvas.setUpdatesEnabled(False)
+                self.__plotRenormalizableGraph()
+            except:
+                self.__logger.exception('Unable to draw renormalizable graph.')
+            finally:
+                self.ui.canvas.setUpdatesEnabled(True)
         else:
             self.closeRChild()
-            self.__removeRenormalizableGraph()
-        #super().renormalizableChangedEvent(value)
-        #self._updateRenormalizable()
+            try:
+                self.__removeRenormalizableGraph()
+            except:
+                self.__logger.exception('Unable to remove renormalizable graph.')
+            finally:
+                self.ui.canvas.setUpdatesEnabled(True)
+
+    def rFunctionChangedEvent(self):
+        try:
+            self.ui.canvas.setUpdatesEnabled(False)
+            self.__updateRenormalizableGraph()
+        except:
+            self.__logger.exception('Unable to update renormalizable graph.')
+        finally:
+            self.ui.canvas.setUpdatesEnabled(True)
+
+        if self.rChild is not None:
+            self._updateRChildEvent(self.rChild,self.period)
 
     ''' Periodic intervals and Trapping intervals '''
     # Periodic intervals and levels 
@@ -324,10 +418,8 @@ class UnimodalWindow(UnimodalBaseWindow):
         try:
             func_renormalize=self.function.renomalize(period)
         #except RuntimeError as e:
-        except BaseException as e:
-            print("Unable to renormalize at level ",str(self.level))
-            print("Parameter ",str(self.config.parameterValue))
-            print(str(e))
+        except:
+            self.__logger.exception("Unable to renormalize. period:%s",str(period))
             self._rFunc=None
             self._r_s=None
             self._r_si=None
@@ -340,7 +432,11 @@ class UnimodalWindow(UnimodalBaseWindow):
             return False
 
     def __renormalizable(self, period):
-        return self.function.renormalizable(period)
+        try:
+            return self.function.renormalizable(period)
+        except:
+            self.__logger.exception('Unable to check renormalizable')
+            return False
 
     '''
     Child Events
@@ -358,45 +454,73 @@ class UnimodalWindow(UnimodalBaseWindow):
         if self.__renormalize(period) == False:
             return None
 
-        rChild=UnimodalWindow(self._rFunc, self.level+1, rParent=self, config=self.config)
-        rChild.setWindowTitle("Level "+str(self.level+1))
-        rChild.setAttribute(QtCore.Qt.WA_DeleteOnClose)
-        rChild.setParent(None)
-        
-        self._findPeriodicInterval(self.period)
-        self._updateRescalingLevels(rChild)
-
-        self.ui.canvas.setUpdatesEnabled(False)
-        self.__plotNextLevelOrbits()
-        self.__plotDeepLevelOrbits(rChild)
-        self.ui.canvas.setUpdatesEnabled(True)
+        try:
+            rChild=UnimodalWindow(self._rFunc, self.level+1, rParent=self, config=self.config)
+            rChild.setWindowTitle("Level "+str(self.level+1))
+            rChild.setAttribute(QtCore.Qt.WA_DeleteOnClose)
+            rChild.setParent(None)
+            
+            self._findPeriodicInterval(self.period)
+            self._updateRescalingLevels(rChild)
+        except:
+            self.__logger.exception('Unable to open child window. period: %s', period)
+            return None
+    
+        try:
+            self.ui.canvas.setUpdatesEnabled(False)
+            self.__plotNextLevelOrbits()
+            self.__plotDeepLevelOrbits(rChild)
+        except:
+            self.__logger.exception('Unable to draw child graph. period: %s', period)
+        finally:
+            self.ui.canvas.setUpdatesEnabled(True)
 
         return rChild
 
     def _updateRChildEvent(self, rChild:UnimodalBaseWindow, period:int):
         if self.__renormalize(period) == True:
             # Update child
-            rChild.function=self._rFunc
+            try:
+                rChild.setFunction(self._rFunc)
+            except:
+                self.__logger.exception('Unable to update child window. period: %s', period)
+                self.closeRChild()
+                return
             
-            self._findPeriodicInterval(self.period)
-
-            self.__updateNextLevelOrbits()
-            if self._updateRescalingLevels(rChild):
-                self.__updateDeepLevelOrbits(rChild)
+            try:
+                self._findPeriodicInterval(self.period)
+    
+                self.__updateNextLevelOrbits()
+                if self._updateRescalingLevels(rChild):
+                    self.__updateDeepLevelOrbits(rChild)
+            except:
+                self.__logger.exception('Unable to update child graph. period: %s', period)
         else:
             self.closeRChild()
 
     # Notified by the child whne a child is renormalized
     # called by child window
     def _descendantRenormalizedEvent(self, level, window):
-        if self._updateRescalingLevels(self.rChild):
-            self.__updateDeepLevelOrbits(self.rChild)
+        try:
+            self.ui.canvas.setUpdatesEnabled(False)
+            if self._updateRescalingLevels(self.rChild, level):
+                self.__updateDeepLevelOrbits(self.rChild)
+        except:
+            self.__logger.exception('Unable to update deep renormalization graph. period: %s', self.period)
+        finally:
+            self.ui.canvas.setUpdatesEnabled(True)
 
     # called when the child is closed.
     #isThisClosed=False
     def _closeRChildEvent(self):
-        self.__removeNextLevelOrbits()
-        self.__removeDeepLevelOrbits()
+        try:
+            self.ui.canvas.setUpdatesEnabled(False)
+            self.__removeNextLevelOrbits()
+            self.__removeDeepLevelOrbits()
+        except:
+            self.__logger.exception('Unable to update remove child graph. period: %s', self.period)
+        finally:
+            self.ui.canvas.setUpdatesEnabled(True)
         
         self._rFunc=None
         self._r_s=None
@@ -412,14 +536,18 @@ class UnimodalWindow(UnimodalBaseWindow):
         self.levels_beta=[self.function.p_b]
         self.levels_Beta=[self.function.p_B]
 
-        
-def main():
-    import Setting
-    app = QtWidgets.QApplication(sys.argv)  # A new instance of QApplication
-    form = UnimodalWindow(Unimodal(lambda x:Setting.func(x,Setting.parameterValue),Setting.func_c(Setting.parameterValue)))                 # We set the form to be our ExampleApp (design)
+from lib.module import loadFile
+
+def main(argv):
+    if len(argv)<1:
+        print('unimodalwindow <unimodalfile>')
+        sys.exit(2)
+    
+    Setting=loadFile(argv[0])              
+    app = QtWidgets.QApplication(sys.argv[1:])  # A new instance of QApplication
+    form = UnimodalWindow(Unimodal(lambda x:Setting.func(x,Setting.parameterValue),Setting.func_c(Setting.parameterValue),config=Setting),config=Setting)                 # We set the form to be our ExampleApp (design)
     form.show()                         # Show the form
     app.exec_()                         # and execute the app
 
-
 if __name__ == '__main__':              # if we're running file directly and not importing it
-    main()  
+    main(sys.argv[1:])  

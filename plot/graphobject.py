@@ -5,8 +5,9 @@ Created on 2017/9/3
 '''
 
 from PyQt5 import QtCore
-from plot.canvasbase import CanvasBase
-import typing
+from .canvasbase import CanvasBase
+import typing as tp
+import logging
 
 class GraphObject(CanvasBase):
     '''
@@ -20,11 +21,17 @@ class GraphObject(CanvasBase):
     __visibleMask=True
     
     plotOptions={}
+    _logger:tp.Optional[logging.Logger]=None
     
-    def __init__(self,visible=True,visibleMask=True,parent=None,**kwargs):
+    def __init__(self,visible=True,visibleMask=True,parent=None,logger=None,**kwargs):
         #self.__visible=visible
         self.__visibleMask=visibleMask
         self.__visible=visible
+        if logger is None:
+            self._logger=logging.getLogger(__name__)
+        else:
+            self._logger=logger
+            
         CanvasBase.__init__(self, parent)
         for key, value in kwargs.items():
             setattr(self, key, value)
@@ -46,14 +53,14 @@ class GraphObject(CanvasBase):
         lambda self, val: self.setVisible(val)
         )
 
-    def _setVisibleInternal(self,visible):
+    def _setVisibleInternal(self,visible:bool):
         # implimentation for visible if state changed
         raise NotImplementedError("GraphObject._setVisibleInternal has to be implemented")
         
-    def getVisibleMask(self):
+    def getVisibleMask(self)->bool:
         return self.__visibleMask
     @QtCore.pyqtSlot(bool)
-    def setVisibleMask(self,visibleMask):
+    def setVisibleMask(self,visibleMask:bool):
         if (self.__visible and visibleMask) != (self.__visible and self.__visibleMask):
             self._setVisibleInternal(self.__visible and visibleMask)
         self.__visibleMask=visibleMask
@@ -68,63 +75,3 @@ class GraphObject(CanvasBase):
         @return: bool. Return True if the graph is shown on the plot 
         '''
         return self.__visible and self.__visibleMask
-
-    # clear the graph from the screen
-    # todo: remove this method
-    def clear(self):
-        raise NotImplementedError("GraphObject.clear has to be implemented")
-
-# Sync a group of GraphObject items
-# sync methods: visible, clear
-class Group(GraphObject):
-    __graphList:typing.List[GraphObject]=[]
-    def __init__(self,graphList:typing.Iterable[GraphObject],visible=True,parent=None,**kwargs):
-        for member in graphList:
-            member.parent=self
-
-        self.__graphList=list(graphList)
-        GraphObject.__init__(self,visible=visible,parent=parent,**kwargs)
-        self._setVisibleInternal(visible=visible)
-        
-    def _setVisibleInternal(self, visible):
-        for member in self.__graphList:
-            member.setVisibleMask(visible)
-    
-    # clear all artist in the list from the canvas    
-    def update(self):
-        for member in self.__graphList:
-            member.update()
-
-    # clear all artist in the list from the canvas    
-    def clear(self):
-        for member in self.__graphList:
-            member.setParent(None)
-            member.clear()
-        del self.__graphList[:]
-    
-    def canvasChangedEvent(self, oldCanvas, newCanvas):
-        for member in self.__graphList:
-            member.canvasChangedEvent(oldCanvas, newCanvas)
-        GraphObject.canvasChangedEvent(self, oldCanvas, newCanvas)
-        
-    '''
-    List methods
-    '''
-    def __getitem__(self,key):
-        return self.__graphList[key]
-    def __setitem__(self,key,value):
-        self.__graphList[key].parent=None
-        self.__graphList[key]=value
-        value.parent=self
-    def __iter__(self):
-        return self.__graphList
-    def append(self,x:GraphObject):
-        x.setVisibleMask(self.visible)
-        x.parent=self
-        self.__graphList.append(x)
-    def extend(self,l:typing.Iterable[GraphObject]):
-        for member in l:
-            member.setVisibleMask(self.isShowed())
-            member.parent=self
-        self.__graphList.extend(l)
-

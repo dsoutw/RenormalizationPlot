@@ -1,4 +1,4 @@
 @echo off
-call pyuic5 -x MainWindowUI.ui -o MainWindowUI.py
-call pyuic5 -x UnimodalWindowUI.ui -o UnimodalWindowUI.py
-python Main.py
+call pyuic5 -x ui/mainwindowUI.ui -o ui/mainwindowui.py
+call pyuic5 -x ui/unimodalwindowui.ui -o ui/unimodalwindowui.py
+python main.py

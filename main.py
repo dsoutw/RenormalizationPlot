@@ -3,24 +3,28 @@ from PyQt5.QtWidgets import QFileDialog
 import sys # We need sys so that we can pass argv to QApplication
 #import functools
 #import inspect
-import importlib.util
 import os.path
-import traceback
 import numpy as np
 
-import MainWindowUI # This file holds our MainWindow and all design related things
+from ui.mainwindowui import Ui_mainWindow # This file holds our MainWindow and all design related things
                     # it also keeps events etc that we defined in Qt Designer
-from UnimodalWindow import UnimodalWindow
+from ui.unimodalwindow import UnimodalWindow
 from function import Unimodal
+from lib.module import loadFile
 
-class MainWindow(QtWidgets.QMainWindow, MainWindowUI.Ui_mainWindow):
+import logging
+import logging.config
+logging.captureWarnings(True)
+import typing as tp
+import config
+
+class MainWindow(QtWidgets.QMainWindow, Ui_mainWindow):
     title="Renormalization Plot"
+    __logger:tp.Optional[logging.Logger]=None
     
     def __init__(self):
-        # Explaining super is out of the scope of this article
-        # So please google it if you're not familar with it
-        # Simple reason why we use it here is that it allows us to
-        # access variables, methods etc in the design.py file
+        self.__logger:logging.Logger=logging.getLogger(__name__)
+        
         super().__init__()
         self.setupUi(self)  # This is defined in design.py file automatically
                             # It sets up layout and widgets that are defined
@@ -57,9 +61,13 @@ class MainWindow(QtWidgets.QMainWindow, MainWindowUI.Ui_mainWindow):
         
         self.parameterWidget.setEnabled(False)
         self.setWindowTitle(self.title)
-    
+        self.__logger.info("UI initilized")
+        
     functionConf=None
     __originalPlot=None
+    
+    def showEvent(self, *args, **kwargs):
+        QtWidgets.QMainWindow.showEvent(self, *args, **kwargs)
     
     def openFileDialog(self):
         options = QFileDialog.Options()
@@ -70,66 +78,95 @@ class MainWindow(QtWidgets.QMainWindow, MainWindowUI.Ui_mainWindow):
             "Python Files (*.py);;All Files (*)", 
             options=options)
         
+        if file[0] == '' or file[0] is None:
+            '''User cancel'''
+            return
+        
         if not os.path.isfile(file[0]):
+            self.__logger.error('File does not exist: %s',file[0])
             return
         
         try:
-            config=self.__loadFile(file[0])
-        except Exception as e:
-            print(str(e))
-            traceback.print_exc()
+            config=loadFile(file[0])
+        except Exception:
+            self.__logger.exception('Unable to load file: %s',file[0])
             return
 
-        window=self.__openWindow(config)
-        if window is not None:
-            # Success
-            if self.__originalPlot is not None:
-                self.__originalPlot.destroyed.disconnect()
-                self.__originalPlot.mdiSubWindow.close()
-            window.showMaximized()
-            self.setWindowTitle("%s - [%s]" % (self.title,config.__name__))
+        try:
+            window=self.__openWindow(config)
+        except Exception:
+            self.__logger.exception('Unable to open window: %s',config.__name__)
+            return
 
-            self.functionConf=config
-            self.__originalPlot=window
+        self.__closeWindow()
+        self.functionConf=config
+        self.__originalPlot=window
 
-            self.__loadConfig(config)
-            self.parameterWidget.setEnabled(True)
+        window.showMaximized()
+        self.setWindowTitle("%s - [%s]" % (self.title,config.__name__))
 
-    # load function
-    # todo: support for cython file
-    def __loadFile(self, path):
-        name="unimodal:"+os.path.basename(path)
-        spec = importlib.util.spec_from_file_location(name, path)
-        module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)
-        return module
+        self.__loadConfig(config)
+        self.parameterWidget.setEnabled(True)
+
+        self.__logger.info('File opened: %s', os.path.basename(file[0]))
+
     
     def __openWindow(self,config):
-        window=None
-        try:
-            # Create the window for the original plot
-            #kwargs={inspect.getargspec(self.functionConf.func).args[1]:self.functionConf.parameterValue}
-            #function=functools.partial(self.functionConf.func,**kwargs)
-            #print(self.functionConf.parameterValue)
-            functionParameter=np.float64(config.parameterValue)
-            functionWithParameter=config.func
-            function=lambda x: functionWithParameter(x,functionParameter)
-            window=UnimodalWindow(Unimodal(
+        # Create the window for the original plot
+        
+        # Setup function
+        #kwargs={inspect.getargspec(self.functionConf.func).args[1]:self.functionConf.parameterValue}
+        #function=functools.partial(self.functionConf.func,**kwargs)
+        #print(self.functionConf.parameterValue)
+        functionParameter=np.float64(config.parameterValue)
+        functionWithParameter=config.func
+        function=lambda x: functionWithParameter(x,functionParameter)
+        
+        window=UnimodalWindow(Unimodal(
+                function,
+                config.func_c(functionParameter),
+                config=config,
+                signiture=functionParameter
+                ),0,config=config)
+        window.setWindowTitle("Original Function")
+        window.setAttribute(QtCore.Qt.WA_DeleteOnClose)
+        
+        window.mdiSubWindow=self.mdiArea.addSubWindow(window,
+            QtCore.Qt.SubWindow | QtCore.Qt.CustomizeWindowHint | QtCore.Qt.WindowSystemMenuHint |
+            QtCore.Qt.WindowMinMaxButtonsHint | QtCore.Qt.WindowCloseButtonHint)
+        return window
+
+    def __updateWindow(self):
+        if self.__originalPlot is not None:
+            try:
+                #kwargs={inspect.getargspec(self.functionConf.func).args[1]:self.functionConf.parameterValue}
+                #function=functools.partial(self.functionConf.func,**kwargs
+                functionParameter=np.float64(self.functionConf.parameterValue)
+                functionWithParameter=self.functionConf.func
+                function=lambda x: functionWithParameter(x,functionParameter)
+                self.__originalPlot.function=Unimodal(
                     function,
-                    config.func_c(functionParameter),
-                    config=config
-                    ),0,config=config)
-            window.setWindowTitle("Original Function")
-            window.setAttribute(QtCore.Qt.WA_DeleteOnClose)
-            
-            window.mdiSubWindow=self.mdiArea.addSubWindow(window,
-                QtCore.Qt.SubWindow | QtCore.Qt.CustomizeWindowHint | QtCore.Qt.WindowSystemMenuHint |
-                QtCore.Qt.WindowMinMaxButtonsHint | QtCore.Qt.WindowCloseButtonHint)
-            return window
-        except Exception as e:
-            print("Unable to open window",str(e))
-            traceback.print_exc()
-            return None
+                    self.functionConf.func_c(functionParameter),
+                    config=self.functionConf,
+                    signiture=functionParameter
+                    )
+                return
+            except Exception:
+                self.__logger.exception('Unable to update plot: %s [%s]', self.functionConf.__name__, self.functionConf.parameterValue)
+            self.__closeWindow()
+    
+    def __closeWindow(self):
+        if self.__originalPlot is not None:
+            self.__originalPlot.destroyed.disconnect()
+            self.__originalPlot.mdiSubWindow.close()
+            self.__originalPlot=None
+    
+    def __windowClosedSlot(self):
+        self.__logger.info('File closed by user: %s', self.functionConf.__name__)
+        self.setWindowTitle(self.title)
+        self.parameterWidget.setEnabled(False)
+        self.functionConf=None
+        self.__originalPlot=None
     
     def __loadConfig(self,config):
         # Set the initial values of the parameter selector
@@ -142,13 +179,7 @@ class MainWindow(QtWidgets.QMainWindow, MainWindowUI.Ui_mainWindow):
 
         self.setParameter(config.parameterValue)
         
-        self.__originalPlot.destroyed.connect(self.__fileClosedSlot)
-    
-    def __fileClosedSlot(self):
-        self.setWindowTitle(self.title)
-        self.parameterWidget.setEnabled(False)
-        self.functionConf=None
-        self.__originalPlot=None
+        self.__originalPlot.destroyed.connect(self.__windowClosedSlot)
     
     '''
     Parameter Slider
@@ -165,10 +196,11 @@ class MainWindow(QtWidgets.QMainWindow, MainWindowUI.Ui_mainWindow):
     def setParameter(self,value):
         self.__parameterEditing=True
 
+        self.__logger.info('Parameter changed to %s',value)
         self.functionConf.parameterValue=value
         self.parameterSlider.setValue(int(self.parameterToPercentage(value)*(self.parameterSlider.maximum()-self.parameterSlider.minimum())))
         self.parameterEdit.setText(str(value))
-        self.__updatePlot()
+        self.__updateWindow()
 
         self.__parameterEditing=False
 
@@ -185,16 +217,6 @@ class MainWindow(QtWidgets.QMainWindow, MainWindowUI.Ui_mainWindow):
         if not self.__parameterEditing:
             self.setParameter(self.percentageToParameter(float(self.parameterSlider.value())/(self.parameterSlider.maximum()-self.parameterSlider.minimum())))
 
-    def __updatePlot(self):
-        #kwargs={inspect.getargspec(self.functionConf.func).args[1]:self.functionConf.parameterValue}
-        #function=functools.partial(self.functionConf.func,**kwargs
-        functionWithParameter=self.functionConf.func
-        function=lambda x: functionWithParameter(x,self.functionConf.parameterValue)
-        self.__originalPlot.function=Unimodal(
-            function,
-            self.functionConf.func_c(self.functionConf.parameterValue)
-            )
-        
     # Update Bound
     def __parameterMinBoundUpdate(self):
         if float(self.parameterMinEdit.text()) < self.functionConf.parameterMax:
@@ -248,11 +270,12 @@ class MainWindow(QtWidgets.QMainWindow, MainWindowUI.Ui_mainWindow):
         self.__parameterEditing=False
         
         
-        
 def main():
+    logging.config.dictConfig(config.log)
     app = QtWidgets.QApplication(sys.argv)  # A new instance of QApplication
     form = MainWindow()                 # We set the form to be our ExampleApp (design)
     form.show()                         # Show the form
+    form.openFileDialog()
     app.exec_()                         # and execute the app
 
 

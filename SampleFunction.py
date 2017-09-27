@@ -26,7 +26,7 @@ precisionPeriodicR=1e-06
 
 interpolationEnabled=True
 # unit second
-interpolationThreshold=0.05
+interpolationThreshold=0.02
 # precision of sampling points for the interpolation
 interpolationPrecision=1e-04
 

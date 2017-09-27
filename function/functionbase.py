@@ -5,6 +5,8 @@ Created on 2017/9/20
 '''
 #from abc import ABCMeta,abstractmethod
 from abc import ABCMeta,abstractmethod
+import typing as tp 
+import logging
 
 class FunctionBaseMeta(ABCMeta):
     def __init__(self, name, bases, dct):
@@ -15,15 +17,25 @@ class FunctionBaseMeta(ABCMeta):
         #print(str(bases))
         #print(str(dct))
     
-class FunctionBase(metaclass=FunctionBaseMeta):
+class FunctionBase(object,metaclass=FunctionBaseMeta):
     '''
     classdocs
     '''
+    _logger:tp.Optional[logging.Logger]=None
 
-    def __init__(self):
+    def __init__(self,variables=1,logger:tp.Optional[logging.Logger]=None):
         '''
         Constructor
         '''
+        if logger is None:
+            self._logger:logging.Logger=logging.LoggerAdapter(logging.getLogger(__name__),{'function':self})
+        else:
+            self._logger=logging.LoggerAdapter(logger,{'function':self})
+
+        if variables==1:
+            self.iterates=self.__iteratesOneVariable
+        else:
+            self.iterates=self.__iteratesMultipleVariable
         #self.__call__=self.function
         pass
         
@@ -32,6 +44,9 @@ class FunctionBase(metaclass=FunctionBaseMeta):
     
     def __call__(self, *args, **kwargs):
         return self.function(*args, **kwargs)
+
+    def __str__(self):
+        return type(self).__name__
     
     def iterates(self, *args, iteration:int=2, **kwargs):
         '''

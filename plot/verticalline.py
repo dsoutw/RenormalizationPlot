@@ -3,11 +3,12 @@ Created on 2017/9/3
 
 @author: dsou
 '''
-from plot.artist import ArtistBase
+from .artist import ArtistBase
 from PyQt5 import QtCore
+import logging
 
 class VerticalLine(ArtistBase):
-    def __init__(self, xValue, **kwargs):
+    def __init__(self, xValue, logger=None, **kwargs):
         '''
         Plot a vertical line on a canvas
         :param canvas:
@@ -19,9 +20,12 @@ class VerticalLine(ArtistBase):
         :param visible:
         :type visible:
         '''
+        if logger is None:
+            logger=logging.getLogger(__name__)
+
         self._xValue=xValue
         
-        super().__init__(**kwargs)
+        super().__init__(logger=logger, **kwargs)
 
     def _initilizePlot(self):
         return self.__plot(self.canvas.axes)

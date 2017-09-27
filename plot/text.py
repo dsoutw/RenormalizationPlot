@@ -4,12 +4,13 @@ Created on 2017/9/14
 @author: dsou
 '''
 
-from plot.artist import ArtistBase
+from .artist import ArtistBase
 from PyQt5 import QtCore
 from typing import Tuple
+import logging
 
 class Text(ArtistBase):
-    def __init__(self, text:str, xy:Tuple[int,int], xyOffset:Tuple[int,int]=(0,0), **kwargs):
+    def __init__(self, text:str, xy:Tuple[int,int], xyOffset:Tuple[int,int]=(0,0), logger=None, **kwargs):
         '''
         Plot a vertical line on a canvas
         :param canvas:
@@ -21,11 +22,14 @@ class Text(ArtistBase):
         :param visible:
         :type visible:
         '''
+        if logger is None:
+            logger=logging.getLogger(__name__)
+
         (self._xValue,self._yValue)=xy
         (self._xOffset,self._yOffset)=xyOffset
         self._text=text
         
-        super().__init__(**kwargs)
+        super().__init__(logger=logger, **kwargs)
 
     def _initilizePlot(self):
         return self.__plot(self.canvas.axes)
