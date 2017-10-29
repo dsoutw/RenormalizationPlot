@@ -3,6 +3,11 @@ Renormalization Plot - ui/unimodalbasewindow.py
     User interface for unimodal type of maps (unimodal and Henon maps)
 
 Copyright (C) 2017 Dyi-Shing Ou. All Rights Reserved.
+
+This file is part of Renormalization Plot which is released under 
+the terms of the GNU General Public License version 3 as published 
+by the Free Software Foundation. See LICENSE.txt or 
+go to <http://www.gnu.org/licenses/> for full license details.
 '''
 
 from PyQt5 import QtCore, QtWidgets # Import the PyQt4 module we'll need
