@@ -1,7 +1,8 @@
 '''
-Created on 2017/9/3
+Renormalization Plot - plot/graphobject.py
+    Wrapper for matplotlib methods
 
-@author: dsou
+Copyright (C) 2017 Dyi-Shing Ou. All Rights Reserved.
 '''
 
 from PyQt5 import QtCore

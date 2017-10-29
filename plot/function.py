@@ -1,7 +1,8 @@
 '''
-Created on 2017/9/3
+Renormalization Plot - plot/function.py
+    Draw the plot for a function of one variable
 
-@author: dsou
+Copyright (C) 2017 Dyi-Shing Ou. All Rights Reserved.
 '''
 
 from .artist import ArtistBase,generateSample
@@ -22,14 +23,10 @@ class Function(ArtistBase):
     def __init__(self, func, logger=None, **kwargs):
         '''
         Plot a function
-        :param canvas: the canvas showing the plot
-        :type canvas:
         :param func: function to be plot
-        :type func: function of one variable
-        :param axis: axis to be plot. 
-        :type axis:
-        :param visible: set visible 
-        :type visible:
+        :type func: real function of one variable
+        @param logger: Logging instance (optional)
+        @type logger: logging.Logger
         '''
         if logger is None:
             logger=logging.getLogger(__name__)

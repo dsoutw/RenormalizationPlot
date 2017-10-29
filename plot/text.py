@@ -1,7 +1,8 @@
 '''
-Created on 2017/9/14
+Renormalization Plot - plot/text.py
+    Add some text to the plot
 
-@author: dsou
+Copyright (C) 2017 Dyi-Shing Ou. All Rights Reserved.
 '''
 
 from .artist import ArtistBase
@@ -12,16 +13,17 @@ import logging
 class Text(ArtistBase):
     def __init__(self, text:str, xy:Tuple[int,int], xyOffset:Tuple[int,int]=(0,0), logger=None, **kwargs):
         '''
-        Plot a vertical line on a canvas
-        :param canvas:
-        :type canvas:
-        :param text: 
-        :type text: str
-        :param axis:
-        :type axis:
-        :param visible:
-        :type visible:
+        Add some text to the plot
+        @param text: Text to add
+        @type text: str
+        @param xy: midpoint of the text
+        @type xy: (float, float)
+        @param xyOffset: offset of the text
+        @type xyOffset: (float, float)
+        @param logger: Logging instance (optional)
+        @type logger: logging.Logger
         '''
+
         if logger is None:
             logger=logging.getLogger(__name__)
 

@@ -1,8 +1,10 @@
 '''
-Created on 2017/9/24
+Renormalization Plot - function/unimodal.py
+    Renormalized unimodal maps
 
-@author: dsou
+Copyright (C) 2017 Dyi-Shing Ou. All Rights Reserved.
 '''
+
 import numpy as np
 from scipy.interpolate import CubicSpline
 import time

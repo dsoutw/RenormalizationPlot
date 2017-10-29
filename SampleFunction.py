@@ -1,3 +1,13 @@
+'''
+Renormalization Plot - SampleFunction.py
+    A sample configuration file for a one-parameter family unimodal map
+
+    WARNING: The options in this configuration file will be modified/renamed 
+        in the later versions in order to add new functions to this program
+
+Copyright (C) 2017 Dyi-Shing Ou. All Rights Reserved.
+'''
+
 import numpy as np
 
 parameterMin=1

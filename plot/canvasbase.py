@@ -1,8 +1,11 @@
 '''
-Created on 2017/9/15
+Renormalization Plot - plot/canvasbase.py
+    Control for canvas
 
-@author: dsou
+Copyright (C) 2017 Dyi-Shing Ou. All Rights Reserved.
 '''
+
+
 from PyQt5 import QtCore
 
 class CanvasBase(object):

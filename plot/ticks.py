@@ -1,7 +1,8 @@
 '''
-Created on 2017/9/3
+Renormalization Plot - plot/ticks.py
+    Add custom ticks to the plot
 
-@author: dsou
+Copyright (C) 2017 Dyi-Shing Ou. All Rights Reserved.
 '''
 
 from .artist import ArtistBase
@@ -16,6 +17,17 @@ class Ticks(ArtistBase):
     yPosition = ["left", "right"]
     
     def __init__(self, position, ticks=[], ticksLabel=[], logger=None, **kwargs):
+        '''
+        Add custom ticks to the plot
+        @param position: Location of the custom ticks
+        @type position: Ticks.positionValues
+        @param ticks: Ticks to be added
+        @type ticks: list of floats
+        @param ticksLabel: Ticks label
+        @type ticksLabel: list of str
+        @param logger: Logging instance (optional)
+        @type logger: logging.Logger
+        '''
         if logger is None:
             logger=logging.getLogger(__name__)
 

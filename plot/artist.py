@@ -1,8 +1,10 @@
 '''
-Created on 2017/9/4
+Renormalization Plot - plot/artist.py
+    A abstract class wrapper for the artist class from matplotlib
 
-@author: dsou
+Copyright (C) 2017 Dyi-Shing Ou. All Rights Reserved.
 '''
+
 from matplotlib.artist import Artist as MPLArtist
 import numpy as np
 from plot.graphobject import GraphObject

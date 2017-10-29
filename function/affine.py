@@ -1,8 +1,10 @@
 '''
-Created on 2017/9/20
+Renormalization Plot - function/affine.py
+    Affine maps
 
-@author: dsou
+Copyright (C) 2017 Dyi-Shing Ou. All Rights Reserved.
 '''
+
 from .functionbase import FunctionBase 
 
 class Affine(FunctionBase):

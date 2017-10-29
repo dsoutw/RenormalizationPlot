@@ -1,3 +1,10 @@
+'''
+Renormalization Plot - ui/unimodalbasewindow.py
+    User interface for unimodal type of maps (unimodal and Henon maps)
+
+Copyright (C) 2017 Dyi-Shing Ou. All Rights Reserved.
+'''
+
 from PyQt5 import QtCore, QtWidgets # Import the PyQt4 module we'll need
 
 from ui.unimodalwindowui import Ui_unimodalWindow # This file holds our MainWindow and all design related things

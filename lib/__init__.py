@@ -1,5 +1,6 @@
 '''
-Created on 2017/9/24
+Renormalization Plot - lib/__init__.py
+    Misc library
 
-@author: dsou
+Copyright (C) 2017 Dyi-Shing Ou. All Rights Reserved.
 '''

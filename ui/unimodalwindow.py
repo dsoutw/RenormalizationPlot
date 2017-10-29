@@ -1,3 +1,10 @@
+'''
+Renormalization Plot - ui/unimodalwindow.py
+    User interface for unimodal maps
+
+Copyright (C) 2017 Dyi-Shing Ou. All Rights Reserved.
+'''
+
 from PyQt5 import QtCore, QtWidgets
 import logging
 import typing as tp

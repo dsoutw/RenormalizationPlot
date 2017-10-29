@@ -1,7 +1,8 @@
 '''
-Created on 2017/9/3
+Renormalization Plot - plot/rectangle.py
+    Plot a rectangle
 
-@author: dsou
+Copyright (C) 2017 Dyi-Shing Ou. All Rights Reserved.
 '''
 
 from .artist import ArtistBase
@@ -10,6 +11,19 @@ import logging
 
 class Rectangle(ArtistBase):
     def __init__(self, xValue, yValue, width, height, logger=None, **kwargs):
+        '''
+        Plot a rectangle
+        @param xValue: x coordinate of the lower left corner
+        @type xValue: float
+        @param yValue: y coordinate of the lower left corner
+        @type yValue: float
+        @param width: Width
+        @type width: float
+        @param height: Height
+        @type height: float
+        @param logger: Logging instance (optional)
+        @type logger: logging.Logger
+        '''
         if logger is None:
             logger=logging.getLogger(__name__)
 

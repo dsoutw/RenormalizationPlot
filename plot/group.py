@@ -1,17 +1,28 @@
 '''
-Created on 2017/9/25
+Renormalization Plot - plot/group.py
+    Group a list of GraphObject instances
 
-@author: dsou
+Copyright (C) 2017 Dyi-Shing Ou. All Rights Reserved.
 '''
+
 import logging
 import typing as tp
 from .graphobject import GraphObject
 
-# Sync a group of GraphObject items
-# sync methods: visible, clear
 class Group(GraphObject):
     __graphList:tp.List[GraphObject]=[]
-    def __init__(self,graphList:tp.Iterable[GraphObject],visible=True,parent=None,logger=None,**kwargs):
+    def __init__(self,graphList:tp.Iterable[GraphObject],visible:bool=True,logger=None,**kwargs):
+        '''
+        Group a list of graphobject instances
+        @param graphList: A list of graphs
+        @type graphList: class GraphObject
+        @param visible: Visibility of the group
+        @type visible: bool
+        @param logger:
+        @type logger:
+        @param logger: Logging instance (optional)
+        @type logger: logging.Logger
+        '''
         if logger is None:
             logger=logging.getLogger(__name__)
 
@@ -19,8 +30,8 @@ class Group(GraphObject):
             member.parent=self
 
         self.__graphList=list(graphList)
-        GraphObject.__init__(self,visible=visible,parent=parent,logger=logger,**kwargs)
         self._setVisibleInternal(visible=visible)
+        GraphObject.__init__(self,visible=visible,logger=logger,**kwargs)
         
     def _setVisibleInternal(self, visible):
         for member in self.__graphList:

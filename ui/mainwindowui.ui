@@ -1,5 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
+ <comment>
+	Renormalization Plot - ui/mainwindowui.ui
+	    User interface for the main window
+	
+	Copyright (C) 2017 Dyi-Shing Ou. All Rights Reserved.
+ </comment>
+ <author>Dyi-Shing Ou</author>
+ 
  <class>mainWindow</class>
  <widget class="QMainWindow" name="mainWindow">
   <property name="geometry">

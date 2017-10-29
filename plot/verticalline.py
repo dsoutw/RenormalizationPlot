@@ -1,8 +1,10 @@
 '''
-Created on 2017/9/3
+Renormalization Plot - plot/verticalline.py
+    Add a vertical line to the plot
 
-@author: dsou
+Copyright (C) 2017 Dyi-Shing Ou. All Rights Reserved.
 '''
+
 from .artist import ArtistBase
 from PyQt5 import QtCore
 import logging
@@ -10,16 +12,13 @@ import logging
 class VerticalLine(ArtistBase):
     def __init__(self, xValue, logger=None, **kwargs):
         '''
-        Plot a vertical line on a canvas
-        :param canvas:
-        :type canvas:
-        :param xValue:
-        :type xValue:
-        :param axis:
-        :type axis:
-        :param visible:
-        :type visible:
+        Add a vertical line to the plot
+        @param xValue: x coordinate of the vertical line
+        @type xValue: float
+        @param logger: Logging instance (optional)
+        @type logger: logging.Logger
         '''
+
         if logger is None:
             logger=logging.getLogger(__name__)
 

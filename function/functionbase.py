@@ -1,9 +1,10 @@
 '''
-Created on 2017/9/20
+Renormalization Plot - function/functionbase.py
+    The base class for mathematical functions
 
-@author: dsou
+Copyright (C) 2017 Dyi-Shing Ou. All Rights Reserved.
 '''
-#from abc import ABCMeta,abstractmethod
+
 from abc import ABCMeta,abstractmethod
 import typing as tp 
 import logging

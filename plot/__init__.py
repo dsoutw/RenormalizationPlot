@@ -1,3 +1,10 @@
+'''
+Renormalization Plot - plot/__init__.py
+    Plotting package. A wrapper for matplotlib
+
+Copyright (C) 2017 Dyi-Shing Ou. All Rights Reserved.
+'''
+
 from .graphobject import GraphObject
 from .group import Group
 from .artist import ArtistBase

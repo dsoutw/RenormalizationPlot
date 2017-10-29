@@ -1,3 +1,11 @@
+'''
+Renormalization Plot - main.py
+    Main Program
+    Usage: python main.py
+
+Copyright (C) 2017 Dyi-Shing Ou. All Rights Reserved.
+'''
+
 from PyQt5 import QtCore, QtWidgets, QtGui # Import the PyQt4 module we'll need
 from PyQt5.QtWidgets import QFileDialog
 import sys # We need sys so that we can pass argv to QApplication

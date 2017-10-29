@@ -1,7 +1,8 @@
 '''
-Created on 2017/9/3
+Renormalization Plot - plot/contour.py
+    Draw contour plot
 
-@author: dsou
+Copyright (C) 2017 Dyi-Shing Ou. All Rights Reserved.
 '''
 
 from .artist import ArtistBase,generateSample
@@ -19,6 +20,13 @@ class Contour(ArtistBase):
     __updateDirty=False
     
     def __init__(self, func, logger=None, **kwargs):
+        '''
+        Draw the contour plot of a function of two variables 
+        @param func: Function to be plotted
+        @type func: real function of two variables
+        @param logger: Logging instance (optional)
+        @type logger: logging.Logger
+        '''
         if logger is None:
             logger=logging.getLogger(__name__)
 

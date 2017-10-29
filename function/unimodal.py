@@ -1,3 +1,10 @@
+'''
+Renormalization Plot - function/unimodal.py
+    Unimodal maps
+
+Copyright (C) 2017 Dyi-Shing Ou. All Rights Reserved.
+'''
+
 import numpy as np
 #import copy
 from scipy import optimize

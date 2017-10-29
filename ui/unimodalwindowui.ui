@@ -1,5 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
+ <comment>
+	Renormalization Plot - ui/unimodalwindowui.ui
+	    User interface for the unimodal window (unimodal maps and Henon maps)
+	
+	Copyright (C) 2017 Dyi-Shing Ou. All Rights Reserved.
+ </comment>
+ <author>Dyi-Shing Ou</author>
+
  <class>unimodalWindow</class>
  <widget class="QMainWindow" name="unimodalWindow">
   <property name="geometry">

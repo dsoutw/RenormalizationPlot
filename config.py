@@ -1,8 +1,10 @@
 '''
-Created on 2017/9/22
-
-@author: dsou
+Renormalization Plot - config.py
+    Configuration file
 '''
+
+''' Logging '''
+
 import logging
 
 log = dict(

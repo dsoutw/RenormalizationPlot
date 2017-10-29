@@ -1,8 +1,10 @@
 '''
-Created on 2017/9/24
+Renormalization Plot - lib/module.py
+    Utilities for load modules dynamically
 
-@author: dsou
+Copyright (C) 2017 Dyi-Shing Ou. All Rights Reserved.
 '''
+
 import importlib.util
 import os.path
 

@@ -1,11 +1,11 @@
 '''
-Created on 2017/9/16
+Renormalization Plot - ui/binding.py
+    Bind graph objects with UI components
+    String variable names are used as pointers
 
-Bind graph objects with UI components
-Use string to work around on nonexistence of pointers
-
-@author: dsou
+Copyright (C) 2017 Dyi-Shing Ou. All Rights Reserved.
 '''
+
 import typing as tp
 import logging
 import operator

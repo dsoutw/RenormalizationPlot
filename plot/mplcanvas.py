@@ -1,3 +1,10 @@
+'''
+Renormalization Plot - plot/mplcanvas.py
+    A wrapper for matplotlib canvas
+
+Copyright (C) 2017 Dyi-Shing Ou. All Rights Reserved.
+'''
+
 from PyQt5 import QtCore
 
 # Matplotlib library
