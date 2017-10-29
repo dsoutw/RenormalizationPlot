@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
+ <author>Dyi-Shing Ou</author>
  <comment>
 	Renormalization Plot - ui/mainwindowui.ui
 	    User interface for the main window
@@ -8,10 +9,8 @@
 	This file is part of Renormalization Plot which is released under 
 	the terms of the GNU General Public License version 3 as published 
 	by the Free Software Foundation. See LICENSE.txt or 
-	go to <http://www.gnu.org/licenses/> for full license details.
+	go to http://www.gnu.org/licenses/ for full license details.
  </comment>
- <author>Dyi-Shing Ou</author>
- 
  <class>mainWindow</class>
  <widget class="QMainWindow" name="mainWindow">
   <property name="geometry">
@@ -172,28 +171,22 @@
     <addaction name="actionCascade"/>
     <addaction name="actionTile"/>
    </widget>
-   <widget class="QMenu" name="menuAbout">
-    <property name="title">
-     <string>&amp;About</string>
-    </property>
-   </widget>
    <addaction name="menuFile"/>
    <addaction name="menuWindow"/>
-   <addaction name="menuAbout"/>
   </widget>
   <action name="actionQuit">
    <property name="text">
-    <string>Quit</string>
+    <string>&amp;Quit</string>
    </property>
   </action>
   <action name="actionCascade">
    <property name="text">
-    <string>Cascade</string>
+    <string>&amp;Cascade</string>
    </property>
   </action>
   <action name="actionTile">
    <property name="text">
-    <string>Tile</string>
+    <string>&amp;Tile</string>
    </property>
   </action>
   <action name="actionOpen">

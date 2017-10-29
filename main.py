@@ -12,7 +12,7 @@ go to <http://www.gnu.org/licenses/> for full license details.
 '''
 
 from PyQt5 import QtCore, QtWidgets, QtGui # Import the PyQt4 module we'll need
-from PyQt5.QtWidgets import QFileDialog
+from PyQt5.QtWidgets import QFileDialog, QMessageBox
 import sys # We need sys so that we can pass argv to QApplication
 #import functools
 #import inspect
@@ -44,6 +44,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_mainWindow):
         
         # Setup open file dialog
         self.actionOpen.triggered.connect(self.openFileDialog)
+        # setup about box
+        self.menubar.addAction("&About").triggered.connect(self.aboutDialog)
 
         # Update Parameter
         self.parameterEdit.editingFinished.connect(self.__parameterEditUpdate)
@@ -74,6 +76,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_mainWindow):
         
         self.parameterWidget.setEnabled(False)
         self.setWindowTitle(self.title)
+        
         self.__logger.info("UI initilized")
         
     functionConf=None
@@ -81,6 +84,25 @@ class MainWindow(QtWidgets.QMainWindow, Ui_mainWindow):
     
     def showEvent(self, *args, **kwargs):
         QtWidgets.QMainWindow.showEvent(self, *args, **kwargs)
+        
+    def aboutDialog(self):
+        QMessageBox.about(self, "About", 
+            "Renromalization Plot\n"
+            "Copyright (C) 2017 Dyi-Shing Ou. All Rights Reserved.\n\n"
+            
+            "Renormalization Plot is free software: you can redistribute it and/or modify "
+            "it under the terms of the GNU General Public License version 3 as published by "
+            "the Free Software Foundation.\n\n"
+
+            "Renormalization Plot is distributed in the hope that it will be useful, "
+            "but WITHOUT ANY WARRANTY; without even the implied warranty of "
+            "MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the "
+            "GNU General Public License for more details.\n\n"
+
+            "You should have received a copy of the GNU General Public License "
+            "along with Renormalization Plot.\n"
+            "If not, see <http://www.gnu.org/licenses/>."
+            )
     
     def openFileDialog(self):
         options = QFileDialog.Options()
