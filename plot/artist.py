@@ -107,6 +107,8 @@ class ArtistBase(GraphObject,QtCore.QObject):
                         self.__updateDirty=False
                     except Exception as e:
                         raise RuntimeError('Unable to initialize the plot') from e
+                    finally:
+                        self.canvas.update()
             else:
                 # Only update the contents when the plot is visible
                 self.__updateDirty=True
@@ -138,6 +140,8 @@ class ArtistBase(GraphObject,QtCore.QObject):
                     self.__updateDirty=False
                 except:
                     self._logger.exception('Unable to initialize the plot')
+                finally:
+                    self.canvas.update()
         
     # artist
     # useless?
