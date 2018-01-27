@@ -76,6 +76,8 @@ class Group(GraphObject):
         value.parent=self
     def __iter__(self):
         return self.__graphList
+    def __len__(self):
+        return len(self.__graphList)
     def append(self,x:GraphObject):
         x.setVisibleMask(self.visible)
         x.parent=self
