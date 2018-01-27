@@ -171,6 +171,7 @@ class UnimodalBaseWindow(Binding, QtWidgets.QMainWindow):
             self.__period=period
             self.ui.periodSpinBox.setValue(period)
             self.periodChangedEvent(period)
+            self.__updateParent(1)
     def getPeriod(self)->int:
         return self.__period
     period=property(
@@ -216,7 +217,7 @@ class UnimodalBaseWindow(Binding, QtWidgets.QMainWindow):
     __rChild:tp.Optional['UnimodalBaseWindow']=None
 
     @abstractmethod
-    def _newRChildEvent(self, period:int)->'PlotWindow':
+    def _RChildOpenedEvent(self, period:int)->'PlotWindow':
         '''
         Create a renormalized function window
         :param period: The period of renormalization
@@ -227,7 +228,7 @@ class UnimodalBaseWindow(Binding, QtWidgets.QMainWindow):
         raise NotImplementedError("UnimodalBaseWindow._renormalizable")
 
     @abstractmethod
-    def _closeRChildEvent(self):
+    def _RChildCloesedEvent(self):
         '''
         Update the renormalized function window
         Called when the renormalized function is modified
@@ -237,27 +238,29 @@ class UnimodalBaseWindow(Binding, QtWidgets.QMainWindow):
         raise NotImplementedError("UnimodalBaseWindow._renormalizable")
     
     @abstractmethod
-    def _descendantRenormalizedEvent(self):
+    def _RChildLevelsUpdatedEvent(self):
         raise NotImplementedError("UnimodalBaseWindow._renormalizable")
+    
+    def __updateParent(self, level):
+        ancestor=self.__rParent
+        while ancestor is not None:
+            ancestor._RChildLevelsUpdatedEvent(self.__rChild,level)
+            ancestor=ancestor.__rParent
+            level=level+1
     
     def openRChild(self):
         # open child renormalization window
         # create window if not exist then renormalize
         if self.__rChild == None:
-            self.__rChild =self._newRChildEvent(self.__period)
+            self.__rChild =self._RChildOpenedEvent(self.__period)
             if self.__rChild == None:
                 return
 
             self.ui.levelBox.setEnabled(True)
             self.openWindow(self.__rChild)
-            
             # Notify the ancestors that the unimodal map is renormalized
-            level=2
-            ancestor=self.__rParent
-            while ancestor is not None:
-                ancestor._descendantRenormalizedEvent(level,self.__rChild)
-                ancestor=ancestor.__rParent
-                level=level+1
+            self.__updateParent(2)
+            
         else:
             self.focusWindow(self.__rChild)
 
@@ -271,7 +274,7 @@ class UnimodalBaseWindow(Binding, QtWidgets.QMainWindow):
     #isThisClosed=False
     def __rChildClosed(self):
         if self.__rChild != None:
-            self._closeRChildEvent()
+            self._RChildCloesedEvent()
     
             self.ui.levelBox.setEnabled(False)
             self.__rChild=None
