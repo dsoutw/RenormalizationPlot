@@ -46,9 +46,13 @@ class Ticks(ArtistBase):
         super().__init__(logger=logger, **kwargs)
 
     def _initilizePlot(self):
+        xLimit=self.canvas.axes.get_xlim()
+        yLimit=self.canvas.axes.get_ylim()
         artist = self.__plot(self.canvas.figure, self.canvas.axes)
         artist.__ticksCanvas=self.canvas
         self.canvas.addAxes(artist)
+        artist.set_xlim(*xLimit)
+        artist.set_ylim(*yLimit)
         return artist
 
     def __plot(self, figure, axis):
@@ -107,16 +111,16 @@ class Ticks(ArtistBase):
             return None
     
     def _updatePlot(self,artist):
+        xLimit=self.canvas.axes.get_xlim()
+        yLimit=self.canvas.axes.get_ylim()
         if self._position in Ticks.xPosition:
-            xLimit=artist.get_xlim()
             artist.set_xticks(self._ticks)
             artist.set_xticklabels(self._ticksLabel)
-            artist.set_xlim(*xLimit)
         elif self._position in Ticks.yPosition:
-            yLimit=artist.get_ylim()
             artist.set_yticks(self._ticks)
             artist.set_yticklabels(self._ticksLabel)
-            artist.set_ylim(*yLimit)
+        artist.set_xlim(*xLimit)
+        artist.set_ylim(*yLimit)
         return artist
     
     def _clearPlot(self):

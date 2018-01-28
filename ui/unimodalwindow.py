@@ -117,25 +117,25 @@ class UnimodalWindow(UnimodalBaseWindow):
             self.gBeta0_0=None
             self.gBeta0_Bar0=None
             self.gBeta0_Bar1=None
-            #self.gBeta0Ticks.setTicks([])
+            self.gBeta0Ticks.setTicks([])
             self.gBeta0=None
         elif self.function.p_B is None:
             self.gBeta0_0=plot.VerticalLine(self.function.p_b,plotOptions={'color':'gray','lw':0.5})
             self.gBeta0_Bar0=None
             self.gBeta0_Bar1=None
-            #self.gBeta0Ticks.setTicks([self.function.p_b])
+            self.gBeta0Ticks.setTicks([self.function.p_b])
             self.gBeta0=plot.Group([self.gBeta0_0,self.gBeta0Ticks])
         elif self.function.p_B2 is None:
             self.gBeta0_0=plot.VerticalLine(self.function.p_b,plotOptions={'color':'gray','lw':0.5})
             self.gBeta0_Bar0=plot.VerticalLine(self.function.p_B,plotOptions={'color':'gray','lw':0.5})
             self.gBeta0_Bar1=None
-            #self.gBeta0Ticks.setTicks([self.function.p_b,self.function.p_B])
+            self.gBeta0Ticks.setTicks([self.function.p_b,self.function.p_B])
             self.gBeta0=plot.Group([self.gBeta0_0,self.gBeta0_Bar0,self.gBeta0Ticks])
         else:
             self.gBeta0_0=plot.VerticalLine(self.function.p_b,plotOptions={'color':'gray','lw':0.5})
             self.gBeta0_Bar0=plot.VerticalLine(self.function.p_B,plotOptions={'color':'gray','lw':0.5})
             self.gBeta0_Bar1=plot.VerticalLine(self.function.p_B2,plotOptions={'color':'gray','lw':0.5})
-            #self.gBeta0Ticks.setTicks([self.function.p_b,self.function.p_B,self.function.p_B2])
+            self.gBeta0Ticks.setTicks([self.function.p_b,self.function.p_B,self.function.p_B2])
             self.gBeta0=plot.Group([self.gBeta0_0,self.gBeta0_Bar0,self.gBeta0_Bar1,self.gBeta0Ticks])
         
     def __plotCurrentLevel(self):
@@ -317,7 +317,6 @@ class UnimodalWindow(UnimodalBaseWindow):
         def solve(x):
             return self.function.iterates(x,iteration=self.period-1)-y1
         return optimize.brenth(solve, self.orbit_alpha1[0],self.orbit_Alpha1[0])
-
 
     def _updateRescalingLevels(self,rChild,level=1):
         updated=False
