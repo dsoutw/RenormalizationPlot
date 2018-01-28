@@ -51,8 +51,12 @@ class UnimodalWindow(UnimodalBaseWindow):
 
         self.levels_alpha=[func.p_a]
         self.levels_Alpha=[func.p_A]
-        self.levels_beta=[func.p_b]
-        self.levels_Beta=[func.p_B]
+        if func.p_B is not None:
+            self.levels_beta=[func.p_b]
+            self.levels_Beta=[func.p_B]
+        else:
+            self.levels_beta=[]
+            self.levels_Beta=[]
 
         self.__func:Unimodal = func
         if logger is None:
@@ -107,6 +111,33 @@ class UnimodalWindow(UnimodalBaseWindow):
     plot current level
     '''
     __currentLevelPlotted=False
+    def __plotBeta(self):
+        # Draw b
+        if self.function.p_b is None:
+            self.gBeta0_0=None
+            self.gBeta0_Bar0=None
+            self.gBeta0_Bar1=None
+            #self.gBeta0Ticks.setTicks([])
+            self.gBeta0=None
+        elif self.function.p_B is None:
+            self.gBeta0_0=plot.VerticalLine(self.function.p_b,plotOptions={'color':'gray','lw':0.5})
+            self.gBeta0_Bar0=None
+            self.gBeta0_Bar1=None
+            #self.gBeta0Ticks.setTicks([self.function.p_b])
+            self.gBeta0=plot.Group([self.gBeta0_0,self.gBeta0Ticks])
+        elif self.function.p_B2 is None:
+            self.gBeta0_0=plot.VerticalLine(self.function.p_b,plotOptions={'color':'gray','lw':0.5})
+            self.gBeta0_Bar0=plot.VerticalLine(self.function.p_B,plotOptions={'color':'gray','lw':0.5})
+            self.gBeta0_Bar1=None
+            #self.gBeta0Ticks.setTicks([self.function.p_b,self.function.p_B])
+            self.gBeta0=plot.Group([self.gBeta0_0,self.gBeta0_Bar0,self.gBeta0Ticks])
+        else:
+            self.gBeta0_0=plot.VerticalLine(self.function.p_b,plotOptions={'color':'gray','lw':0.5})
+            self.gBeta0_Bar0=plot.VerticalLine(self.function.p_B,plotOptions={'color':'gray','lw':0.5})
+            self.gBeta0_Bar1=plot.VerticalLine(self.function.p_B2,plotOptions={'color':'gray','lw':0.5})
+            #self.gBeta0Ticks.setTicks([self.function.p_b,self.function.p_B,self.function.p_B2])
+            self.gBeta0=plot.Group([self.gBeta0_0,self.gBeta0_Bar0,self.gBeta0_Bar1,self.gBeta0Ticks])
+        
     def __plotCurrentLevel(self):
         '''plot graphs'''
         # plot function
@@ -122,18 +153,12 @@ class UnimodalWindow(UnimodalBaseWindow):
         self.gAlpha0=plot.Ticks("top",
             [-1,1,self.function.p_c],
             [r"$\alpha(0)$",r"$\overline{\alpha(0)}$",r"$c$"])
-        self.gBeta0_0=plot.VerticalLine(self.function.p_b,plotOptions={'color':'gray','lw':0.5})
-        # Draw B
-        self.gBeta0_Bar0=plot.VerticalLine(self.function.p_B,plotOptions={'color':'gray','lw':0.5})
-        # Draw B2
-        self.gBeta0_Bar1=plot.VerticalLine(self.function.p_B2,plotOptions={'color':'gray','lw':0.5})
-        # Beta ticks
+        
         self.gBeta0Ticks=plot.Ticks("top",
-                                [self.function.p_b,self.function.p_B,self.function.p_B2],
-                                [r"$\beta^{0}$",r"$\overline{\beta^{1}}$"]
+                                [],
+                                [r"$\beta^{0}$",r"$\overline{\beta^{1}}$",r"$\overline{\beta^{0}}$"]
                                 )
-        self.gBeta0=plot.Group([self.gBeta0_0,self.gBeta0_Bar0,self.gBeta0_Bar1,self.gBeta0Ticks])
-            
+        self.__plotBeta()
         self.__currentLevelPlotted=True
 
     def __updateCurrentLevel(self):
@@ -144,10 +169,8 @@ class UnimodalWindow(UnimodalBaseWindow):
                 self.gFunctionIterates.update()
                 
                 self.gAlpha0.setTicks([-1,1,self.function.p_c])
-                self.gBeta0_0.setXValue(self.function.p_b)
-                self.gBeta0_Bar0.setXValue(self.function.p_B)
-                self.gBeta0_Bar1.setXValue(self.function.p_B2)
-                self.gBeta0Ticks.setTicks([self.function.p_b,self.function.p_B,self.function.p_B2])
+                self.__plotBeta()
+
             except:
                 self.__currentLevelPlotted=False
                 raise
@@ -213,8 +236,12 @@ class UnimodalWindow(UnimodalBaseWindow):
     __nextLevelOrbitPlotted=False
     def __plotNextLevelOrbits(self):
         self.gAlpha1=plot.Group(plot.VetricalLineList(self.orbit_alpha1+self.orbit_Alpha1))
-        self.gBeta1=plot.Group(plot.VetricalLineList(self.orbit_beta1+self.orbit_Beta1))
-        self.gLevel1=plot.Group([self.gAlpha1,self.gBeta1])
+        if len(self.orbit_Beta1)>0:
+            self.gBeta1=plot.Group(plot.VetricalLineList(self.orbit_beta1+self.orbit_Beta1))
+            self.gLevel1=plot.Group([self.gAlpha1,self.gBeta1])
+        else:
+            self.gBeta1=None
+            self.gLevel1=plot.Group([self.gAlpha1])
         self.__nextLevelOrbitPlotted=True
 
     def __updateNextLevelOrbits(self):
@@ -223,8 +250,12 @@ class UnimodalWindow(UnimodalBaseWindow):
                 self.gAlpha1.clear()
                 self.gAlpha1.extend(plot.VetricalLineList(self.orbit_alpha1+self.orbit_Alpha1))
         
-                self.gBeta1.clear()
-                self.gBeta1.extend(plot.VetricalLineList(self.orbit_beta1+self.orbit_Beta1))
+                if len(self.orbit_Beta1)>0:
+                    self.gBeta1=plot.Group(plot.VetricalLineList(self.orbit_beta1+self.orbit_Beta1))
+                    self.gLevel1=plot.Group([self.gAlpha1,self.gBeta1])
+                else:
+                    self.gBeta1=None
+                    self.gLevel1=plot.Group([self.gAlpha1])
             except:
                 self.__nextLevelOrbitPlotted=False
                 raise
@@ -287,6 +318,7 @@ class UnimodalWindow(UnimodalBaseWindow):
             return self.function.iterates(x,iteration=self.period-1)-y1
         return optimize.brenth(solve, self.orbit_alpha1[0],self.orbit_Alpha1[0])
 
+
     def _updateRescalingLevels(self,rChild,level=1):
         updated=False
         i=level
@@ -294,13 +326,18 @@ class UnimodalWindow(UnimodalBaseWindow):
         if (self.levels_alpha is None) or (i<=1):
             self.levels_alpha=[self.function.p_a,self.orbit_alpha1[0]]
             self.levels_Alpha=[self.function.p_A,self.orbit_Alpha1[0]]
+
+            if len(self.orbit_Beta1) is 0:
+                self.levels_beta=[self.function.p_b]
+                self.levels_Beta=[self.function.p_B]
+                return True
             self.levels_beta=[self.function.p_b,self.orbit_beta1[0]]
             self.levels_Beta=[self.function.p_B,self.orbit_Beta1[0]]
             i=2
             updated=True
 
-        if len(self.levels_alpha) != i:
-            i=min(len(self.levels_alpha),level)
+        if len(self.levels_Beta) != i:
+            i=min(len(self.levels_Beta),level)
             self.levels_alpha=self.levels_alpha[0:i]
             self.levels_Alpha=self.levels_Alpha[0:i]
             self.levels_beta=self.levels_beta[0:i]
@@ -308,7 +345,7 @@ class UnimodalWindow(UnimodalBaseWindow):
             updated=True
         
         # update the list of the periodic points if new renormalization level is available
-        while i-1 < len(rChild.levels_alpha) and i <= self.config.figureMaxLevels:
+        while i-1 < len(rChild.levels_Beta) and i <= self.config.figureMaxLevels:
             self.levels_alpha.append(self._iRescaling(rChild.levels_alpha[i-1]))
             self.levels_Alpha.append(self._iRescaling(rChild.levels_Alpha[i-1]))
             self.levels_beta.append(self._iRescaling(rChild.levels_beta[i-1]))
@@ -407,8 +444,12 @@ class UnimodalWindow(UnimodalBaseWindow):
             # build period intervals from the next level
             self.orbit_alpha1=self.function.p_a1[period]
             self.orbit_Alpha1=self.function.p_A1[period]
-            self.orbit_beta1=self.function.orbit(self.function(self._r_si(self._rFunc.p_b)),period)
-            self.orbit_Beta1=self.function.reflexOrbit(self.orbit_beta1)
+            if self._rFunc.p_b is not None:
+                self.orbit_beta1=self.function.orbit(self.function(self._r_si(self._rFunc.p_b)),period)
+                self.orbit_Beta1=self.function.reflexOrbit(self.orbit_beta1)
+            else:
+                self.orbit_beta1=[]
+                self.orbit_Beta1=[]
         else:
             self.orbit_alpha1=[]
             self.orbit_Alpha1=[]
@@ -417,8 +458,13 @@ class UnimodalWindow(UnimodalBaseWindow):
 
         self.levels_alpha=[self.function.p_a]
         self.levels_Alpha=[self.function.p_A]
-        self.levels_beta=[self.function.p_b]
-        self.levels_Beta=[self.function.p_B]
+        if self.function.p_B is not None:
+            self.levels_beta=[self.function.p_b]
+            self.levels_Beta=[self.function.p_B]
+        else:
+            self.levels_beta=[]
+            self.levels_Beta=[]
+
     
     ''' Rescaling levels '''
     levels_alpha=[]
@@ -554,8 +600,12 @@ class UnimodalWindow(UnimodalBaseWindow):
 
         self.levels_alpha=[self.function.p_a]
         self.levels_Alpha=[self.function.p_A]
-        self.levels_beta=[self.function.p_b]
-        self.levels_Beta=[self.function.p_B]
+        if self.function.p_B is not None:
+            self.levels_beta=[self.function.p_b]
+            self.levels_Beta=[self.function.p_B]
+        else:
+            self.levels_beta=[]
+            self.levels_Beta=[]
 
 from lib.module import loadFile
 

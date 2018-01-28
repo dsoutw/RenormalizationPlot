@@ -35,14 +35,54 @@ class Unimodal(FunctionBase):
     p_a1={}
     p_A1={}
     
-    # critical point
-    p_c=None
-    p_v=None
-    
     # name of the map
     _signiture=None
     _level=[]
     _logger=None
+    
+    '''
+    Properties
+    '''
+    
+    ''' Alpha Fixed Points '''
+    __p_a=None
+    def get_p_a(self)->int:
+        return self.__p_a
+    p_a=property(lambda self: self.get_p_a())
+
+    __p_A=None
+    def get_p_A(self)->int:
+        return self.__p_A
+    p_A=property(lambda self: self.get_p_A())
+
+    ''' Beta Fixed Points '''
+    ''' The values can be None if there are no such a point '''
+    __p_b=None
+    def get_p_b(self)->int:
+        return self.__p_b
+    p_b=property(lambda self: self.get_p_b())
+
+    __p_B=None
+    def get_p_B(self)->int:
+        return self.__p_B
+    p_B=property(lambda self: self.get_p_B())
+
+    __p_B2=None
+    def get_p_B2(self)->int:
+        return self.__p_B2
+    p_B2=property(lambda self: self.get_p_B2())
+
+    ''' Critical Orbits '''
+    __p_c=None
+    def get_p_c(self)->int:
+        return self.__p_c
+    p_c=property(lambda self: self.get_p_c())
+
+    __p_v=None
+    def get_p_v(self)->int:
+        return self.__p_v
+    p_v=property(lambda self: self.get_p_v())
+    
     
     def __map_solve(self, x, y):
         return self.function(x)-y
@@ -53,15 +93,14 @@ class Unimodal(FunctionBase):
 
         self._signiture=signiture
         self._level=level
-        
         _logger=logging.getLogger(__name__)
         
+        super().__init__(1,logger=_logger)
+
         #self.function = copy.deepcopy(func)
         self.function=func
-        self.p_c = p_c
-        
+        self.__p_c = p_c
         self._setupVariable()
-        super().__init__(1,logger=_logger)
 
     def __str__(self):
         name='Unimodal:%s' % self._signiture
@@ -81,41 +120,58 @@ class Unimodal(FunctionBase):
         self.p_a1={}
         self.p_A1={}
         
-        # Set critical value
-        self.p_v=self.function(self.p_c)
-
         # Check if it is a unimodal function with the standard convention
         # i.e. -1=f(-1)=f(1)
-        self.p_a=np.float64(-1.0)
+        self.__p_a=np.float64(-1.0)
         value=self.function(self.p_a)
         if not np.isclose(self.function(self.p_a),self.p_a,rtol=self.__TOL_EQUAL):
             self._logger.warning('f(-1) is far from -1: f(-1)=%s' % (value))
         
         # Check if f(-1)=1
-        self.p_A=np.float64(1.0)
+        self.__p_A=np.float64(1.0)
         value=self.function(self.p_A)
         if not np.isclose(value,self.p_a,rtol=self.__TOL_EQUAL):
             self._logger.warning('f(1) is far from -1: f(1)=%s' % (value))
+
+        # Check critical point
+        if (self.p_c<self.p_a) or (self.p_A<self.p_c):
+            raise ValueError('The critical point has to be in [-1,1]')
+
+        # Set critical value
+        self.__p_v=self.function(self.p_c)
         
-        # Check if the unimodal map has a fixed point with negative multiplier
+        # Check if the unimodal map has a fixed point with a negative multiplier
         # i.e f(c)>c (not guarentee that the fixed point is expanding)
         # One could use finite difference to check the point's derivative
-        if self.function(self.p_c) < self.p_c:
-            raise ValueError('Not a unimodal map: c>v')
-        
-        # Find beta fixed point
-        try:
-            self.p_b=optimize.brentq(lambda x: self.function(x)-x, self.p_c, self.p_A, xtol=self.config.precisionPeriodicA, rtol=self.config.precisionPeriodicR)
-        except BaseException as e:
-            raise RuntimeError('Unable to find beta fixed point\n') from e
-        try:
-            self.p_B=optimize.brentq(self.__map_solve, self.p_a, self.p_c, args=(self.p_b,), xtol=self.config.precisionPeriodicA, rtol=self.config.precisionPeriodicR)
-        except BaseException as e:
-            raise RuntimeError('Unable to find beta_bar point') from e
-        try:
-            self.p_B2=optimize.brentq(self.__map_solve, self.p_b, self.p_A, args=(self.p_B,), xtol=self.config.precisionPeriodicA, rtol=self.config.precisionPeriodicR)
-        except BaseException as e:
-            raise RuntimeError('Unable to find beta_2bar point') from e
+        if self.p_c < self.p_v:
+            # Find beta fixed point
+            try:
+                self.__p_b=optimize.brentq(lambda x: self.function(x)-x, self.p_c, self.p_A, xtol=self.config.precisionPeriodicA, rtol=self.config.precisionPeriodicR)
+            except BaseException:
+                self.__p_b=None
+                self.__p_B=None
+                self.__p_B2=None
+                self._logger.warning('Unable to find beta fixed point', exc_info=True)
+                return
+            try:
+                self.__p_B=optimize.brentq(self.__map_solve, self.p_a, self.p_c, args=(self.p_b,), xtol=self.config.precisionPeriodicA, rtol=self.config.precisionPeriodicR)
+            except BaseException:
+                self.__p_B=None
+                self.__p_B2=None
+                self._logger.warning('Unable to find beta_bar point', exc_info=True)
+                return
+            try:
+                self.__p_B2=optimize.brentq(self.__map_solve, self.p_b, self.p_A, args=(self.p_B,), xtol=self.config.precisionPeriodicA, rtol=self.config.precisionPeriodicR)
+            except BaseException:
+                self.__p_B2=None
+                self._logger.warning('Unable to find beta_2bar point', exc_info=True)
+                return
+        else:
+            self.__p_b=None
+            self.__p_B=None
+            self.__p_B2=None
+            self._logger.warning('The unimodal map does not have a beta fixed point: v<c')
+
     
     ''' Renormalization Tools '''
 
@@ -159,13 +215,16 @@ class Unimodal(FunctionBase):
         Check if the unimodal map is period-doubling renormalizable
         :return: enum Renormalizable
         '''
+        if (self.p_b is None) or (self.p_B is None) or (self.p_B2 is None):
+            return False
+        
         # The condition f(v) < c ensures that there exists a fixed point with negative multiplier
-        if not self.p_b < self.p_v:
+        #if not self.p_b < self.p_v:
             #return Renormalizable.under
-            return False
-        if not self.function(self.p_v) < self.p_c:
-            #return Renormalizable.under
-            return False
+        #    return False
+        #if not self.function(self.p_v) < self.p_c:
+        #    #return Renormalizable.under
+        #    return False
         if not self.p_v < self.p_B2:
             #return Renormalizable.above
             return False
@@ -178,6 +237,9 @@ class Unimodal(FunctionBase):
 
     
     def renomalizableOther(self,period):
+        if self.p_B2 is None:
+            return False
+
         # period doubling renormalizable
         if self.p_v < self.p_c:
             return False
