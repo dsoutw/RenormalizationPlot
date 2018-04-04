@@ -89,3 +89,39 @@ class MPLCanvas(FigureCanvas,CanvasBase):
         
     def getCanvas(self):
         return self
+    
+    __showXTicks=True
+    @QtCore.pyqtSlot(bool)
+    def setShowXTicks(self,show):
+        self.__showXTicks=show
+        self.axes.tick_params(
+            axis='x',          # changes apply to the x-axis
+            which='both',      # both major and minor ticks are affected
+            bottom=show,      # ticks along the bottom edge are off
+            labelbottom=show
+            )
+        self.update()
+    def getShowXTicks(self):
+        return self.__showXTicks
+    showXTicks=property(
+        lambda self: self.getShowXTicks(), 
+        lambda self, show: self.setShowXTicks(show)
+        )
+
+    __showYTicks=True
+    @QtCore.pyqtSlot(bool)
+    def setShowYTicks(self,show):
+        self.__showYTicks=show
+        self.axes.tick_params(
+            axis='y',          # changes apply to the x-axis
+            which='both',      # both major and minor ticks are affected
+            left=show,      # ticks along the bottom edge are off
+            labelleft=show
+            )
+        self.update()
+    def getShowYTicks(self):
+        return self.__showYTicks
+    showYTicks=property(
+        lambda self: self.getShowYTicks(), 
+        lambda self, show: self.setShowYTicks(show)
+        )

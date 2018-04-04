@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
+ <author>Dyi-Shing Ou</author>
  <comment>
 	Renormalization Plot - ui/unimodalwindowui.ui
 	    User interface for the unimodal window (unimodal maps and Henon maps)
@@ -11,8 +12,6 @@
 	by the Free Software Foundation. See LICENSE.txt or 
 	go to http://www.gnu.org/licenses/ for full license details.
  </comment>
- <author>Dyi-Shing Ou</author>
-
  <class>unimodalWindow</class>
  <widget class="QMainWindow" name="unimodalWindow">
   <property name="geometry">
@@ -366,8 +365,8 @@
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>105</width>
-             <height>114</height>
+             <width>204</width>
+             <height>438</height>
             </rect>
            </property>
            <layout class="QFormLayout" name="formLayout_2">
@@ -449,6 +448,63 @@
         </item>
        </layout>
       </widget>
+      <widget class="QWidget" name="optionsTab">
+       <attribute name="title">
+        <string>Options</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="verticalLayout_5">
+        <item>
+         <widget class="QScrollArea" name="scrollArea_2">
+          <property name="frameShape">
+           <enum>QFrame::NoFrame</enum>
+          </property>
+          <property name="widgetResizable">
+           <bool>true</bool>
+          </property>
+          <widget class="QWidget" name="scrollAreaWidgetContents_4">
+           <property name="geometry">
+            <rect>
+             <x>0</x>
+             <y>0</y>
+             <width>204</width>
+             <height>438</height>
+            </rect>
+           </property>
+           <layout class="QFormLayout" name="formLayout_6">
+            <item row="0" column="0">
+             <widget class="QLabel" name="xTicksLabel">
+              <property name="text">
+               <string>X-Ticks</string>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="1">
+             <widget class="QCheckBox" name="xTicksCheckBox">
+              <property name="checked">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="0">
+             <widget class="QLabel" name="yTicksLabel">
+              <property name="text">
+               <string>Y-Ticks</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="1">
+             <widget class="QCheckBox" name="yTicksCheckBox">
+              <property name="checked">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </widget>
+        </item>
+       </layout>
+      </widget>
      </widget>
     </item>
    </layout>
@@ -465,6 +521,10 @@
    <extends>QWidget</extends>
    <header>plot/mplcanvas.h</header>
    <container>1</container>
+   <slots>
+    <slot>setShowXTicks(bool)</slot>
+    <slot>setShowYTicks(bool)</slot>
+   </slots>
   </customwidget>
  </customwidgets>
  <tabstops>
@@ -568,6 +628,38 @@
     <hint type="destinationlabel">
      <x>562</x>
      <y>111</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>xTicksCheckBox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>canvas</receiver>
+   <slot>setShowXTicks(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>504</x>
+     <y>35</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>198</x>
+     <y>87</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>yTicksCheckBox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>canvas</receiver>
+   <slot>setShowYTicks(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>519</x>
+     <y>55</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>317</x>
+     <y>179</y>
     </hint>
    </hints>
   </connection>
