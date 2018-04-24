@@ -111,6 +111,8 @@ class UnimodalWindow(UnimodalBaseWindow):
         '''plot graphs'''
         # plot function
         self.gFunction = plot.Function(self.function,plotOptions={'lw':1})
+        # plot the reflection of the function
+        self.gFunctionReflection = plot.Function(self.function,plotOptions={'lw':1},reflection=True)
         # plot second iterate
         self.gFunctionSecond = plot.Function(lambda x:self.function.iterates(x,iteration=2),plotOptions={'lw':1})
         # plot multiple iterate
@@ -140,6 +142,7 @@ class UnimodalWindow(UnimodalBaseWindow):
         if self.__currentLevelPlotted:
             try:
                 self.gFunction.setFunction(self.function)
+                self.gFunctionReflection.setFunction(self.function)
                 self.gFunctionSecond.setFunction(lambda x:self.function.iterates(x,iteration=2))
                 self.gFunctionIterates.update()
                 
