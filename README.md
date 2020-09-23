@@ -13,6 +13,8 @@ Need to have the following packages installed before using the software
 
 ## Usage
 1. Run "python main.py"
+The user can open the sample file "SampleFunction.py". 
+The sample will show a period-doubling renormalizable quadratic unimodal map.
 
 ## License
 Copyright (C) 2017 Dyi-Shing Ou.
