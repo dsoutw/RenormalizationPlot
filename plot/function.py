@@ -25,7 +25,7 @@ class Function(ArtistBase):
     _yEventId=None
     plotOptions=()
     
-    def __init__(self, func, logger=None, **kwargs):
+    def __init__(self, func, logger=None, reflection=False, **kwargs):
         '''
         Plot a function
         :param func: function to be plot
@@ -37,6 +37,7 @@ class Function(ArtistBase):
             logger=logging.getLogger(__name__)
 
         self.__func=func
+        self.__reflection=reflection
 
         # set sample points
         super().__init__(logger=logger, **kwargs)
@@ -59,7 +60,12 @@ class Function(ArtistBase):
             data=list(map(self.function,self._sample))
         except Exception as e:
             raise RuntimeError('Unable to generate sample points') from e
-        curve, = axis.plot(self._sample, data, **self.plotOptions)
+
+        if not self.__reflection:
+            curve, = axis.plot(self._sample, data, **self.plotOptions)
+        else:
+            curve, = axis.plot(data, self._sample, **self.plotOptions)
+        
         return curve
     
     def draw(self, axis):
@@ -74,7 +80,12 @@ class Function(ArtistBase):
             data=list(map(self.function,self._sample))
         except Exception as e:
             raise RuntimeError('Unable to generate sample points') from e
-        artist.set_ydata(data)
+
+        if not self.__reflection:
+            artist.set_ydata(data)
+        else:
+            artist.set_xdata(data)
+            
         return artist
 
     def _clearPlot(self):

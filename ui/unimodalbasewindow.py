@@ -37,6 +37,7 @@ class UnimodalBaseWindow(Binding, QtWidgets.QMainWindow):
     __bindingList={
         # current level
         'gFunction':{},
+        'gFunctionReflection':{'getVisible':'reflectionCheckBox','setEnable':('reflectionCheckBox',)},
         'gFunctionSecond':{'getVisible':'secondIterateCheckBox','setEnable':('secondIterateCheckBox',)},
         'gFunctionIterates':{'getVisible':'iteratedGraphCheckBox','setEnable':('iteratedGraphCheckBox',)},
         'gDiagonal':{'getVisible':'diagonalCheckBox','setEnable':('diagonalCheckBox',)},
