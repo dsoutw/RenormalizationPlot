@@ -64,7 +64,7 @@ class UnimodalWindow(UnimodalBaseWindow):
 
         try:
             self.ui.canvas.setUpdatesEnabled(False)
-            self.ui.canvas.setAxesOptions(adjustable='box-forced',xlim=[-1,1], ylim=[-1,1],aspect='equal')
+            self.ui.canvas.setAxesOptions(adjustable='box',xlim=[-1,1], ylim=[-1,1],aspect='equal')
             #self.canvas.fig.tight_layout()
             self.__plotCurrentLevel()
             #self.setRenormalizable(self.__renormalizable(self.period))
@@ -132,7 +132,7 @@ class UnimodalWindow(UnimodalBaseWindow):
         # Beta ticks
         self.gBeta0Ticks=plot.Ticks("top",
                                 [self.function.p_b,self.function.p_B,self.function.p_B2],
-                                [r"$\beta^{0}$",r"$\overline{\beta^{1}}$"]
+                                [r"$\beta^{0}$",r"$\overline{\beta^{1}}$",""]
                                 )
         self.gBeta0=plot.Group([self.gBeta0_0,self.gBeta0_Bar0,self.gBeta0_Bar1,self.gBeta0Ticks])
             
