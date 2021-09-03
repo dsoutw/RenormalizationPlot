@@ -100,7 +100,7 @@ class ArtistBase(GraphObject,QtCore.QObject):
                             pass
                         raise RuntimeError('Unable to update plot: %s' % self.__artist) from e
                     finally:
-                        self.canvas.update()
+                        self.canvas.updatePlot()
                 else:
                     try:
                         self.__artist=self._initilizePlot()
@@ -108,7 +108,7 @@ class ArtistBase(GraphObject,QtCore.QObject):
                     except Exception as e:
                         raise RuntimeError('Unable to initialize the plot') from e
                     finally:
-                        self.canvas.update()
+                        self.canvas.updatePlot()
             else:
                 # Only update the contents when the plot is visible
                 self.__updateDirty=True
@@ -133,7 +133,7 @@ class ArtistBase(GraphObject,QtCore.QObject):
                     except:
                         self._logger.exception('Unable to set visible: %s' % visible)
                 
-                self.canvas.update()
+                self.canvas.updatePlot()
             elif visible is True:
                 try:
                     self.__artist=self._initilizePlot()
@@ -141,7 +141,7 @@ class ArtistBase(GraphObject,QtCore.QObject):
                 except:
                     self._logger.exception('Unable to initialize the plot')
                 finally:
-                    self.canvas.update()
+                    self.canvas.updatePlot()
         
     # artist
     # useless?
@@ -159,7 +159,7 @@ class ArtistBase(GraphObject,QtCore.QObject):
         if (oldCanvas is not None) and (self.__artist is not None):
             try:
                 self._clearPlot()
-                oldCanvas.update()
+                oldCanvas.updatePlot()
             except:
                 self._logger.exception('Unable to remove the plot from the old canvas')
 

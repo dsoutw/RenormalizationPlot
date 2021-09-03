@@ -37,25 +37,25 @@ class MPLCanvas(FigureCanvas,CanvasBase):
         #                           QtWidgets.QSizePolicy.Expanding)
         #FigureCanvas.updateGeometry(self)
         #self.setMinimumSize(0, 0)
-        self._updateDirty=False
+        self._plotDirty=False
 
     def compute_initial_figure(self):
         pass
     
-#    def updatePlot(self):
-#        #self._updatePlot=True
-#        #self.update()
-#        self.draw_idle()
-#        pass
-
     @QtCore.pyqtSlot()
     def update(self):
+        if self._plotDirty == True:
+            if self.updatesEnabled() == True:
+                FigureCanvas.draw_idle(self)
+                self._plotDirty=False
+        FigureCanvas.update(self)
+    
+    @QtCore.pyqtSlot()
+    def updatePlot(self):
         if self.updatesEnabled() == True:
             FigureCanvas.draw_idle(self)
         else:
-            self._updateDirty=True
-            
-        FigureCanvas.update(self)
+            self._plotDirty=True
     
     @QtCore.pyqtSlot(bool)
     def setUpdatesEnabled(self, enable):
@@ -63,11 +63,11 @@ class MPLCanvas(FigureCanvas,CanvasBase):
             #self._updateDirty=False
             pass
         elif enable == True:
-            if self._updateDirty == True:
+            if self._plotDirty == True:
                 FigureCanvas.draw_idle(self)
-                self._updateDirty = False
+                self._plotDirty=False
         FigureCanvas.setUpdatesEnabled(self, enable)
-        
+   
     __axesOptions={}
     def setAxesOptions(self,**kwargs):
         self.__axesOptions.update(kwargs)
