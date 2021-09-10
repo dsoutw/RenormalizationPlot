@@ -34,6 +34,6 @@ Consider a one-parameter family of unimodal maps.
 As the parameter increases, the attracting fixed point bifurcates into an attracting period-two orbit of period two and a repelling fixed point. 
 Then the attracting period-two orbit bifurcates into an attracting period-four orbit and a repelling period-two orbit.
 This procedure repeats as the parameter increases.
-<video muted autoplay controls>
+<video muted controls width="600">
     <source src="res/PeriodDoubling.mp4" type="video/mp4">
 </video>
