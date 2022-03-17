@@ -11,7 +11,7 @@ The program is released under the GNU General Public License version 3.
 
 ## Instructions
 
-[How to use the program](https://github.com/dsoutw/Renormalization-Plot/blob/master/README.md)
+[How to use the program](https://github.com/dsoutw/RenormalizationPlot/blob/master/README.md)
 
 ## Gallery
 
