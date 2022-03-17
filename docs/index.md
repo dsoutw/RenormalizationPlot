@@ -1,4 +1,4 @@
-# Renormalization-Plots
+# Renormalization Plot
 
 This is a Python program that can renormalize unimodal maps. 
 It can renormalize any one-parameter family of unimodal maps.
@@ -7,11 +7,11 @@ The program is released under the GNU General Public License version 3.
 
 ## Download
 
-[Source code](https://github.com/dsoutw/Renormalization-Plot/releases)
+[Source code](/RenormalizationPlot/releases)
 
 ## Instructions
 
-[How to use the program](https://github.com/dsoutw/Renormalization-Plot/blob/master/README.md)
+[How to use the program](/RenormalizationPlot/blob/master/README.md)
 
 ## Gallery
 
